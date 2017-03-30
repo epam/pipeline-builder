@@ -35,7 +35,18 @@ const pipeline = require('pipeline-builder');
 console.log(pipeline.VERSION);
 ```
 
-Refer to the [API docs and tutorials](docs/tutorials) for more details.
+Refer to the [API docs and tutorials](docs/tutorials) for more details
+
+## WDL Parser/Visualizer limitations
+
+The following WDL features, that require more specific parsing or visualization, are not supported at the moment:
+
+* [Imports](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#import-statements)
+* [Sub workflows](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#sub-workflows)
+* [Conditionals](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#conditionals)
+* [Scatter](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#scatter) - IN DEVELOPMENT
+* [Loop](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#loops) - IN DEVELOPMENT
+* [Workflow level resolution](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#workflow-level-resolution)
 
 ## Contribution
 
