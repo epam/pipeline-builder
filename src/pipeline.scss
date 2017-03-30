@@ -1,0 +1,92 @@
+@import '../node_modules/jointjs/dist/joint';
+
+// EPAM primary colors
+$sharp-blue: #39c2d7;
+$lime-green: #a3c644;
+$graphite: #464547;
+$white: #fff;
+
+// EPAM secondary colors
+$raspberry: #b22746;
+$plum: #8e244d;
+$dark-blue: #1a9cb0;
+$dark-green: #7f993a;
+$medium-gray: #666;
+$gray: #999;
+$light-gray: #ccc;
+
+// Semantic color mapping
+$step-color: $sharp-blue;
+$port-color: $graphite;
+
+.joint-type-visualstep.selected {
+  .body {
+    stroke: $raspberry;
+    stroke-width: 3px;
+  }
+}
+
+.joint-type-visualstep {
+  text {
+    font-weight: 500;
+    font-family: "Source Sans Pro", sans-serif;
+  }
+
+  rect {
+    rx: 5px;
+    ry: 5px;
+  }
+
+  .body {
+    fill: $white;
+    stroke: $step-color;
+    stroke-width: 2px;
+  }
+
+  .label {
+    fill: $step-color;
+    font-size: 16px;
+  }
+
+  .port-body {
+    stroke: $white;
+    stroke-width: 3px;
+    fill: $port-color;
+  }
+
+  .port-body:hover {
+    opacity: 1;
+    fill: $step-color;
+  }
+
+  .port-label {
+    fill: $port-color;
+    text-decoration: none;
+    text-transform: none;
+  }
+}
+
+.joint-link {
+  .connection {
+    stroke: $port-color;
+    stroke-width: 2px;
+  }
+
+  .marker-arrowheads .marker-arrowhead,
+  .marker-vertex-group .marker-vertex,
+  .marker-vertex-group .marker-vertex:hover {
+    fill: $port-color;
+  }
+
+  .marker-arrowheads .marker-arrowhead:hover {
+    fill: $step-color;
+  }
+
+  .link-tools .link-tool .tool-remove circle {
+    fill: $raspberry;
+  }
+}
+
+.joint-highlight-stroke {
+  stroke: $sharp-blue;
+}

@@ -1,0 +1,9 @@
+language: node_js
+node_js: "6"
+os: linux
+dist: trusty
+install: 
+    - yarn global add gulp-cli
+    - yarn install
+script: gulp
+after_script: gulp test:coveralls

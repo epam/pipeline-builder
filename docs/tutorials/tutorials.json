@@ -1,0 +1,16 @@
+{
+  "create-workflow": {
+    "title": "Creating a Workflow",
+    "children": ["hello", "splitmerge"]
+  },
+  "hello": {
+    "title": "Hello, World!"
+  },
+  "splitmerge": {
+    "title": "Split and Merge"
+  },
+
+  "link-library": {
+    "title": "Linking the Library"
+  }
+}

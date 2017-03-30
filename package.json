@@ -1,0 +1,106 @@
+{
+  "name": "pipeline-builder",
+  "version": "0.2.0-dev",
+  "description": "Pipeline Builder",
+  "main": "dist/pipeline.js",
+  "jsnext:main": "dist/pipeline.module.js",
+  "module": "dist/pipeline.module.js",
+  "browser": "dist/pipeline.min.js",
+  "style": "dist/pipeline.min.css",
+  "files": [
+    "dist/pipeline.js",
+    "dist/pipeline.js.map",
+    "dist/pipeline.min.js",
+    "dist/pipeline.min.js.map",
+    "dist/pipeline.module.js",
+    "dist/pipeline.module.js.map",
+    "dist/pipeline.css",
+    "dist/pipeline.css.map",
+    "dist/pipeline.min.css",
+    "dist/pipeline.min.css.map"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/epam/pipeline-builder.git"
+  },
+  "author": "EPAM Systems",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/epam/pipeline-builder/issues"
+  },
+  "homepage": "https://github.com/epam/pipeline-builder#readme",
+  "scripts": {
+    "test": "gulp test",
+    "build": "gulp"
+  },
+  "keywords": [
+    "workflow",
+    "pipeline",
+    "wdl",
+    "diagram",
+    "graph"
+  ],
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not ie <= 10"
+  ],
+  "devDependencies": {
+    "babel-core": "^6.23.1",
+    "babel-loader": "^6.3.2",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-es2015": "^6.22.0",
+    "babel-register": "^6.23.0",
+    "chai": "^3.5.0",
+    "coveralls": "^2.12.0",
+    "css-loader": "^0.26.2",
+    "del": "^2.2.2",
+    "eslint": "^3.16.1",
+    "eslint-config-airbnb-base": "^11.1.0",
+    "eslint-plugin-import": "^2.2.0",
+    "gulp": "^3.9.1",
+    "gulp-autoprefixer": "^3.1.1",
+    "gulp-babel-istanbul": "^1.6.0",
+    "gulp-clean-css": "^3.0.3",
+    "gulp-coveralls": "^0.1.4",
+    "gulp-eslint": "^3.0.1",
+    "gulp-ignore": "^2.0.2",
+    "gulp-istanbul": "^1.1.1",
+    "gulp-jsdoc3": "^1.0.1",
+    "gulp-mocha": "^3.0.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-sass": "^3.1.0",
+    "gulp-sourcemaps": "^2.4.1",
+    "gulp-stylelint": "^3.9.0",
+    "gulp-uglify": "^2.0.1",
+    "gulp-util": "^3.0.8",
+    "jsdoc-export-default-interop": "^0.3.1",
+    "minami": "^1.1.1",
+    "mocha": "^3.2.0",
+    "node-sass": "^4.5.0",
+    "open": "^0.0.5",
+    "rollup": "^0.41.4",
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-commonjs": "^7.0.0",
+    "rollup-plugin-replace": "^1.1.1",
+    "run-sequence": "^1.2.2",
+    "sass-loader": "^6.0.2",
+    "sass-module-importer": "^1.4.0",
+    "sinon": "^1.17.7",
+    "style-loader": "^0.13.2",
+    "stylelint-config-standard": "^16.0.0",
+    "vinyl-ftp": "^0.6.0",
+    "webpack": "^2.2.1",
+    "webpack-dev-server": "^2.4.1",
+    "yargs": "^6.6.0"
+  },
+  "dependencies": {
+    "jointjs": "^1.0.3",
+    "lodash": "^4.17.4"
+  },
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "test"
+  }
+}

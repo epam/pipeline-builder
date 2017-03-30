@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pipeline Builder</title>
+  <style>
+    #diagram {
+      border: 1px solid silver;
+      min-height: 800px;
+    }
+  </style>
+</head>
+<body>
+<div id="info"></div>
+
+<div id="form">
+<form>
+  <p>
+    <button id="btn-build" type="button">Build</button>
+    <button id="btn-generate" type="button">Generate</button>
+    <button id="btn-get-svg" type="button">To SVG</button>
+    <button id="btn-get-png" type="button">To PNG</button>
+    <button id="btn-zoom-in" type="button">Zoom In</button>
+    <button id="btn-zoom-out" type="button">Zoom Out</button>
+    <button id="btn-fit-page" type="button">Fit to page</button>
+    <button id="btn-layout" type="button">Layout</button>
+  </p>
+  <p>
+    <label for="txt-script"><b>Paste your .wdl script here:</b></label><br>
+    <textarea id="txt-script" cols="150" rows="20"></textarea>
+  </p>
+</form>
+</div>
+
+<div id="diagram"></div>
+
+<script src="demo.bundle.js"></script>
+</body>
+</html>
