@@ -548,7 +548,7 @@ describe('parser/WDL/utils', () => {
         data: {},
       };
 
-      extractMetaBlock(ast, 'meta', desc);
+      extractMetaBlock(ast[0].attributes.map.list, 'meta', desc);
 
       expect(desc.data.meta).to.contain.all.keys(['author', 'docker']);
       expect(desc.data.meta.author).to.equal('"daniil.savchuk"');

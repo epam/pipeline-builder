@@ -259,19 +259,16 @@ export function extractType(declarationNode) {
 }
 
 export function extractMetaBlock(list, filter, desc) {
-  list.filter(item => item.name.toLowerCase() === filter.toLowerCase())
-    .map(item => item.attributes.map.list)
-    .reduce((i, j) => i.concat(j), [])
-    .forEach((item) => {
-      const attributes = item.attributes;
-      const key = attributes.key.source_string;
+  list.forEach((item) => {
+    const attributes = item.attributes;
+    const key = attributes.key.source_string;
 
-      if (desc.data[filter] === undefined) {
-        desc.data[filter] = {};
-      }
+    if (desc.data[filter] === undefined) {
+      desc.data[filter] = {};
+    }
 
-      desc.data[filter][key] = extractExpression(attributes.value).string;
-    });
+    desc.data[filter][key] = extractExpression(attributes.value).string;
+  });
 }
 
 export class WDLParserError extends Error {
