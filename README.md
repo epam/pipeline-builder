@@ -18,7 +18,7 @@ Example of a **Pipeline Builder** usage is available at [http://pb.opensource.ep
 
 This demo application demonstrates major capabilities of a **Pipeline Builder**
 
-Description of the demo application is available at [Demo application manual](docs/general/demo-app-manual.md)
+Description of the demo application is available at [Demo application overview](docs/general/README.md)
 
 ## Installation and Usage
 

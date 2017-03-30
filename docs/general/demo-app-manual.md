@@ -1,1 +1,0 @@
-# Pipeline Builder demo application
