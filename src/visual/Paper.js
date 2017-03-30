@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import joint, { V } from 'jointjs';
 
+import VisualGroup from './VisualGroup';
+
 /**
  * Extended version of the joint.dia.Paper class.
  */
@@ -13,7 +15,6 @@ export default class Paper extends joint.dia.Paper {
     super(_.defaults(opts, {
       gridSize: 1,
       linkPinning: false,
-      embeddingMode: true,
       perpendicularLinks: false,
       multiLinks: false,
       highlighting: {
@@ -31,7 +32,11 @@ export default class Paper extends joint.dia.Paper {
         },
       },
 
-      validateEmbedding: () => false,
+      validateEmbedding: (child, parent) => {
+        const parentStep = parent.model.step;
+        const childStepParent = child.step;
+        return parent.model instanceof VisualGroup && childStepParent.name === parentStep.name;
+      },
 
       validateConnection: (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
         if (!cellViewT || !cellViewS || cellViewT.id === cellViewS.id) {

@@ -24,10 +24,10 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       const workflow = new WDLWorkflow(ast);
 
       expect(workflow.name).to.equal('foo');
-      expect(workflow.desc).to.contain.all.keys(['i', 'o', 'data']);
-      expect(workflow.desc.i).to.be.empty;
-      expect(workflow.desc.o).to.be.empty;
-      expect(workflow.desc.data).to.be.empty;
+      expect(workflow.workflowStep.action).to.contain.all.keys(['i', 'o', 'data']);
+      expect(workflow.workflowStep.action.i).to.be.empty;
+      expect(workflow.workflowStep.action.o).to.be.empty;
+      expect(workflow.workflowStep.action.data).to.be.empty;
     });
 
     it('requires several inputs', () => {
@@ -86,7 +86,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       };
 
       const workflow = new WDLWorkflow(ast);
-      expect(workflow.desc.i).to.have.all.keys(['a', 'b']);
+      expect(workflow.workflowStep.action.i).to.have.all.keys(['a', 'b']);
     });
 
     it('throws error when workflow uses undeclared task', () => {
