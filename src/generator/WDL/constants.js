@@ -3,6 +3,10 @@ export const TASK = 'task';
 export const WORKFLOW = 'workflow';
 export const CALL = 'call';
 export const AS = 'as';
+export const IN = 'in';
+export const SCATTER = 'scatter';
+export const IF = 'if';
+export const WHILE = 'while';
 
 /* IO MAPPINGS*/
 export const INPUT = 'input';

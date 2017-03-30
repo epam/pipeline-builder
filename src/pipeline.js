@@ -3,6 +3,7 @@
 import Workflow from './model/Workflow';
 import Action from './model/Action';
 import Step from './model/Step';
+import Group from './model/Group';
 import Visualizer from './visual/Visualizer';
 import parse from './parser/parse';
 import generate from './generator/generate';
@@ -60,7 +61,11 @@ export default {
    * @type {Step}
    */
   Step,
-
+  /**
+   * @static
+   * @type {Group}
+   */
+  Group,
   /**
    * @static
    * @type {Visualizer}

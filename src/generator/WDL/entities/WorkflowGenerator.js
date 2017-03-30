@@ -8,7 +8,14 @@ import { buildDeclarations } from '../utils/utils';
 
 export default class WorkflowGenerator {
   constructor(wfStep, settings) {
+    this.wfBodyElementGenerators = {
+      call: this.genCall,
+      scatter: this.genScatter,
+      whileloop: this.genWhile,
+      if: this.genIf,
+    };
     this.wfName = wfStep.name;
+    this.wfStep = wfStep;
 
     const action = wfStep.action;
     this.declarations = action.i;
@@ -30,8 +37,7 @@ export default class WorkflowGenerator {
     if (this.wfBlockString === '') {
       this.wfBlockString += `${constants.WORKFLOW} ${this.wfName} ${constants.SCOPE_OPEN}${EOL}`;
 
-      this.wfBlockString += buildDeclarations(this.declarations, this.settings);
-      this.wfBlockString += this.buildCallMapping(this.children);
+      this.wfBlockString += this.renderStepMainBody(this.wfStep);
       this.wfBlockString += this.buildSegment(constants.META, this.meta);
       this.wfBlockString += this.buildSegment(constants.PARAMETER_META, this.parameterMeta);
       this.wfBlockString += this.buildOutputMap(this.outputMappings);
@@ -39,6 +45,23 @@ export default class WorkflowGenerator {
       this.wfBlockString += `${constants.SCOPE_CLOSE}${EOL}${EOL}`;
     }
     return this.wfBlockString;
+  }
+
+  renderStepMainBody(step) {
+    const declarations = step.action.i;
+    const children = step.children;
+
+    let res = '';
+
+    if (!step.type) {
+      res += buildDeclarations(declarations, this.settings);
+    }
+
+    _.forEach(children, (val) => {
+      res += this.wfBodyElementGenerators[val.type || 'call'].call(this, val);
+    });
+
+    return res;
   }
 
   buildPortValue(value) {
@@ -49,10 +72,11 @@ export default class WorkflowGenerator {
 
       const connection = value.inputs[0];
       if (connection.from instanceof Port) {
-        const outStepName = connection.from.step.name;
+        const outStep = connection.from.step;
+        const outStepName = outStep.name;
         const outVarName = connection.from.name;
 
-        if (outStepName === this.wfName) {
+        if (outStepName === this.wfName || outStep.type) {
           return outVarName;
         }
         return `${outStepName}.${outVarName}`;
@@ -62,7 +86,7 @@ export default class WorkflowGenerator {
     return '';
   }
 
-  buildCallMapping(children) {
+  genCall(child) {
     const EOL = this.settings.getValue('style.eol');
     const SCOPE_INDENT = this.settings.getValue('style.scope_indent');
     const DOUBLE_SCOPE_INDENT = `${SCOPE_INDENT}${SCOPE_INDENT}`;
@@ -70,38 +94,89 @@ export default class WorkflowGenerator {
 
     let res = '';
 
-    _.forEach(children, (val) => {
-      let callString = `${SCOPE_INDENT}${constants.CALL} `;
+    const val = child;
+    let callString = `${SCOPE_INDENT}${constants.CALL} `;
 
-      if (val.action.name === val.name) {
-        callString += `${val.name}`;
-      } else {
-        callString += `${val.action.name} ${constants.AS} ${val.name}`;
-      }
+    if (val.action.name === val.name) {
+      callString += `${val.name}`;
+    } else {
+      callString += `${val.action.name} ${constants.AS} ${val.name}`;
+    }
 
-      res += `${callString}`;
+    res += `${callString}`;
 
-      if (_.size(val.i) > 0) {
-        let mappingWasFounded = false;
+    if (_.size(val.i) > 0) {
+      let mappingWasFounded = false;
 
-        _.forEach(val.i, (pVal, pKey) => {
-          if (pVal.inputs && _.size(pVal.inputs) > 0) {
-            if (!mappingWasFounded) {
-              res += ` ${constants.SCOPE_OPEN}${EOL}`;
-              res += `${DOUBLE_SCOPE_INDENT}${constants.INPUT}${constants.COLON}${EOL}`;
-              mappingWasFounded = true;
-            }
-            res += `${TRIPLE_SCOPE_INDENT}${pKey} ${constants.EQ} ${this.buildPortValue(pVal)},${EOL}`;
+      _.forEach(val.i, (pVal, pKey) => {
+        if (pVal.inputs && _.size(pVal.inputs) > 0) {
+          if (!mappingWasFounded) {
+            res += ` ${constants.SCOPE_OPEN}${EOL}`;
+            res += `${DOUBLE_SCOPE_INDENT}${constants.INPUT}${constants.COLON}${EOL}`;
+            mappingWasFounded = true;
           }
-        });
-        if (mappingWasFounded) {
-          res += `${SCOPE_INDENT}${constants.SCOPE_CLOSE}`;
+          res += `${TRIPLE_SCOPE_INDENT}${pKey} ${constants.EQ} ${this.buildPortValue(pVal)},${EOL}`;
         }
+      });
+      if (mappingWasFounded) {
+        res += `${SCOPE_INDENT}${constants.SCOPE_CLOSE}`;
       }
+    }
 
-      res += `${EOL}`;
+    return `${res}${EOL}`;
+  }
+
+  genScatter(child) {
+    const EOL = this.settings.getValue('style.eol');
+    const SCOPE_INDENT = this.settings.getValue('style.scope_indent');
+
+    let res = '';
+
+    const item = child.action.data.variable;
+    const collection = child.action.data.collection;
+    res += `${SCOPE_INDENT}${constants.SCATTER} (${item} ${constants.IN} ${collection}) {${EOL}`;
+
+    return this.genBodyCloser(res, child);
+  }
+
+  genIf(child) {
+    const EOL = this.settings.getValue('style.eol');
+    const SCOPE_INDENT = this.settings.getValue('style.scope_indent');
+
+    let res = '';
+
+    const expression = child.action.data.expression;
+    res += `${SCOPE_INDENT}${constants.IF} (${expression}) ${constants.SCOPE_OPEN}${EOL}`;
+
+    return this.genBodyCloser(res, child);
+  }
+
+  genWhile(child) {
+    const EOL = this.settings.getValue('style.eol');
+    const SCOPE_INDENT = this.settings.getValue('style.scope_indent');
+
+    let res = '';
+
+    const expression = child.action.data.expression;
+    res += `${SCOPE_INDENT}${constants.WHILE} (${expression}) ${constants.SCOPE_OPEN}${EOL}`;
+
+    return this.genBodyCloser(res, child);
+  }
+
+  genBodyCloser(res, child) {
+    const EOL = this.settings.getValue('style.eol');
+    const SCOPE_INDENT = this.settings.getValue('style.scope_indent');
+
+    const innerBody = this.renderStepMainBody(child);
+    const bodyStringArr = innerBody.split(EOL);
+
+    _.forEach(bodyStringArr, (str) => {
+      if (str !== '') {
+        res += `${SCOPE_INDENT}${str}${EOL}`;
+      }
     });
 
+    res += `${SCOPE_INDENT}${constants.SCOPE_CLOSE}${EOL}`;
     return res;
   }
 

@@ -4,6 +4,9 @@ import joint, { V } from 'jointjs';
 import Paper from './Paper';
 import VisualLink from './VisualLink';
 import VisualStep from './VisualStep';
+import VisualGroup from './VisualGroup';
+
+import Group from '../model/Group';
 
 import Zoom from './Zoom';
 
@@ -130,7 +133,7 @@ export default class Visualizer {
     this.zoom.fitToPage({ padding: 10, maxScale: 1 });
     this._timer = setInterval(() => this._update(), 30);
 
-    this._listenLinks(step);
+    this._listenLinks();
   }
 
   /**
@@ -143,6 +146,7 @@ export default class Visualizer {
       rankSep: 180,
       rankDir: 'LR',
       setLinkVertices: false,
+      resizeClusters: false,
     };
 
     joint.layout.DirectedGraph.layout(this._graph, settings);
@@ -153,8 +157,14 @@ export default class Visualizer {
     const links = this._graph.getConnectedLinks(source);
     _.forEach(ports, (port) => {
       _.forEach(port.outputs, (conn) => {
+        const srcIsGroup = conn.from.step instanceof Group;
+        const dstIsGroup = conn.to.step instanceof Group;
+
         const targetName = conn.to.step.name;
-        if (children[targetName] && _.find(links, link => link.conn === conn) === undefined) {
+        if (children[targetName] &&
+          _.find(links, link => link.conn === conn) === undefined &&
+          !srcIsGroup &&
+          !dstIsGroup) {
           const link = new VisualLink(
             source.id, port.name, children[targetName].id, conn.to.name, conn);
           link.addTo(this._graph);
@@ -170,7 +180,6 @@ export default class Visualizer {
     }
     // validate call <-> step correspondence
     const children = this._children;
-    const stepChildren = step.children;
 
     // handle the renames
     const pickBy = _.pickBy || _.pick; // be prepared for legacy lodash 3.10.1
@@ -181,8 +190,23 @@ export default class Visualizer {
     });
 
     const toRemove = [];
+    const findChildInModel = (visChild, name, modelChild) => {
+      const modelChildren = modelChild.children;
+
+      if (_.has(modelChildren, name)) {
+        return true;
+      }
+
+      let res = false;
+      _.forEach(modelChildren, (child) => {
+        res = res || findChildInModel(visChild, name, child);
+      });
+
+      return res;
+    };
+
     _.forEach(children, (visChild, name) => {
-      if (!stepChildren[name]) {
+      if (!findChildInModel(visChild, name, step)) {
         // remove visual step from graph
         toRemove[toRemove.length] = visChild;
       }
@@ -197,24 +221,51 @@ export default class Visualizer {
       delete children[child.step.name];
     });
 
-    _.forEach(stepChildren, (child, name) => {
-      let visChild = children[name];
-      if (!visChild) {
-        visChild = new VisualStep(child, this.zoom.fromWidgetToLocal({
+    const updateOrCreateVisualSteps = (innerStep, parent = null) => {
+      const innerChildren = innerStep.children;
+      _.forEach(innerChildren, (child, name) => {
+        let visChild = children[name];
+        const opts = this.zoom.fromWidgetToLocal({
           x: this.paper.el.offsetWidth / 2,
           y: this.paper.el.offsetHeight / 2,
-        }));
-        children[name] = visChild;
-        this._graph.addCell(visChild);
-      } else {
-        // it is essential to update links before the step!
-        const links = this._graph.getConnectedLinks(visChild);
-        _.forEach(links, (link) => {
-          link.refresh();
         });
-        visChild.update();
-      }
-    });
+        if (!visChild) {
+          visChild = _.isUndefined(child.type) ? new VisualStep(child, opts) : new VisualGroup(child, opts);
+
+          children[name] = visChild;
+
+          this._graph.addCell(visChild);
+          if (parent) {
+            parent.embed(visChild);
+          }
+        } else {
+          // it is essential to update links before the step!
+          const links = this._graph.getConnectedLinks(visChild);
+          _.forEach(links, (link) => {
+            link.refresh();
+          });
+          visChild.update();
+        }
+
+        if (parent) {
+          parent.fitEmbeds({
+            deep: true,
+            padding: {
+              left: 30,
+              right: 30,
+              top: 50,
+              bottom: 50,
+            },
+          });
+        }
+
+        if (child.children) {
+          updateOrCreateVisualSteps(child, visChild);
+        }
+      });
+    };
+
+    updateOrCreateVisualSteps(step);
 
     _.forEach(children, (child) => {
       this._loopPorts(child.step.o, child);
@@ -222,7 +273,7 @@ export default class Visualizer {
     });
   }
 
-  _listenLinks(step) {
+  _listenLinks() {
     const graph = this._graph;
     graph.on('remove', (cell) => {
       if (cell instanceof VisualLink && cell.conn && cell.conn.isValid()) {
@@ -242,8 +293,8 @@ export default class Visualizer {
           return;
         }
 
-        const sourceChild = step.children[source.step.name];
-        const targetChild = step.children[target.step.name];
+        const sourceChild = source.step;
+        const targetChild = target.step;
         if (link.conn) {
           link.conn.unbind();
         }
