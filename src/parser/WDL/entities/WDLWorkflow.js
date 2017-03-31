@@ -76,12 +76,10 @@ export default class WDLWorkflow {
    */
   parseScatter(item, parent = undefined) {
     const opts = {
-      i: {},
-    };
-
-    opts.data = {
-      variable: item.item.source_string,
-      collection: extractExpression(item.collection).string,
+      data: {
+        variable: item.item.source_string,
+        collection: extractExpression(item.collection).string,
+      },
     };
 
     const scatter = new Group(`scatter_${this.scatterIndex}`, 'scatter', opts);
@@ -99,11 +97,9 @@ export default class WDLWorkflow {
    */
   parseIf(item, parent = undefined) {
     const opts = {
-      i: {},
-    };
-
-    opts.data = {
-      expression: extractExpression(item.expression).string,
+      data: {
+        expression: extractExpression(item.expression).string,
+      },
     };
 
     const ifStatement = new Group(`if_${this.ifIndex}`, 'if', opts);
@@ -121,11 +117,9 @@ export default class WDLWorkflow {
    */
   parseWhile(item, parent = undefined) {
     const opts = {
-      i: {},
-    };
-
-    opts.data = {
-      expression: extractExpression(item.expression).string,
+      data: {
+        expression: extractExpression(item.expression).string,
+      },
     };
 
     const whileLoop = new Group(`whileloop_${this.loopIndex}`, 'whileloop', opts);
