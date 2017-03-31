@@ -37,7 +37,8 @@ export default class WorkflowGenerator {
     if (this.wfBlockString === '') {
       this.wfBlockString += `${constants.WORKFLOW} ${this.wfName} ${constants.SCOPE_OPEN}${EOL}`;
 
-      this.wfBlockString += this.renderStepMainBody(this.wfStep);
+      const prosessed = [];
+      this.wfBlockString += this.renderStepMainBody(this.wfStep, prosessed);
       this.wfBlockString += this.buildSegment(constants.META, this.meta);
       this.wfBlockString += this.buildSegment(constants.PARAMETER_META, this.parameterMeta);
       this.wfBlockString += this.buildOutputMap(this.outputMappings);
@@ -47,7 +48,7 @@ export default class WorkflowGenerator {
     return this.wfBlockString;
   }
 
-  renderStepMainBody(step) {
+  renderStepMainBody(step, prosessed) {
     const declarations = step.action.i;
     const children = step.children;
 
@@ -57,8 +58,59 @@ export default class WorkflowGenerator {
       res += buildDeclarations(declarations, this.settings);
     }
 
-    _.forEach(children, (val) => {
-      res += this.wfBodyElementGenerators[val.type || 'call'].call(this, val);
+
+    for (let i = 0, size = _.size(children); i < size; ++i) {
+      const childName = this.getNextOrderedChild(children, prosessed);
+      prosessed.push(childName);
+
+      const child = children[childName];
+      res += this.wfBodyElementGenerators[child.type || 'call'].call(this, child, prosessed);
+    }
+
+    return res;
+  }
+
+  getNextOrderedChild(children, processed) {
+    let res = '';
+    const isSubset = (source, target) => !_.difference(_.flatten(source), _.flatten(target)).length;
+
+    _.forEach(children, (child) => {
+      if (_.indexOf(processed, child.name) < 0) {
+        const refs = this.findCallReferences(child);
+
+        if (refs.length === 0 || isSubset(refs, processed)) {
+          res = child.name;
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    if (res === '') {
+      throw new Error('Cycled links are not allowed');
+    }
+    return res;
+  }
+
+  findCallReferences(child) {
+    const res = [];
+
+    _.forEach(child.i, (value) => {
+      if (value.inputs && _.size(value.inputs) > 0) {
+        if (_.size(value.inputs) > 1) {
+          throw new Error('Multiple links into one input are prohibited');
+        }
+
+        const connection = value.inputs[0];
+        if (connection.from instanceof Port && connection.from.step.name !== this.wfStep.name) {
+          res.push(connection.from.step.name);
+        }
+      }
+    });
+
+    _.forEach(child.children, (item) => {
+      res.concat(this.findCallReferences(item));
     });
 
     return res;
@@ -126,7 +178,7 @@ export default class WorkflowGenerator {
     return `${res}${EOL}`;
   }
 
-  genScatter(child) {
+  genScatter(child, prosessed) {
     const EOL = this.settings.getValue('style.eol');
     const SCOPE_INDENT = this.settings.getValue('style.scope_indent');
 
@@ -136,10 +188,10 @@ export default class WorkflowGenerator {
     const collection = child.action.data.collection;
     res += `${SCOPE_INDENT}${constants.SCATTER} (${item} ${constants.IN} ${collection}) {${EOL}`;
 
-    return this.genBodyCloser(res, child);
+    return this.genBodyCloser(res, child, prosessed);
   }
 
-  genIf(child) {
+  genIf(child, prosessed) {
     const EOL = this.settings.getValue('style.eol');
     const SCOPE_INDENT = this.settings.getValue('style.scope_indent');
 
@@ -148,10 +200,10 @@ export default class WorkflowGenerator {
     const expression = child.action.data.expression;
     res += `${SCOPE_INDENT}${constants.IF} (${expression}) ${constants.SCOPE_OPEN}${EOL}`;
 
-    return this.genBodyCloser(res, child);
+    return this.genBodyCloser(res, child, prosessed);
   }
 
-  genWhile(child) {
+  genWhile(child, prosessed) {
     const EOL = this.settings.getValue('style.eol');
     const SCOPE_INDENT = this.settings.getValue('style.scope_indent');
 
@@ -160,14 +212,14 @@ export default class WorkflowGenerator {
     const expression = child.action.data.expression;
     res += `${SCOPE_INDENT}${constants.WHILE} (${expression}) ${constants.SCOPE_OPEN}${EOL}`;
 
-    return this.genBodyCloser(res, child);
+    return this.genBodyCloser(res, child, prosessed);
   }
 
-  genBodyCloser(res, child) {
+  genBodyCloser(res, child, prosessed) {
     const EOL = this.settings.getValue('style.eol');
     const SCOPE_INDENT = this.settings.getValue('style.scope_indent');
 
-    const innerBody = this.renderStepMainBody(child);
+    const innerBody = this.renderStepMainBody(child, prosessed);
     const bodyStringArr = innerBody.split(EOL);
 
     _.forEach(bodyStringArr, (str) => {
