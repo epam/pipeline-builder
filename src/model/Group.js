@@ -1,4 +1,6 @@
+import _ from 'lodash';
 import Step from './Step';
+import Action from './Action';
 
 /**
  * Class representing the entire group.
@@ -27,12 +29,22 @@ class Group extends Step {
    */
   constructor(name, type, config = {}) {
     /* Clean up config agains input or output ports or bindings*/
-    delete config.i;
-    delete config.o;
+    if (!(config instanceof Action)) {
+      if (_.has(config, 'i') || _.has(config, 'o')) {
+        throw new Error('Group could not have any ports');
+      }
+    } else {
+      throw new Error('Group could be created only using config object');
+    }
 
     super(name, config);
 
     this.type = type || 'default';
+  }
+
+  /* Override the parent function to prohibit the port addition*/
+  // eslint-disable-next-line class-methods-use-this
+  _onActionChanged() {
   }
 }
 
