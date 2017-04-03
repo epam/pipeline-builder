@@ -44,12 +44,4 @@ describe('model/Group', () => {
       expect(() => new Group(name, type, new Action(name, config))).to.throw(Error);
     });
   });
-
-  describe('_onActionChanged', () => {
-
-    it('doing nothing', () => {
-      const group = new Group(name);
-      expect(group._onActionChanged()).to.be.empty;
-    });
-  });
 });
