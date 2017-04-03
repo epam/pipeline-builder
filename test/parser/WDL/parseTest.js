@@ -22,6 +22,21 @@ workflow foo {
     expect(parse(src).status).to.equal(true);
   });
 
+  it('throws WDLParserError when there are some error in source', () => {
+    const src = `
+workflow foo {
+  File a
+  call b
+  File c
+}
+
+task b {
+  File a
+}`;
+
+    expect(parse(src).status).to.equal(false);
+  });
+
   it('requires to parse valid wdl script', () => {
 
     const flow = new Workflow('example1', {

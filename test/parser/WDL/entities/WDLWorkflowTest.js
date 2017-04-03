@@ -367,5 +367,61 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       const workflow = new WDLWorkflow(ast, context);
       expect(workflow.workflowStep.children.if_0.type).to.equal('if');
     });
+
+    it('throws error if prohibited keys into some block are appeared', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'if',
+              attributes: {
+                expression: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'integers',
+                  line: 3,
+                  col: 16,
+                },
+                body: {
+                  list: [
+                    {
+                      name: 'WorkflowOutputs',
+                      attributes: {
+                        task: {
+                          id: 11,
+                          str: 'fqn',
+                          source_string: 'bar',
+                          line: 3,
+                          col: 6,
+                        },
+                        alias: null,
+                        body: null,
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      const context = {
+        actionMap: {
+          bar: {
+          },
+        },
+      };
+
+
+      expect(() => new WDLWorkflow(ast, context)).to.throws(WDLParserError);
+    });
   });
 });
