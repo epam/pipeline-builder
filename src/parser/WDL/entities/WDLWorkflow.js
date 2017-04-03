@@ -53,9 +53,9 @@ export default class WDLWorkflow {
         } else if (declarationsPassed) {
           throw new WDLParserError('Declarations are allowed only before other things of current scope');
         }
-        this.parsingProcessors[lcName].call(this, item.attributes, parentStep);
+        this.parsingProcessors[lcName].call(this, item, parentStep);
       } else {
-        throw new WDLParserError(`In ${name} body keys in ${opts} are not allowed`);
+        throw new WDLParserError(`In ${name} body keys [${opts}] are not allowed`);
       }
     });
   }
@@ -66,7 +66,7 @@ export default class WDLWorkflow {
    * @param {ast} item - Root ast tree node of current meta block
    */
   parseMeta(item) {
-    extractMetaBlock(item.map.list, item.name, this.workflowStep.action);
+    extractMetaBlock(item.attributes.map.list, item.name.toLowerCase(), this.workflowStep.action);
   }
 
   /**
@@ -74,11 +74,11 @@ export default class WDLWorkflow {
    * @param {ast} item - Root ast tree node of current scatter block
    * @param {Step} parent - parent step
    */
-  parseScatter(item, parent = undefined) {
+  parseScatter(item, parent) {
     const opts = {
       data: {
-        variable: item.item.source_string,
-        collection: extractExpression(item.collection).string,
+        variable: item.attributes.item.source_string,
+        collection: extractExpression(item.attributes.collection).string,
       },
     };
 
@@ -87,7 +87,7 @@ export default class WDLWorkflow {
     this.scatterIndex += 1;
     parent.add(scatter);
 
-    this.parseBody(item.body.list, 'scatter', scatter, ['workflowoutputs', 'meta', 'parametermeta']);
+    this.parseBody(item.attributes.body.list, 'scatter', scatter, ['workflowoutputs', 'meta', 'parametermeta', 'declaration']);
   }
 
   /**
@@ -95,10 +95,10 @@ export default class WDLWorkflow {
    * @param {ast} item - Root ast tree node of current if block
    * @param {Step} parent - parent step
    */
-  parseIf(item, parent = undefined) {
+  parseIf(item, parent) {
     const opts = {
       data: {
-        expression: extractExpression(item.expression).string,
+        expression: extractExpression(item.attributes.expression).string,
       },
     };
 
@@ -107,7 +107,7 @@ export default class WDLWorkflow {
     this.ifIndex += 1;
     parent.add(ifStatement);
 
-    this.parseBody(item.body.list, 'if', ifStatement, ['workflowoutputs', 'meta', 'parametermeta']);
+    this.parseBody(item.attributes.body.list, 'if', ifStatement, ['workflowoutputs', 'meta', 'parametermeta', 'declaration']);
   }
 
   /**
@@ -115,10 +115,10 @@ export default class WDLWorkflow {
    * @param {ast} item - Root ast tree node of current while block
    * @param {Step} parent - parent step
    */
-  parseWhile(item, parent = undefined) {
+  parseWhile(item, parent) {
     const opts = {
       data: {
-        expression: extractExpression(item.expression).string,
+        expression: extractExpression(item.attributes.expression).string,
       },
     };
 
@@ -127,7 +127,7 @@ export default class WDLWorkflow {
     this.loopIndex += 1;
     parent.add(whileLoop);
 
-    this.parseBody(item.body.list, 'whileloop', whileLoop, ['workflowoutputs', 'meta', 'parametermeta']);
+    this.parseBody(item.attributes.body.list, 'whileloop', whileLoop, ['workflowoutputs', 'meta', 'parametermeta', 'declaration']);
   }
 
   /**
@@ -135,10 +135,10 @@ export default class WDLWorkflow {
    * @param {ast} item - Root ast tree node of the current call
    * @param {Step} parent - parent step
    */
-  parseCall(item, parent = undefined) {
-    const parentStep = parent || this.workflowStep;
-    const task = item.task.source_string;
-    const alias = item.alias ? item.alias.source_string : task;
+  parseCall(item, parent) {
+    const parentStep = parent;
+    const task = item.attributes.task.source_string;
+    const alias = item.attributes.alias ? item.attributes.alias.source_string : task;
 
     if (!_.has(this.context.actionMap, task)) {
       throw new WDLParserError(`Undeclared task call: '${task}'.`);
@@ -147,7 +147,7 @@ export default class WDLWorkflow {
     const childStep = new Step(alias, _.get(this.context.actionMap, task));
     parentStep.add(childStep);
 
-    this.findCallInputBinding(item, childStep, parentStep);
+    this.findCallInputBinding(item.attributes, childStep, parentStep);
   }
 
   findCallInputBinding(callNode, step, parentStep) {
@@ -189,9 +189,10 @@ export default class WDLWorkflow {
    * @param {ast} item - Root ast tree node of current declaration
    * @param {Step} parent - parent step
    */
-  parseDeclaration(item, parent = undefined) {
-    const parentStep = parent || this.workflowStep;
-    const decl = item;
+  // eslint-disable-next-line class-methods-use-this
+  parseDeclaration(item, parent) {
+    const parentStep = parent;
+    const decl = item.attributes;
     const name = decl.name.source_string;
     const type = extractType(decl.type);
 
@@ -215,7 +216,7 @@ export default class WDLWorkflow {
    * @param {ast} item - Root ast tree node of current outputs declaration
    */
   parseWfOutputs(item) {
-    const outputList = item.outputs.list.map(i => i.attributes);
+    const outputList = item.attributes.outputs.list.map(i => i.attributes);
 
     this.processWilds(outputList);
     this.processExpressions(outputList);
@@ -267,8 +268,8 @@ export default class WDLWorkflow {
    * @param {list<ast>} outputList - Array of ast nodes representing each output
    */
   processWilds(outputList) {
-    return outputList.forEach((item) => {
-      if (!item.fqn || !item.wildcard) {
+    outputList.forEach((item) => {
+      if (!item.fqn && !item.wildcard) {
         return;
       }
       const fqn = item.fqn;
@@ -284,17 +285,6 @@ export default class WDLWorkflow {
         o: obj,
       });
     });
-  }
-
-  /**
-   * Filter the entire child nodes of first param by determined in second param field name
-   * @param {ast} wfNode - Ast tree node to filter
-   * @param {string} field - AST node name to be extracted
-   */
-  static getSubNodes(wfNode, field) {
-    return wfNode.list
-      .filter(node => node.name.toLowerCase() === field)
-      .map(ast => ast.attributes);
   }
 
   static findStepInStructureRecursively(step, name) {
