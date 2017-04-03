@@ -251,12 +251,11 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       const context = {
         actionMap: {
           bar: {
-
-          }
-        }
+          },
+        },
       };
       const workflow = new WDLWorkflow(ast, context);
-      expect(workflow.workflowStep.children['scatter_0'].type).to.equal('scatter');
+      expect(workflow.workflowStep.children.scatter_0.type).to.equal('scatter');
     });
 
     it('requires loop', () => {
@@ -307,12 +306,11 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       const context = {
         actionMap: {
           bar: {
-
-          }
-        }
+          },
+        },
       };
       const workflow = new WDLWorkflow(ast, context);
-      expect(workflow.workflowStep.children['whileloop_0'].type).to.equal('whileloop');
+      expect(workflow.workflowStep.children.whileloop_0.type).to.equal('whileloop');
     });
 
     it('requires if', () => {
@@ -363,12 +361,11 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       const context = {
         actionMap: {
           bar: {
-
-          }
-        }
+          },
+        },
       };
       const workflow = new WDLWorkflow(ast, context);
-      expect(workflow.workflowStep.children['if_0'].type).to.equal('if');
+      expect(workflow.workflowStep.children.if_0.type).to.equal('if');
     });
   });
 });
