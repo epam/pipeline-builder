@@ -89,6 +89,79 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(workflow.workflowStep.action.i).to.have.all.keys(['a', 'b']);
     });
 
+    it('throws error when workflow declarations are obtained not only at start', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'File',
+                  line: 3,
+                  col: 1,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'a',
+                  line: 3,
+                  col: 6,
+                },
+                expression: null,
+              },
+            },
+            {
+              name: 'Call',
+              attributes: {
+                task: {
+                  id: 11,
+                  str: 'fqn',
+                  source_string: 'bar',
+                  line: 3,
+                  col: 6,
+                },
+                alias: null,
+                body: null,
+              },
+            },
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'File',
+                  line: 4,
+                  col: 1,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'b',
+                  line: 4,
+                  col: 6,
+                },
+                expression: null,
+              },
+            },
+          ],
+        },
+      };
+      expect(() => new WDLWorkflow(ast, {
+        actionMap: {},
+      })).to.throws(WDLParserError);
+    });
+
     it('throws error when workflow uses undeclared task', () => {
       const ast = {
         name: {
@@ -123,7 +196,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       })).to.throws(WDLParserError);
     });
 
-    it('throws error when workflow uses scatter', () => {
+    it('requires scatter', () => {
       const ast = {
         name: {
           id: 14,
@@ -175,7 +248,127 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
 
-      expect(() => new WDLWorkflow(ast)).to.throws(WDLParserError);
+      const context = {
+        actionMap: {
+          bar: {
+
+          }
+        }
+      };
+      const workflow = new WDLWorkflow(ast, context);
+      expect(workflow.workflowStep.children['scatter_0'].type).to.equal('scatter');
+    });
+
+    it('requires loop', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'WhileLoop',
+              attributes: {
+                expression: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'integers',
+                  line: 3,
+                  col: 16,
+                },
+                body: {
+                  list: [
+                    {
+                      name: 'Call',
+                      attributes: {
+                        task: {
+                          id: 11,
+                          str: 'fqn',
+                          source_string: 'bar',
+                          line: 3,
+                          col: 6,
+                        },
+                        alias: null,
+                        body: null,
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      const context = {
+        actionMap: {
+          bar: {
+
+          }
+        }
+      };
+      const workflow = new WDLWorkflow(ast, context);
+      expect(workflow.workflowStep.children['whileloop_0'].type).to.equal('whileloop');
+    });
+
+    it('requires if', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'if',
+              attributes: {
+                expression: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'integers',
+                  line: 3,
+                  col: 16,
+                },
+                body: {
+                  list: [
+                    {
+                      name: 'Call',
+                      attributes: {
+                        task: {
+                          id: 11,
+                          str: 'fqn',
+                          source_string: 'bar',
+                          line: 3,
+                          col: 6,
+                        },
+                        alias: null,
+                        body: null,
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      const context = {
+        actionMap: {
+          bar: {
+
+          }
+        }
+      };
+      const workflow = new WDLWorkflow(ast, context);
+      expect(workflow.workflowStep.children['if_0'].type).to.equal('if');
     });
   });
 });
