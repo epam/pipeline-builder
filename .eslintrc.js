@@ -1,3 +1,5 @@
+const os = require('os');
+
 module.exports = {
   root: true,
   extends: 'airbnb-base',
@@ -14,7 +16,7 @@ module.exports = {
 
   // current deviations from AirBnB setup (TODO: revisit later)
   rules: {
-    'linebreak-style': ['warn', 'unix'],
+    'linebreak-style': ['warn', os.EOL === '\n'? 'unix' : 'windows'],
     'no-param-reassign': 0,
     'no-underscore-dangle': ['warn', { 'allowAfterThis': true }],
     'no-plusplus': ['error', { 'allowForLoopAfterthoughts': true }],
