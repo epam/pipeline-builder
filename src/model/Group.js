@@ -8,10 +8,9 @@ import Action from './Action';
  * @example
  * const test = new Group('scatter1', {
  *   type: 'scatter',
- *   i: {
- *     scatter_array: {
- *       type: 'Array[String]',
- *     },
+ *   data: {
+ *     collection: 'inputSamples',
+ *     item: 'sample',
  *   },
  * });
  * const hello = test.add(new Step('hello', ...));
@@ -22,6 +21,7 @@ class Group extends Step {
    * Create a group.
    * A group is a compound {@link Step} which also keeps track of all {@link Action Actions} used
    * in its child steps.
+   * Note that group cannot contain any ports
    *
    * @param {string} name - Group name.
    * @param {string} type - Group type.
