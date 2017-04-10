@@ -65,17 +65,17 @@ export default function parse(data) {
     actions: [],
   };
 
-  if (data === undefined || data === '') {
-    result.status = false;
-    result.message = 'No data to parse';
-  }
-
   let ast;
   if (result.status) {
     const ret = hermesStage(data);
     result.status = ret.status;
     result.message = ret.message;
     ast = ret.ast;
+  }
+
+  if (result.status && (ast === undefined || ast === null)) {
+    result.status = false;
+    result.message = 'No data to parse';
   }
 
   if (result.status) {

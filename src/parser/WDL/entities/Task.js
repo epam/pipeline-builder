@@ -21,9 +21,17 @@ export default class Task {
     this.processDeclarations(taskNode.declarations);
     this.processOutputs(taskNode);
 
-    extractMetaBlock(taskNode.sections.list, 'meta', this.desc);
-    extractMetaBlock(taskNode.sections.list, 'runtime', this.desc);
-    extractMetaBlock(taskNode.sections.list, 'parameterMeta', this.desc);
+    Task.filterValues(taskNode.sections.list, 'meta').forEach((item) => {
+      extractMetaBlock(item, 'meta', this.desc);
+    });
+
+    Task.filterValues(taskNode.sections.list, 'runtime').forEach((item) => {
+      extractMetaBlock(item, 'runtime', this.desc);
+    });
+
+    Task.filterValues(taskNode.sections.list, 'parameterMeta').forEach((item) => {
+      extractMetaBlock(item, 'parameterMeta', this.desc);
+    });
   }
 
   /**
@@ -67,5 +75,10 @@ export default class Task {
           default: extractExpression(node.expression).string,
         };
       });
+  }
+
+  static filterValues(list, filter) {
+    return list.filter(item => item.name.toLowerCase() === filter.toLowerCase())
+      .map(item => item.attributes.map.list);
   }
 }

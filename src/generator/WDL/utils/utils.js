@@ -13,5 +13,5 @@ export function buildDeclarations(declarations, settings) { // eslint-disable-li
     res += `${SCOPE_INDENT}${decl.type} ${name}${decl.default ? buildDeclarationValue(decl.default) : ''}${EOL}`;
   });
 
-  return res;
+  return `${res}${EOL}`;
 }

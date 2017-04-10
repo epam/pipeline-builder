@@ -9,13 +9,23 @@ export default function generate(objectModel) {
   const wf = new WorkflowGenerator(objectModel, settings).renderWorkflow();
 
   let tasks = '';
-  const actionsRendered = {};
-  _.forEach(objectModel.children, (val) => {
-    const action = val.action;
-    if (!actionsRendered[action.name]) {
-      actionsRendered[action.name] = true;
-      tasks += new TaskGenerator(action).renderTask();
-    }
+  const actionsToBeRendered = {};
+
+  const actionSelector = (children) => {
+    _.forEach(children, (val) => {
+      if (!val.type) {
+        const action = val.action;
+        actionsToBeRendered[action.name] = action;
+      } else {
+        actionSelector(val.children);
+      }
+    });
+  };
+
+  actionSelector(objectModel.children);
+
+  _.forEach(actionsToBeRendered, (action) => {
+    tasks += new TaskGenerator(action).renderTask();
   });
 
   return wf + tasks;
