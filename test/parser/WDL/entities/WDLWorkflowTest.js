@@ -196,7 +196,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       })).to.throws(WDLParserError);
     });
 
-    it('requires scatter', () => {
+    it('supports scatter', () => {
       const ast = {
         name: {
           id: 14,
@@ -258,7 +258,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(workflow.workflowStep.children.scatter_0.type).to.equal('scatter');
     });
 
-    it('requires loop', () => {
+    it('supports loop', () => {
       const ast = {
         name: {
           id: 14,
@@ -313,7 +313,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(workflow.workflowStep.children.whileloop_0.type).to.equal('whileloop');
     });
 
-    it('requires if', () => {
+    it('supports if', () => {
       const ast = {
         name: {
           id: 14,
@@ -368,7 +368,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(workflow.workflowStep.children.if_0.type).to.equal('if');
     });
 
-    it('throws error if prohibited keys into some block are appeared', () => {
+    it('throws error if prohibited keys in some block are appeared', () => {
       const ast = {
         name: {
           id: 14,
@@ -423,7 +423,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(() => new WDLWorkflow(ast, context)).to.throws(WDLParserError);
     });
 
-    it('requires workflow outputs as wildcard1', () => {
+    it('supports workflow outputs with wildcard1', () => {
       const ast = {
         name: {
           id: 14,
@@ -549,7 +549,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
     });
 
 
-    it('requires workflow outputs as wildcard2', () => {
+    it('supports workflow outputs with wildcard2', () => {
       const ast = {
         name: {
           id: 14,
@@ -680,7 +680,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(workflow.workflowStep.action.o).to.have.all.keys(['bar.*']);
     });
 
-    it('requires workflow outputs as expression', () => {
+    it('supports workflow outputs with expressions', () => {
       const ast = {
         name: {
           id: 14,
@@ -830,7 +830,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(workflow.workflowStep.action.o).to.have.all.keys(['wfOut']);
     });
 
-    it('requires workflow to have a meta block', () => {
+    it('supports workflow to have a meta block', () => {
       const ast = {
         name: {
           id: 14,

@@ -22,7 +22,7 @@ workflow foo {
     expect(parse(src).status).to.equal(true);
   });
 
-  it('throws WDLParserError if source syntax is incorrect', () => {
+  it('returns with error flag if source syntax is incorrect', () => {
     const src = `
 workflow foo {
   File a
@@ -168,7 +168,7 @@ task merge {
     expect(parsedFlow.model[0].name).to.equal(flow.name);
   });
 
-  it('throws the error message if syntax error was occured', () => {
+  it('returns with error flag if syntax error was occurred', () => {
     const src = `
 fizz buzz {
 }`;

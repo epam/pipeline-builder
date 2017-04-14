@@ -43,8 +43,8 @@ The following WDL features, that require more specific parsing or visualization,
 
 * [Imports](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#import-statements)
 * [Sub workflows](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#sub-workflows)
-* [Order when generating declarations of any step(workflow, call, if, scatter, while and task)](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#workflow-level-resolution)
-* [Declarations into the [call, if, scatter and while] blocks are not supported](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#conditionals)
+* [Order of steps (workflow, call, if, scatter, while) in generated WDL code](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#workflow-level-resolution)
+* [Declarations in a [call, if, scatter and while] blocks are not supported](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#conditionals)
 
 ## Contribution
 
