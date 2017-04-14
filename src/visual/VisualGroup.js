@@ -3,7 +3,7 @@ import joint from 'jointjs';
 const cDefaultWidth = 100;
 const cMinHeight = 100;
 
-/** Class that provides graphical representation for the Step.
+/** Class that provides graphical representation for the Group.
  * @private
  */
 export default class VisualGroup extends joint.shapes.devs.Model {

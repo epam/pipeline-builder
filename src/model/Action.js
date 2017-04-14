@@ -36,6 +36,8 @@ function isSubset(subObject, bigObject) {
       !isSubset(val, bigObject[key])));
 }
 
+const PORT_PROHIBITION_ERROR = 'Ports are not allowed for this action';
+
 /**
  * Class representing a generic action to be referenced in specific steps.
  *
@@ -81,6 +83,17 @@ class Action extends EventDispatcher {
      * @type {string}
      */
     this.name = name;
+
+    /**
+     * Flag that allow or prohibit the port addition to the action
+     * Note if it set to true, trying to create or add any port lead to the exception
+     * @type {boolean}
+     */
+    this.canHavePorts = _.isUndefined(desc.canHavePorts) ? true : Boolean(desc.canHavePorts);
+
+    if (!this.canHavePorts && (!_.isUndefined(desc.i) || !_.isUndefined(desc.o))) {
+      throw new Error(PORT_PROHIBITION_ERROR);
+    }
     /**
      * Dictionary of input ports descriptions.
      * @type {Object.<string, PortDesc>}
@@ -91,6 +104,7 @@ class Action extends EventDispatcher {
      * @type {Object.<string, PortDesc>}
      */
     this.o = _.mapValues(desc.o || {}, createPort);
+
     /**
      * Metadata associated with the action (i.e. arbitrary user-defined action details).
      * @type {Object.<string, *>}
@@ -116,6 +130,10 @@ class Action extends EventDispatcher {
    * });
    */
   addPorts(desc) {
+    if (!this.canHavePorts) {
+      throw new Error(PORT_PROHIBITION_ERROR);
+    }
+
     let changed = false;
     const newIn = _.mapValues(desc.i || {}, createPort);
     if (!isSubset(newIn, this.i)) {
@@ -144,6 +162,10 @@ class Action extends EventDispatcher {
    * helloAction.removePorts({ i: ['unused'], o: ['str'] });
    */
   removePorts(ports) {
+    if (!this.canHavePorts) {
+      throw new Error(PORT_PROHIBITION_ERROR);
+    }
+
     let changed = false;
     const removePort = (portsMap, remList) => {
       _.forEach(remList, (portName) => {
@@ -163,6 +185,10 @@ class Action extends EventDispatcher {
   }
 
   _renamePort(oldName, newName, isInput) {
+    if (!this.canHavePorts) {
+      throw new Error(PORT_PROHIBITION_ERROR);
+    }
+
     const ports = isInput ? this.i : this.o;
 
     if (!ports[oldName]) {

@@ -22,7 +22,7 @@ workflow foo {
     expect(parse(src).status).to.equal(true);
   });
 
-  it('throws WDLParserError when there are some error in source', () => {
+  it('throws WDLParserError if source syntax is incorrect', () => {
     const src = `
 workflow foo {
   File a
