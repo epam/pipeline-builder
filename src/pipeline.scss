@@ -66,6 +66,14 @@ $port-color: $graphite;
   }
 }
 
+.joint-type-visualgroup {
+  @extend .joint-type-visualstep;
+
+  .body {
+    fill: transparent;
+  }
+}
+
 .joint-link {
   .connection {
     stroke: $port-color;

@@ -143,7 +143,8 @@ export default class Visualizer {
     const settings = {
       marginX: 100,
       marginY: 10,
-      rankSep: 180,
+      rankSep: 230,
+      nodeSep: 80,
       rankDir: 'LR',
       setLinkVertices: false,
       resizeClusters: false,
@@ -251,8 +252,8 @@ export default class Visualizer {
           parent.fitEmbeds({
             deep: true,
             padding: {
-              left: 30,
-              right: 30,
+              left: 5,
+              right: 5,
               top: 50,
               bottom: 50,
             },
