@@ -18,7 +18,7 @@ export default class VisualGroup extends joint.shapes.devs.Model {
           text: step.type,
         },
       },
-      type: 'VisualStep',
+      type: 'VisualGroup',
     });
 
     this.step = step;
