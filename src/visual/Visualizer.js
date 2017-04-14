@@ -248,18 +248,6 @@ export default class Visualizer {
           visChild.update();
         }
 
-        if (parent) {
-          parent.fitEmbeds({
-            deep: true,
-            padding: {
-              left: 5,
-              right: 5,
-              top: 50,
-              bottom: 50,
-            },
-          });
-        }
-
         if (child.children) {
           updateOrCreateVisualSteps(child, visChild);
         }

@@ -34,14 +34,17 @@ export default class VisualGroup extends joint.shapes.devs.Model {
     this.attr('.label', {
       text: step.type,
     });
-  }
 
-  /**
-   * Obtains bounding box os the element. Overrides Model method.
-   * @param opts options, see joint.shapes.devs.Model.getBBox
-   * @returns {*}
-   */
-  getBBox(opts) {
-    return super.getBBox(opts);
+    if (this.graph) {
+      this.fitEmbeds({
+        deep: true,
+        padding: {
+          left: 5,
+          right: 5,
+          top: 50,
+          bottom: 50,
+        },
+      });
+    }
   }
 }
