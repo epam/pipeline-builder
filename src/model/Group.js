@@ -1,9 +1,8 @@
-import _ from 'lodash';
 import Step from './Step';
 import Action from './Action';
 
 /**
- * Class representing the entire group.
+ * Class representing the group.
  * @extends Step
  * @example
  * const test = new Group('scatter1', {
@@ -28,23 +27,15 @@ class Group extends Step {
    * @param {object} [config={}] - Group configuration containing group meta information.
    */
   constructor(name, type, config = {}) {
-    /* Clean up config agains input or output ports or bindings*/
     if (!(config instanceof Action)) {
-      if (_.has(config, 'i') || _.has(config, 'o')) {
-        throw new Error('Group could not have any ports');
-      }
+      config.canHavePorts = false;
     } else {
       throw new Error('Group could be created only using config object');
     }
 
-    super(name, config);
+    super(name, new Action(name, config));
 
     this.type = type || 'default';
-  }
-
-  /* Override the parent function to prohibit the port addition*/
-  // eslint-disable-next-line class-methods-use-this
-  _onActionChanged() {
   }
 }
 

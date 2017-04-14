@@ -38,6 +38,22 @@ describe('model/Action', () => {
       expect(action.o).to.have.all.keys(['p3', 'p4']);
     });
 
+    it('throws error when trying to configure ports with disabled canHavePorts frag', () => {
+      const config = {
+        i: {
+          p1: { type: 'type1' },
+          p2: { type: 'type2' },
+        },
+        o: {
+          p3: { type: 'type3' },
+          p4: { type: 'type4' },
+        },
+        canHavePorts: false,
+      };
+
+      expect(() => new Action(name, config)).to.throw(Error);
+    });
+
     it('allows only a predefined set of keys in a port description', () => {
       const desc = { foo: 5, type: 'boo', bar: 42, default: [1, 2, 3], multi: false };
       const config = { i: { p: desc }, o: { q: desc } };
@@ -106,6 +122,13 @@ describe('model/Action', () => {
       expect(action.o).to.have.all.keys(['a']);
     });
 
+    it('throws error when trying to add ports with disabled canHavePorts frag', () => {
+      const action = new Action(name, {
+        canHavePorts: false,
+      });
+      expect(() => action.addPorts({ i: { p: {} }, o: { a: {} } })).to.throw(Error);
+    });
+
     it('overrides existing ports', () => {
       const action = new Action(name, { i: { p: {} }, o: { a: {} } });
       action.addPorts({ i: { p: { type: 'bar' } }, o: { a: { type: 'baz' } } });
@@ -171,6 +194,13 @@ describe('model/Action', () => {
       expect(() => action.removePorts({ i: ['x', 'y', 'z'] })).to.not.throw(Error);
     });
 
+    it('throws error when trying to remove ports with disabled canHavePorts frag', () => {
+      const action = new Action(name, {
+        canHavePorts: false,
+      });
+      expect(() => action.removePorts({ i: ['x', 'y', 'z'] })).to.throw(Error);
+    });
+
     it('notifies about changes', () => {
       const action = new Action(name, { i: { p: {} }, o: { a: {} } });
       const callback = sinon.spy();
@@ -205,6 +235,14 @@ describe('model/Action', () => {
       action.renameIPort('p', 'p1');
       expect(action.i.p).to.not.exist;
       expect(action.i.p1).to.exist;
+    });
+
+    it('throws error when trying to rename port with disabled canHavePorts frag', () => {
+      const action = new Action(name, {
+        canHavePorts: false,
+      });
+
+      expect(() => action.renameIPort('p', 'p1')).to.throw(Error);
     });
 
     it('notifies about changes', () => {
@@ -242,6 +280,14 @@ describe('model/Action', () => {
       action.renameOPort('p', 'p1');
       expect(action.o.p).to.not.exist;
       expect(action.o.p1).to.exist;
+    });
+
+    it('throws error when trying to rename port with disabled canHavePorts frag', () => {
+      const action = new Action(name, {
+        canHavePorts: false,
+      });
+
+      expect(() => action.renameOPort('p', 'p1')).to.throw(Error);
     });
 
     it('notifies about changes', () => {
