@@ -52,6 +52,25 @@ export default class VisualStep extends joint.shapes.devs.Model {
     this.attr('.label', {
       text: step.name,
     });
+
+    const ports = this.getPorts();
+
+    _.forEach(ports, (port) => {
+      let isEmpty = true;
+      if (port.group === 'in') {
+        isEmpty = isEmpty && (_.size(step.i[port.id].inputs) === 0 && _.size(step.i[port.id].outputs) === 0);
+      }
+
+      if (port.group === 'out') {
+        isEmpty = isEmpty && (_.size(step.o[port.id].inputs) === 0 && _.size(step.o[port.id].outputs) === 0);
+      }
+
+      const propVal = this.portProp(port.id, 'attrs/circle/class');
+      const newVal = isEmpty ? 'port-body-empty' : 'port-body';
+      if (!propVal || newVal !== propVal) {
+        this.portProp(port.id, 'attrs/circle/class', newVal);
+      }
+    });
   }
 
   /**

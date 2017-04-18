@@ -43,12 +43,16 @@ export default class Paper extends joint.dia.Paper {
           return false;
         }
         // source
-        if (!magnetS || magnetS.getAttribute('class') !== 'port-body' ||
+        if (!magnetS || (magnetS.getAttribute('class') !== 'port-body' &&
+          magnetS.getAttribute('class') !== 'port-body-empty' &&
+          magnetS.getAttribute('class') !== 'port-body-empty available-magnet') ||
           magnetS.getAttribute('port-group') !== 'out') {
           return false;
         }
         // target
-        if (!magnetT || magnetT.getAttribute('class') !== 'port-body' ||
+        if (!magnetT || (magnetT.getAttribute('class') !== 'port-body' &&
+          magnetT.getAttribute('class') !== 'port-body-empty' &&
+          magnetT.getAttribute('class') !== 'port-body-empty available-magnet') ||
           magnetT.getAttribute('port-group') !== 'in') {
           return false;
         }
@@ -61,6 +65,7 @@ export default class Paper extends joint.dia.Paper {
 
         return !portUsed;
       },
+      markAvailable: true,
     }));
   }
 
