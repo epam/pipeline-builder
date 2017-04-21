@@ -92,7 +92,7 @@ export default class Visualizer {
     this.paper.options.validateConnection = (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
       const args = [cellViewS, magnetS, cellViewT, magnetT, end, linkView];
 
-      if (this.paperDefaultValidateConnectionMethod.call(this.paper, ...args)) {
+      if (this.paperDefaultValidateConnectionMethod.apply(this.paper, args)) {
         const targetPortName = magnetT.attributes.port.value;
         const targetStep = cellViewT.model.step;
 
