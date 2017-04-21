@@ -56,14 +56,9 @@ export default class VisualStep extends joint.shapes.devs.Model {
     const ports = this.getPorts();
 
     _.forEach(ports, (port) => {
-      let isEmpty = true;
-      if (port.group === 'in') {
-        isEmpty = isEmpty && (_.size(step.i[port.id].inputs) === 0 && _.size(step.i[port.id].outputs) === 0);
-      }
+      const stepPort = port.group === 'in' ? step.i[port.id] : step.o[port.id];
 
-      if (port.group === 'out') {
-        isEmpty = isEmpty && (_.size(step.o[port.id].inputs) === 0 && _.size(step.o[port.id].outputs) === 0);
-      }
+      const isEmpty = (_.size(stepPort.inputs) + _.size(stepPort.outputs)) === 0;
 
       const propVal = this.portProp(port.id, 'attrs/circle/class');
       const newVal = isEmpty ? 'port-body-empty' : 'port-body';
