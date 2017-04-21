@@ -42,17 +42,30 @@ export default class Paper extends joint.dia.Paper {
         if (!cellViewT || !cellViewS || cellViewT.id === cellViewS.id) {
           return false;
         }
+
+        const isSuitablePortClass = (magnet) => {
+          const availableClasses = [
+            'port-body',
+            'port-body-empty',
+            'available-magnet',
+          ];
+
+          let result = true;
+          const portClasses = magnet.getAttribute('class').split(/\s+/);
+
+          _.forEach(portClasses, (portClass) => {
+            result = result && (availableClasses.indexOf(portClass) >= 0);
+          });
+
+          return result;
+        };
         // source
-        if (!magnetS || (magnetS.getAttribute('class') !== 'port-body' &&
-          magnetS.getAttribute('class') !== 'port-body-empty' &&
-          magnetS.getAttribute('class') !== 'port-body-empty available-magnet') ||
+        if (!magnetS || !isSuitablePortClass(magnetS) ||
           magnetS.getAttribute('port-group') !== 'out') {
           return false;
         }
         // target
-        if (!magnetT || (magnetT.getAttribute('class') !== 'port-body' &&
-          magnetT.getAttribute('class') !== 'port-body-empty' &&
-          magnetT.getAttribute('class') !== 'port-body-empty available-magnet') ||
+        if (!magnetT || !isSuitablePortClass(magnetT) ||
           magnetT.getAttribute('port-group') !== 'in') {
           return false;
         }
