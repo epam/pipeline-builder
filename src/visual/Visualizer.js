@@ -86,6 +86,20 @@ export default class Visualizer {
     this._timer = null;
     this._step = null;
     this.clear();
+
+    const validateConnection = this.paper.options.validateConnection;
+
+    this.paper.options.validateConnection = (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
+      const args = [cellViewS, magnetS, cellViewT, magnetT, end, linkView];
+
+      if (validateConnection.apply(this.paper, args)) {
+        const targetPortName = magnetT.attributes.port.value;
+        const targetStep = cellViewT.model.step;
+
+        return _.size(targetStep.i[targetPortName].inputs) === 0;
+      }
+      return false;
+    };
   }
 
   /**

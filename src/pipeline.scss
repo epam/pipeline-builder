@@ -18,6 +18,8 @@ $light-gray: #ccc;
 // Semantic color mapping
 $step-color: $sharp-blue;
 $port-color: $graphite;
+$port-color-empty: $dark-blue;
+$port-color-available: $lime-green;
 
 .joint-type-visualstep.selected {
   .body {
@@ -52,6 +54,16 @@ $port-color: $graphite;
     stroke: $white;
     stroke-width: 3px;
     fill: $port-color;
+  }
+
+  .port-body-empty {
+    stroke: $port-color-empty;
+    stroke-width: 1.5px;
+    fill: $white;
+  }
+
+  .available-magnet {
+    fill: $port-color-available;
   }
 
   .port-body:hover {
