@@ -1,5 +1,5 @@
 {
-  "name": "pipeline-builder",
+  "name": "pipeline-builder-test",
   "version": "0.3.0-dev",
   "description": "Pipeline Builder",
   "main": "dist/pipeline.js",
