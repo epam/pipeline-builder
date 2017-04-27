@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/epam/pipeline-builder.svg?branch=master)](https://travis-ci.org/epam/pipeline-builder)
-[![Coverage Status](https://coveralls.io/repos/github/epam/pipeline-builder/badge.svg?branch=dev)](https://coveralls.io/github/epam/pipeline-builder?branch=dev)
+[![Build Status](https://travis-ci.org/epam/pipeline-builder.svg?branch=master)](https://travis-ci.org/daniilsavchuk/pipeline-builder)
+[![Coverage Status](https://coveralls.io/repos/github/daniilsavchuk/pipeline-builder/badge.svg?branch=dev)](https://coveralls.io/github/epam/pipeline-builder?branch=dev)
 
 # Pipeline Builder
 
