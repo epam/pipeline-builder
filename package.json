@@ -1,6 +1,6 @@
 {
   "name": "pipeline-builder",
-  "version": "0.2.0-dev",
+  "version": "0.3.0-dev",
   "description": "Pipeline Builder",
   "main": "dist/pipeline.js",
   "jsnext:main": "dist/pipeline.module.js",
