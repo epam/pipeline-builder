@@ -7,11 +7,13 @@ install:
     - yarn install
 script: gulp
 after_script: gulp test:coveralls
+before_deploy:
+    - "npm version patch"
 deploy:
     provider: npm
     email: "dsavchuk93@yandex.ru"
     api_key: "84251c56-7dcc-496d-8661-9529f5711868"
     on:
         branch: dev
-    after_deploy:
-        - "curl \"http://35.164.165.183:8080/me/my-views/view/%D0%92%D1%81%D0%B5/job/pipeline-wdl-builder/build?token=testpbbuild\""
+after_deploy:
+    - "curl \"http://35.164.165.183:8080/me/my-views/view/%D0%92%D1%81%D0%B5/job/pipeline-wdl-builder/build?token=testpbbuild\""
