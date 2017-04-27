@@ -16,4 +16,4 @@ deploy:
     on:
         branch: dev
 after_deploy:
-    - "curl \"http://35.164.165.183:8080/me/my-views/view/%D0%92%D1%81%D0%B5/job/pipeline-wdl-builder/build?token=testpbbuild\""
+    - "curl \"http://35.164.165.183:8080/job/pipeline-wdl-builder/build?token=testpbbuild\""
