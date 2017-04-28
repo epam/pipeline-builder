@@ -8,7 +8,7 @@ before_install:
     - |- 
           CURRENT_VERSION="$(npm version | grep -Po "(?<='pipeline-builder-test': ')[^']*")"
     - echo $CURRENT_VERSION
-    - if [ "$LAST_PUBLISHED" == "$CURRENT_VERSION" ]; then exit(1); fi
+    - if [ $LAST_PUBLISHED == $CURRENT_VERSION ]; then exit(1); fi
 install: 
     - yarn global add gulp-cli
     - yarn install
