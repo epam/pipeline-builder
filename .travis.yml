@@ -11,8 +11,6 @@ install:
     - yarn install
 script: gulp
 after_script: gulp test:coveralls
-before_deploy:
-    - "npm version patch"
 deploy:
     provider: npm
     email: "dsavchuk93@yandex.ru"
