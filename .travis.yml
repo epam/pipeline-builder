@@ -6,7 +6,7 @@ os: linux
 dist: trusty
 before_install: 
     - |-
-          if [ $TRAVIS_BRANCH != "dev" || $TRAVIS_BRAHCH != "master" ]; then exit; fi
+          if [ $TRAVIS_BRANCH != "dev" ] || [ $TRAVIS_BRAHCH != "master" ]; then exit; fi
     - |-
           NPM_TAG="$(if [ $TRAVIS_BRANCH == "dev" ]; then echo "dev"; else echo "latest"; fi)"
     - |-
