@@ -5,7 +5,7 @@ dist: trusty
 before_install: 
     - LAST_PUBLISHED="$(npm view pipeline-builder-test@dev dev version)"
     - echo \"$LAST_PUBLISHED\"
-    - "CURRENT_VERSION=\\\"$(npm version | grep -Po \\\\\\\"(?<='pipeline-builder-test': ')[^']*\\\\\\\")\\\""
+    - "CURRENT_VERSION=\"$(npm version | grep -Po (?<='pipeline-builder-test': ')[^']*)\""
     - echo \"$CURRENT_VERSION\"
     - if [ "$LAST_PUBLISHED" == "$CURRENT_VERSION" ]; then exit(1); fi
 install: 
