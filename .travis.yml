@@ -1,7 +1,5 @@
 env:
-    - EMAIL="dsavchuk93@yandex.ru"
-    - NPM_AUTH_TOKEN="84251c56-7dcc-496d-8661-9529f5711868"
-    - PACKAGE_NAME="pipeline-builder-test"
+    - EMAIL="dsavchuk93@yandex.ru" NPM_AUTH_TOKEN="84251c56-7dcc-496d-8661-9529f5711868" PACKAGE_NAME="pipeline-builder-test"
 language: node_js
 node_js: "6"
 os: linux
@@ -9,6 +7,7 @@ dist: trusty
 before_install: 
     - |-
           NPM_TAG="$(if [ $TRAVIS_BRANCH == "dev" ]; then echo "dev"; else echo "latest"; fi)"
+    - echo $NPM_TAG
     - LAST_PUBLISHED="$(npm view $PACKAGE_NAME@$NPM_TAG version)"
     - |- 
           CURRENT_VERSION="$(npm version | grep -Po "(?<='$PACKAGE_NAME': ')[^']*")"
