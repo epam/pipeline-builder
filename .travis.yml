@@ -6,9 +6,7 @@ os: linux
 dist: trusty
 before_install: 
     - |-
-          if [ $TRAVIS_BRANCH == "dev" || $TRAVIS_BRAHCH == "master" ]
-    - |-
-          then
+          if [ $TRAVIS_BRANCH != "dev" || $TRAVIS_BRAHCH != "master" ]; then exit; fi
     - |-
           NPM_TAG="$(if [ $TRAVIS_BRANCH == "dev" ]; then echo "dev"; else echo "latest"; fi)"
     - |-
@@ -19,8 +17,6 @@ before_install:
           CURRENT_VERSION="$(npm version | grep -Po "(?<='$PACKAGE_NAME': ')[^']*")"
     - |-
           if [ $LAST_PUBLISHED == $CURRENT_VERSION ]; then exit 1; fi
-    - |-
-          fi
 install: 
     - yarn global add gulp-cli
     - yarn install
