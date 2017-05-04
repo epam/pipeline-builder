@@ -2,6 +2,7 @@ import { expect } from 'chai';
 
 import WDLWorkflow from '../../../../src/parser/WDL/entities/WDLWorkflow';
 import WDLParserError from '../../../../src/parser/WDL/utils/utils';
+import Port from '../../../../src/model/Port';
 
 describe('parser/WDL/entities/WDLWorkflow', () => {
 
@@ -237,7 +238,46 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
                           col: 6,
                         },
                         alias: null,
-                        body: null,
+                        body: {
+                          name: 'CallBody',
+                          attributes: {
+                            declarations: {
+                              list: [],
+                            },
+                            io: {
+                              list: [
+                                {
+                                  name: 'Inputs',
+                                  attributes: {
+                                    map: {
+                                      list: [
+                                        {
+                                          name: 'IOMapping',
+                                          attributes: {
+                                            key: {
+                                              id: 14,
+                                              str: 'identifier',
+                                              source_string: 'currSample',
+                                              line: 8,
+                                              col: 9,
+                                            },
+                                            value: {
+                                              id: 14,
+                                              str: 'identifier',
+                                              source_string: 'i',
+                                              line: 8,
+                                              col: 20,
+                                            },
+                                          },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
                       },
                     },
                   ],
@@ -251,6 +291,9 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       const context = {
         actionMap: {
           bar: {
+            i: {
+              currSample: new Port('currSample'),
+            },
           },
         },
       };
