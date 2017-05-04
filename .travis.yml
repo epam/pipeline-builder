@@ -1,5 +1,5 @@
 env:
-    - EMAIL="aleksandr_sidoruk@epam.com" NPM_AUTH_TOKEN="e5fe6537-5536-4a7d-ac90-88d3601c4511" PACKAGE_NAME="pipeline-builder"
+    - EMAIL="aleksandr_sidoruk@epam.com" PACKAGE_NAME="pipeline-builder"
 language: node_js
 node_js: "6"
 os: linux
