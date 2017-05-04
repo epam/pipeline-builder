@@ -243,7 +243,7 @@ export default class WorkflowGenerator {
 
       _.forEach(outputMappings, (val, key) => {
         if (key.indexOf('.') >= 0) {
-          res += `${this.buildPortValue(val)}${EOL}`;
+          res += `${DOUBLE_SCOPE_INDENT}${key}${EOL}`;
         } else {
           res += `${DOUBLE_SCOPE_INDENT}${val.desc.type} ${key} ${constants.EQ} ${this.buildPortValue(val)}${EOL}`;
         }
