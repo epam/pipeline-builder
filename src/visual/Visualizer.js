@@ -244,8 +244,9 @@ export default class Visualizer {
           x: this.paper.el.offsetWidth / 2,
           y: this.paper.el.offsetHeight / 2,
         });
+        opts.step = child;
         if (!visChild) {
-          visChild = _.isUndefined(child.type) ? new VisualStep(child, opts) : new VisualGroup(child, opts);
+          visChild = _.isUndefined(child.type) ? new VisualStep(opts) : new VisualGroup(opts);
 
           children[name] = visChild;
 
