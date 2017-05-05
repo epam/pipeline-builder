@@ -34,6 +34,43 @@ V.prototype.transform = function fun(matrix, opt) {
   return this;
 };
 
+function getDescendants(cell, currDepth) {
+  const embeds = cell.getEmbeddedCells();
+  let best = { cell, currDepth };
+  _.forEach(embeds, (child) => {
+    const chBest = getDescendants(child, currDepth + 1);
+    if (chBest.currDepth > best.currDepth) {
+      best = chBest;
+    }
+  });
+  return best;
+}
+
+function getHighestDescendant(cell) {
+  return getDescendants(cell, 0).cell;
+}
+
+function createSubstituteCells(graph) {
+  const newCellsMap = graph.cloneCells(graph.getCells());
+
+  const newCells = [];
+  let cellIdx = 0;
+  _.forEach(newCellsMap, (newCell, key) => {
+    newCells[cellIdx] = newCell;
+    cellIdx += 1;
+    const cellProto = graph.getCell(key);
+    newCell.proto = cellProto;
+    if (newCell.isLink()) {
+      const source = newCellsMap[getHighestDescendant(cellProto.getSourceElement()).id];
+      const target = newCellsMap[getHighestDescendant(cellProto.getTargetElement()).id];
+      newCell.get('source').id = source.id;
+      newCell.get('target').id = target.id;
+    }
+  });
+
+  return newCells;
+}
+
 /**
  * Class that allows to work with graphical pipeline representation.
  *
@@ -154,6 +191,7 @@ export default class Visualizer {
    * Layout the contents automatically.
    */
   layout() {
+    const newCells = createSubstituteCells(this._graph);
     const settings = {
       marginX: 100,
       marginY: 10,
@@ -162,9 +200,13 @@ export default class Visualizer {
       rankDir: 'LR',
       setLinkVertices: false,
       resizeClusters: false,
+      setPosition: (element, glNode) => {
+        element.proto.set('position', {
+          x: glNode.x - glNode.width / 2,
+          y: glNode.y - glNode.height / 2 });
+      }, // setVertices is ignored
     };
-
-    joint.layout.DirectedGraph.layout(this._graph, settings);
+    joint.layout.DirectedGraph.layout(newCells, settings);
   }
 
   _loopPorts(ports, source) {
