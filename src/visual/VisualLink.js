@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import joint from 'jointjs';
 
 /**
@@ -6,19 +7,12 @@ import joint from 'jointjs';
  */
 export default class VisualLink extends joint.shapes.devs.Link {
 
-  constructor(sourceId, sourcePort, targetId, targetPort, conn) {
-    super({
-      source: {
-        id: sourceId,
-        port: sourcePort,
-      },
-      target: {
-        id: targetId,
-        port: targetPort,
-      },
-    });
+  constructor(opts) {
+    super(_.defaultsDeep(opts, {
+      conn: null,
+    }));
     /** Connection from model. */
-    this.conn = conn;
+    this.conn = this.attributes.conn;
   }
 
   _check(name, port) {
