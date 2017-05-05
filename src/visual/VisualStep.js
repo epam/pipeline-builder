@@ -1,5 +1,5 @@
-import joint from 'jointjs';
 import _ from 'lodash';
+import joint from 'jointjs';
 
 const cDefaultWidth = 100;
 const cMinHeight = 100;
@@ -14,21 +14,30 @@ function findMaxLen(strList) {
  * @private
  */
 export default class VisualStep extends joint.shapes.devs.Model {
-  constructor(step, opts = {}) {
-    super({
+  /**
+   * Creates new Step visual representation. Accepts all options for
+   * joint.shapes.dev.Model and various custom parameters.
+   * @param {object=} opts - Action description.
+   * @param {Object.<string, Step>} opts.step - Step instance.
+   * @param {Object.<string, int>} [opts.x=0] - Center x coordinate.
+   * @param {Object.<string, int>} [opts.y=0] - Center y coordinate.
+   */
+  constructor(opts = { step: null, x: 0, y: 0 }) {
+    super(_.defaultsDeep(opts, {
       position: {
         x: (opts.x - cDefaultWidth / 2) || 0,
         y: (opts.y - cMinHeight / 2) || 0,
       },
       attrs: {
         '.label': {
-          text: step.name,
+          text: opts.step.name,
         },
       },
       type: 'VisualStep',
-    });
+      step: opts.step,
+    }));
 
-    this.step = step;
+    this.step = opts.step;
     this.update();
   }
 
@@ -40,7 +49,8 @@ export default class VisualStep extends joint.shapes.devs.Model {
     const inNames = Object.keys(step.i);
     const outNames = Object.keys(step.o);
     const height = Math.max(cMinHeight, cHeightPerPort * Math.max(inNames.length, outNames.length));
-    const width = Math.max(cDefaultWidth, step.name.length * cPixelPerSymbol);
+    const label = this._getLabel();
+    const width = Math.max(cDefaultWidth, label.length * cPixelPerSymbol);
     this.set({
       inPorts: inNames,
       outPorts: outNames,
@@ -50,7 +60,7 @@ export default class VisualStep extends joint.shapes.devs.Model {
       },
     });
     this.attr('.label', {
-      text: step.name,
+      text: label,
     });
 
     const ports = this.getPorts();
@@ -83,5 +93,9 @@ export default class VisualStep extends joint.shapes.devs.Model {
       bbox.width += leftOffset + rightOffset;
     }
     return bbox;
+  }
+
+  _getLabel() {
+    return this.step.name;
   }
 }

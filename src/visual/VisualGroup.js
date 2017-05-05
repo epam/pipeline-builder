@@ -1,50 +1,47 @@
-import joint from 'jointjs';
+import _ from 'lodash';
+import VisualStep from './VisualStep';
 
-const cDefaultWidth = 100;
-const cMinHeight = 100;
+const cEmbedsPadding = 50;
 
 /** Class that provides graphical representation for the Group.
  * @private
  */
-export default class VisualGroup extends joint.shapes.devs.Model {
-  constructor(step, opts = {}) {
-    super({
-      position: {
-        x: (opts.x - cDefaultWidth / 2) || 0,
-        y: (opts.y - cMinHeight / 2) || 0,
-      },
+export default class VisualGroup extends VisualStep {
+  /**
+   * Creates new Group visual representation. Accepts all options for
+   * joint.shapes.dev.Model and Step and embeds padding values.
+   */
+  constructor(opts = {}) {
+    super(_.defaultsDeep(opts, {
       attrs: {
         '.label': {
-          text: step.type,
+          text: opts.step.type,
         },
       },
       type: 'VisualGroup',
-    });
-
-    this.step = step;
-    this.update();
+      embedsPadding: {
+        left: cEmbedsPadding,
+        right: cEmbedsPadding,
+        top: cEmbedsPadding,
+        bottom: cEmbedsPadding,
+      },
+    }));
   }
 
   /**
    * Updates visual step according to the model.
    */
   update() {
-    const step = this.step;
-
-    this.attr('.label', {
-      text: step.type,
-    });
+    super.update();
 
     if (this.graph) {
       this.fitEmbeds({
-        deep: true,
-        padding: {
-          left: 5,
-          right: 5,
-          top: 50,
-          bottom: 50,
-        },
+        padding: this.attributes.embedsPadding,
       });
     }
+  }
+
+  _getLabel() {
+    return this.step.type;
   }
 }
