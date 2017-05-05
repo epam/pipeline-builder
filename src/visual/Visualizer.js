@@ -180,8 +180,17 @@ export default class Visualizer {
           _.find(links, link => link.conn === conn) === undefined &&
           !srcIsGroup &&
           !dstIsGroup) {
-          const link = new VisualLink(
-            source.id, port.name, children[targetName].id, conn.to.name, conn);
+          const link = new VisualLink({
+            source: {
+              id: source.id,
+              port: port.name,
+            },
+            target: {
+              id: children[targetName].id,
+              port: conn.to.name,
+            },
+            conn,
+          });
           link.addTo(this._graph);
         }
       });
