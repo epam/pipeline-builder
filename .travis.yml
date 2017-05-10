@@ -24,12 +24,14 @@ script: gulp
 after_script: gulp test:coveralls
 deploy:
     - provider: npm
+      skip_cleanup: true
       email: $EMAIL
       api_key: $NPM_AUTH_TOKEN
       tag: dev
       on:
           branch: dev
     - provider: npm
+      skip_cleanup: true
       email: $EMAIL
       api_key: $NPM_AUTH_TOKEN
       tag: latest

@@ -177,7 +177,12 @@ export default class WDLWorkflow {
       }
     } else if (declaration && nodeValue.str === 'identifier') {
       const portName = nodeValue.source_string;
-      step.i[declaration].bind(WDLWorkflow.groupNameResolver(parentStep, portName).i[portName]);
+      const portStep = WDLWorkflow.groupNameResolver(parentStep, portName);
+      if (_.isUndefined(portStep)) {
+        step.i[declaration].bind(portName);
+      } else {
+        step.i[declaration].bind(portStep.i[portName]);
+      }
     } else {
       const expression = extractExpression(nodeValue);
       step.i[declaration].bind(expression.string);
