@@ -14,7 +14,8 @@ Pipeline Builder is a JavaScript library for visualizing and constructing bioinf
 
 ## Demo environment
 
-Example of a **Pipeline Builder** usage is available at [http://pb.opensource.epam.com](http://pb.opensource.epam.com)
+Example of a **Pipeline Builder** usage is available at [http://pb.opensource.epam.com](http://pb.opensource.epam.com) built on master branch and 
+[http://pb.opensource.epam.com:10000](http://pb.opensource.epam.com:10000) built on dev branch
 
 This demo application demonstrates major capabilities of a **Pipeline Builder**
 
