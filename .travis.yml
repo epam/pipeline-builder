@@ -1,9 +1,39 @@
+env:
+    - EMAIL="aleksandr_sidoruk@epam.com" PACKAGE_NAME="pipeline-builder"
 language: node_js
 node_js: "6"
 os: linux
 dist: trusty
+before_install: 
+    - |-
+          if [[ $TRAVIS_BRANCH == "dev" ]] || [[ $TRAVIS_BRANCH == "master" ]]; then
+              NPM_TAG="$(if [[ $TRAVIS_BRANCH == "dev" ]]; then echo "dev"; else echo "latest"; fi)"
+
+              LAST_PUBLISHED="$(npm view $PACKAGE_NAME@$NPM_TAG version)"
+              CURRENT_VERSION="$(npm version | grep -Po "(?<='$PACKAGE_NAME': ')[^']*")"
+
+              if [[ $LAST_PUBLISHED == $CURRENT_VERSION ]]; then
+                  echo "Version change required"
+                  exit 1; 
+              fi
+          fi
 install: 
     - yarn global add gulp-cli
     - yarn install
 script: gulp
 after_script: gulp test:coveralls
+deploy:
+    - provider: npm
+      email: $EMAIL
+      api_key: $NPM_AUTH_TOKEN
+      tag: dev
+      on:
+          branch: dev
+    - provider: npm
+      email: $EMAIL
+      api_key: $NPM_AUTH_TOKEN
+      tag: latest
+      on:
+          branch: master
+after_deploy:
+    - "curl \"http://35.164.165.183:8080/job/pipeline-wdl-builder-$TRAVIS_BRANCH/build?token=$JENKINS_SECRET_TOKEN\""
