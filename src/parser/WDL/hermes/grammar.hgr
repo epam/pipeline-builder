@@ -25,6 +25,8 @@ grammar {
     r'output(?!{%_identifier_follow%})' -> output(:output)
     r'as(?!{%_identifier_follow%})' -> :as
     r'if(?!{%_identifier_follow%})' -> :if
+    r'then(?!{%_identifier_follow%})' -> :then
+    r'else(?!{%_identifier_follow%})' -> :else
     r'while(?!{%_identifier_follow%})' -> :while
     r'runtime(?!{%_identifier_follow%})' -> :runtime
     r'scatter(?!{%_identifier_follow%})' -> :scatter @scatter
@@ -101,19 +103,23 @@ grammar {
       r'\}' -> :rbrace %pop
       r'\[' -> :lsquare
       r'\]' -> :rsquare
-      r'=' -> :equal
       r'\+' -> :plus
       r'\*' -> :asterisk
       r'[0-9]+' -> :integer
       r'(true|false)(?!{%_identifier_follow%})' -> :boolean
+      r'if' -> :if
+      r'else' -> :else
+      r'then' -> :then
       r'{%_type%}(?!{%_identifier_follow%})' -> :type
       r'{%_identifier%}' -> :identifier
+
 
       # Expression tokens
       r':' -> :colon
       r',' -> :comma
       r'\.' -> :dot
       r'==' -> :double_equal
+      r'=' -> :equal
       r'\|\|' -> :double_pipe
       r'\&\&' -> :double_ampersand
       r'!=' -> :not_equal
@@ -134,7 +140,11 @@ grammar {
       r'>=' -> :gteq
       r'>' -> :gt
       r'!' -> :not
-
+      enum {
+        python: r'\?'
+        java: "\\?"
+        javascript: "\\?"
+      } -> :qmark
       # Literals
       enum {
         python: r'"([^\\\"\n]|\\[\\"\'nrbtfav\?]|\\[0-7]{1,3}|\\x[0-9a-fA-F]+|\\[uU]([0-9a-fA-F]{4})([0-9a-fA-F]{4})?)*"'
@@ -159,12 +169,8 @@ grammar {
     }
     mode<scatter> {
       r'\s+' -> null
-      r'\)' -> :rparen %pop
       r'\(' -> :lparen
-      r'\.' -> :dot
-      r'\[' -> :lsquare
-      r'\]' -> :rsquare
-      r'in(?!{%_identifier_follow%})' -> :in
+      r'in(?!{%_identifier_follow%})' -> :in %pop
       r'{%_identifier%}' -> :identifier
     }
     mode<raw_command> {
@@ -198,9 +204,12 @@ grammar {
       r'\+' -> :plus
       r'\*' -> :asterisk
       r'[0-9]+' -> :integer
+      r'if' -> :if
+      r'else' -> :else
+      r'then' -> :then
+      r'{%_identifier%}(?=\s*=)' -> :cmd_attr_hint[] :identifier
       r'(true|false)(?!{%_identifier_follow%})' -> :boolean
       r'{%_type%}(?!{%_identifier_follow%})' -> :type
-      r'{%_identifier%}(?=\s*=)' -> :cmd_attr_hint[] :identifier
       r'{%_identifier%}' -> :identifier
 
       # Expression tokens
@@ -339,9 +348,9 @@ grammar {
                return str
                    .replace(/\\(.?)/g, function (s, n1) {
                      var escapes = {
-                         '\\': '\\', 
-                         '0' : '\u0000', 
-                         ''  : '', 
+                         '\\': '\\',
+                         '0' : '\u0000',
+                         ''  : '',
                          'n' : '\n',
                          'r' : '\r',
                          'b' : '\b',
@@ -380,7 +389,6 @@ grammar {
     $cmd_param_kv = :cmd_attr_hint :identifier :equal $e -> CommandParameterAttr(key=$1, value=$3)
     $outputs = :output :lbrace list($output_kv) :rbrace -> Outputs(attributes=$2)
     $output_kv = $type_e :identifier :equal $e -> Output(type=$0, name=$1, expression=$3)
-
     $runtime = :runtime $map -> Runtime(map=$1)
     $parameter_meta = :parameter_meta $map -> ParameterMeta(map=$1)
     $meta = :meta $map -> Meta(map=$1)
@@ -425,6 +433,7 @@ grammar {
       (*:left) $e = :lsquare list($e, :comma) :rsquare -> ArrayLiteral(values=$1)
       (*:left) $e = :lbrace list($map_kv, :comma) :rbrace -> MapLiteral(map=$1)
       (*:left) $e = :lparen list($e, :comma) :rparen -> TupleLiteral(values=$1)
+      (*:left) $e = :if $e :then $e :else $e -> TernaryIf(cond=$1, iftrue=$3, iffalse=$5)
       $e = :string
       $e = :identifier
       $e = :boolean

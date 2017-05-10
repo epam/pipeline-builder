@@ -104,6 +104,16 @@ const processors = {
     scope.res.type = scope.ast.name;
     scope.res.accesses = scope.res.accesses.concat(left.accesses).concat(right.accesses);
   },
+  Ternary: (scope) => {
+    const cond = scope.extractExpression(scope.attr.cond);
+    const ifTrue = scope.extractExpression(scope.attr.iftrue);
+    const ifFalse = scope.extractExpression(scope.attr.iffalse);
+
+    scope.res.string = `if ${cond.string} then ${ifTrue.string} else ${ifFalse.string}`;
+
+    scope.res.type = scope.ast.name;
+    scope.res.accesses = scope.res.accesses.concat(cond.accesses).concat(ifTrue.accesses).concat(ifTrue.ifFalse);
+  },
   Kv: (scope) => {
     const left = scope.attr.key.source_string;
     const right = scope.extractExpression(scope.attr.value);
@@ -195,6 +205,8 @@ const processorRemap = {
   LessThanOrEqual: 'Binary',
   GreaterThan: 'Binary',
   GreaterThanOrEqual: 'Binary',
+
+  TernaryIf: 'Ternary',
 
   MapLiteralKv: 'Kv',
   ObjectKV: 'Kv',

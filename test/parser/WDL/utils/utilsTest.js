@@ -135,6 +135,52 @@ describe('parser/WDL/utils', () => {
       expect(extractExpression(ast).string).to.equal('!1 + +1 * -1');
     });
 
+    it('requires an ternary operators', () => {
+      const ast = {
+        name: 'TernaryIf',
+        attributes: {
+          cond: {
+            name: 'LogicalNot',
+            attributes: {
+              expression: {
+                id: 2,
+                str: 'integer',
+                source_string: '1',
+                line: 14,
+                col: 12,
+              },
+            },
+          },
+          iftrue: {
+            name: 'LogicalNot',
+            attributes: {
+              expression: {
+                id: 2,
+                str: 'integer',
+                source_string: '2',
+                line: 14,
+                col: 12,
+              },
+            },
+          },
+          iffalse: {
+            name: 'LogicalNot',
+            attributes: {
+              expression: {
+                id: 2,
+                str: 'integer',
+                source_string: '3',
+                line: 14,
+                col: 12,
+              },
+            },
+          },
+        },
+      };
+
+      expect(extractExpression(ast).string).to.equal('if !1 then !2 else !3');
+    });
+
     it('requires an array expressions', () => {
       const ast = {
         name: 'ArrayLiteral',
