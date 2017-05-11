@@ -68,7 +68,9 @@ function createSubstituteCells(graph) {
     }
   });
 
-  return newCells;
+  const gr = new joint.dia.Graph();
+  gr.addCells(newCells);
+  return gr;
 }
 
 /**
@@ -181,6 +183,7 @@ export default class Visualizer {
     this._step = step;
     this._update();
     this.layout();
+    this._update();// call update once more to invoke fitEmbeds
     this.zoom.fitToPage({ padding: 10, maxScale: 1 });
     this._timer = setInterval(() => this._update(), 30);
 
@@ -199,11 +202,15 @@ export default class Visualizer {
       nodeSep: 80,
       rankDir: 'LR',
       setLinkVertices: false,
-      resizeClusters: false,
+      resizeClusters: true,
       setPosition: (element, glNode) => {
         element.proto.set('position', {
           x: glNode.x - glNode.width / 2,
           y: glNode.y - glNode.height / 2 });
+        element.proto.set('size', {
+          width: glNode.width,
+          height: glNode.height,
+        });
       }, // setVertices is ignored
     };
     joint.layout.DirectedGraph.layout(newCells, settings);
