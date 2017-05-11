@@ -75,19 +75,26 @@ export default class WDLWorkflow {
    * @param {Step} parent - parent step
    */
   parseScatter(item, parent) {
+    const itemName = item.attributes.item.source_string;
     const opts = {
-      data: {
-        variable: item.attributes.item.source_string,
-        collection: extractExpression(item.attributes.collection).string,
+      i: {
       },
     };
 
+    const collection = extractExpression(item.attributes.collection);
+
+    const port = WDLWorkflow.getPortForBinding(this.workflowStep, parent, collection);
+
+    opts.i[itemName] = {};
+    opts.i[itemName].type = 'ScatterItem';
+
     const scatter = new Group(`scatter_${this.scatterIndex}`, 'scatter', opts);
+    scatter.i[itemName].bind(port);
 
     this.scatterIndex += 1;
     parent.add(scatter);
 
-    this.parseBody(item.attributes.body.list, 'scatter', scatter, ['workflowoutputs', 'meta', 'parametermeta', 'declaration']);
+    this.parseBody(item.attributes.body.list, 'scatter', scatter, ['workflowoutputs', 'meta', 'parametermeta']);
   }
 
   /**
@@ -97,17 +104,25 @@ export default class WDLWorkflow {
    */
   parseIf(item, parent) {
     const opts = {
-      data: {
-        expression: extractExpression(item.attributes.expression).string,
+      i: {
+        condition: {
+        },
       },
     };
 
+    const condition = extractExpression(item.attributes.expression);
+
+    const port = WDLWorkflow.getPortForBinding(this.workflowStep, parent, condition);
+
+    opts.i.condition.type = 'Condition';
+
     const ifStatement = new Group(`if_${this.ifIndex}`, 'if', opts);
+    ifStatement.i.condition.bind(port);
 
     this.ifIndex += 1;
     parent.add(ifStatement);
 
-    this.parseBody(item.attributes.body.list, 'if', ifStatement, ['workflowoutputs', 'meta', 'parametermeta', 'declaration']);
+    this.parseBody(item.attributes.body.list, 'if', ifStatement, ['workflowoutputs', 'meta', 'parametermeta']);
   }
 
   /**
@@ -117,17 +132,26 @@ export default class WDLWorkflow {
    */
   parseWhile(item, parent) {
     const opts = {
-      data: {
-        expression: extractExpression(item.attributes.expression).string,
+      i: {
+        condition: {
+        },
       },
     };
 
+    const condition = extractExpression(item.attributes.expression);
+
+    const port = WDLWorkflow.getPortForBinding(this.workflowStep, parent, condition);
+
+    opts.i.condition.type = 'Condition';
+    opts.i.condition.bind = port;
+
     const whileLoop = new Group(`whileloop_${this.loopIndex}`, 'whileloop', opts);
+    whileLoop.i.condition.bind(port);
 
     this.loopIndex += 1;
     parent.add(whileLoop);
 
-    this.parseBody(item.attributes.body.list, 'whileloop', whileLoop, ['workflowoutputs', 'meta', 'parametermeta', 'declaration']);
+    this.parseBody(item.attributes.body.list, 'whileloop', whileLoop, ['workflowoutputs', 'meta', 'parametermeta']);
   }
 
   /**
@@ -259,7 +283,7 @@ export default class WDLWorkflow {
       });
 
       wfOutLinksList.forEach((i) => {
-        const startStep = this.workflowStep.children[i.lhs];
+        const startStep = WDLWorkflow.findStepInStructureRecursively(this.workflowStep, i.lhs);
 
         if (startStep) {
           this.workflowStep.o[i.to].bind(startStep.o[i.rhs]);
@@ -322,6 +346,21 @@ export default class WDLWorkflow {
     }
 
     return undefined;
+  }
+
+  static getPortForBinding(workflow, parent, expression) {
+    let binder = expression.string;
+    if (expression.type === 'MemberAccess') {
+      const rhsPart = expression.accesses[0].rhs;
+      const lhsPart = expression.accesses[0].lhs;
+
+      const outputStep = WDLWorkflow.findStepInStructureRecursively(workflow, lhsPart);
+      binder = outputStep.o[rhsPart];
+    } else if (expression.type === 'identifier') {
+      binder = WDLWorkflow.groupNameResolver(parent, expression.string).i[expression.string];
+    }
+
+    return binder;
   }
 
 }
