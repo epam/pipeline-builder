@@ -56,16 +56,22 @@ function createSubstituteCells(graph) {
   const newCells = [];
   let cellIdx = 0;
   _.forEach(newCellsMap, (newCell, key) => {
-    newCells[cellIdx] = newCell;
-    cellIdx += 1;
     const cellProto = graph.getCell(key);
-    newCell.proto = cellProto;
     if (newCell.isLink()) {
-      const source = newCellsMap[getHighestDescendant(cellProto.getSourceElement()).id];
-      const target = newCellsMap[getHighestDescendant(cellProto.getTargetElement()).id];
+      const protoSrc = cellProto.getSourceElement();
+      const protoDst = cellProto.getTargetElement();
+      if (protoDst.isEmbeddedIn(protoSrc, { deep: true }) ||
+          protoSrc.isEmbeddedIn(protoDst, { deep: true })) {
+        return;
+      }
+      const source = newCellsMap[getHighestDescendant(protoSrc).id];
+      const target = newCellsMap[getHighestDescendant(protoDst).id];
       newCell.get('source').id = source.id;
       newCell.get('target').id = target.id;
     }
+    newCells[cellIdx] = newCell;
+    cellIdx += 1;
+    newCell.proto = cellProto;
   });
 
   const gr = new joint.dia.Graph();
