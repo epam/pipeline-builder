@@ -6,8 +6,6 @@ import VisualLink from './VisualLink';
 import VisualStep from './VisualStep';
 import VisualGroup from './VisualGroup';
 
-import Group from '../model/Group';
-
 import Zoom from './Zoom';
 
 // Code below is an official fix for Chrome 57 from JointJS
@@ -229,14 +227,9 @@ export default class Visualizer {
     const links = this._graph.getConnectedLinks(source);
     _.forEach(ports, (port) => {
       _.forEach(port.outputs, (conn) => {
-        const srcIsGroup = conn.from.step instanceof Group;
-        const dstIsGroup = conn.to.step instanceof Group;
-
         const targetName = conn.to.step.name;
         if (children[targetName] &&
-          _.find(links, link => link.conn === conn) === undefined &&
-          !srcIsGroup &&
-          !dstIsGroup) {
+          _.find(links, link => link.conn === conn) === undefined) {
           const link = new VisualLink({
             source: {
               id: source.id,

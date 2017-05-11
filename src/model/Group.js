@@ -27,9 +27,7 @@ class Group extends Step {
    * @param {object} [config={}] - Group configuration containing group meta information.
    */
   constructor(name, type, config = {}) {
-    if (!(config instanceof Action)) {
-      config.canHavePorts = false;
-    } else {
+    if (config instanceof Action) {
       throw new Error('Group could be created only using config object');
     }
 
