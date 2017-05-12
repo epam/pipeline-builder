@@ -220,8 +220,8 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
                 },
                 collection: {
                   id: 14,
-                  str: 'identifier',
-                  source_string: 'integers',
+                  str: 'string',
+                  source_string: '1234',
                   line: 3,
                   col: 16,
                 },

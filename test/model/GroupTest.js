@@ -37,7 +37,7 @@ describe('model/Group', () => {
     });
 
     it('throws error when try to create with ports', () => {
-      expect(() => new Group(name, type, config)).to.throw(Error);
+      expect(() => new Group(name, type, config)).to.not.throw(Error);
     });
 
     it('throws error when try to create with action', () => {
