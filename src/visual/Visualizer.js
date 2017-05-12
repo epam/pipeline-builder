@@ -34,6 +34,57 @@ V.prototype.transform = function fun(matrix, opt) {
   return this;
 };
 
+function getDescendants(cell, currDepth) {
+  const embeds = cell.getEmbeddedCells();
+  let best = { cell, currDepth };
+  _.forEach(embeds, (child) => {
+    const chBest = getDescendants(child, currDepth + 1);
+    if (chBest.currDepth > best.currDepth) {
+      best = chBest;
+    }
+  });
+  return best;
+}
+
+function getHighestDescendant(cell) {
+  return getDescendants(cell, 0).cell;
+}
+
+function createSubstituteCells(graph) {
+  const newCellsMap = graph.cloneCells(graph.getCells());
+
+  const newCells = [];
+  let cellIdx = 0;
+  _.forEach(newCellsMap, (newCell, key) => {
+    const cellProto = graph.getCell(key);
+    if (newCell.isLink()) {
+      const protoSrc = cellProto.getSourceElement();
+      const protoDst = cellProto.getTargetElement();
+      if (protoDst.isEmbeddedIn(protoSrc, { deep: true }) ||
+          protoSrc.isEmbeddedIn(protoDst, { deep: true })) {
+        return;
+      }
+      const source = newCellsMap[getHighestDescendant(protoSrc).id];
+      const target = newCellsMap[getHighestDescendant(protoDst).id];
+      newCell.get('source').id = source.id;
+      newCell.get('target').id = target.id;
+    } else {
+      const bbox = cellProto.getBBox();
+      newCell.set('size', {
+        width: bbox.width,
+        height: bbox.height,
+      });
+    }
+    newCells[cellIdx] = newCell;
+    cellIdx += 1;
+    newCell.proto = cellProto;
+  });
+
+  const gr = new joint.dia.Graph();
+  gr.addCells(newCells);
+  return gr;
+}
+
 /**
  * Class that allows to work with graphical pipeline representation.
  *
@@ -144,6 +195,7 @@ export default class Visualizer {
     this._step = step;
     this._update();
     this.layout();
+    this._update();// call update once more to invoke fitEmbeds
     this.zoom.fitToPage({ padding: 10, maxScale: 1 });
     this._timer = setInterval(() => this._update(), 30);
 
@@ -154,17 +206,22 @@ export default class Visualizer {
    * Layout the contents automatically.
    */
   layout() {
+    const newCells = createSubstituteCells(this._graph);
     const settings = {
       marginX: 100,
       marginY: 10,
-      rankSep: 230,
+      rankSep: 100,
       nodeSep: 80,
       rankDir: 'LR',
       setLinkVertices: false,
-      resizeClusters: false,
+      resizeClusters: true,
+      setPosition: (element, glNode) => {
+        element.proto.set('position', {
+          x: glNode.x - glNode.width / 2,
+          y: glNode.y - glNode.height / 2 });
+      }, // setVertices is ignored
     };
-
-    joint.layout.DirectedGraph.layout(this._graph, settings);
+    joint.layout.DirectedGraph.layout(newCells, settings);
   }
 
   _loopPorts(ports, source) {
@@ -180,8 +237,17 @@ export default class Visualizer {
           _.find(links, link => link.conn === conn) === undefined &&
           !srcIsGroup &&
           !dstIsGroup) {
-          const link = new VisualLink(
-            source.id, port.name, children[targetName].id, conn.to.name, conn);
+          const link = new VisualLink({
+            source: {
+              id: source.id,
+              port: port.name,
+            },
+            target: {
+              id: children[targetName].id,
+              port: conn.to.name,
+            },
+            conn,
+          });
           link.addTo(this._graph);
         }
       });
@@ -244,14 +310,16 @@ export default class Visualizer {
           x: this.paper.el.offsetWidth / 2,
           y: this.paper.el.offsetHeight / 2,
         });
+        opts.step = child;
         if (!visChild) {
-          visChild = _.isUndefined(child.type) ? new VisualStep(child, opts) : new VisualGroup(child, opts);
+          visChild = _.isUndefined(child.type) ? new VisualStep(opts) : new VisualGroup(opts);
 
           children[name] = visChild;
 
           this._graph.addCell(visChild);
           if (parent) {
             parent.embed(visChild);
+            parent.update();
           }
         } else {
           // it is essential to update links before the step!
