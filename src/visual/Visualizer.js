@@ -68,6 +68,12 @@ function createSubstituteCells(graph) {
       const target = newCellsMap[getHighestDescendant(protoDst).id];
       newCell.get('source').id = source.id;
       newCell.get('target').id = target.id;
+    } else {
+      const bbox = cellProto.getBBox();
+      newCell.set('size', {
+        width: bbox.width,
+        height: bbox.height,
+      });
     }
     newCells[cellIdx] = newCell;
     cellIdx += 1;
@@ -204,7 +210,7 @@ export default class Visualizer {
     const settings = {
       marginX: 100,
       marginY: 10,
-      rankSep: 230,
+      rankSep: 100,
       nodeSep: 80,
       rankDir: 'LR',
       setLinkVertices: false,
@@ -213,10 +219,6 @@ export default class Visualizer {
         element.proto.set('position', {
           x: glNode.x - glNode.width / 2,
           y: glNode.y - glNode.height / 2 });
-        element.proto.set('size', {
-          width: glNode.width,
-          height: glNode.height,
-        });
       }, // setVertices is ignored
     };
     joint.layout.DirectedGraph.layout(newCells, settings);
@@ -317,6 +319,7 @@ export default class Visualizer {
           this._graph.addCell(visChild);
           if (parent) {
             parent.embed(visChild);
+            parent.update();
           }
         } else {
           // it is essential to update links before the step!
