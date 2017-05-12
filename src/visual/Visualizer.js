@@ -145,6 +145,14 @@ export default class Visualizer {
         const targetPortName = magnetT.attributes.port.value;
         const targetStep = cellViewT.model.step;
 
+        if (magnetS.getAttribute('port-group') === 'in') {
+          const sourceStep = cellViewS.model.step;
+
+          if (!_.has(sourceStep.children, targetStep.name)) {
+            return false;
+          }
+        }
+
         return _.size(targetStep.i[targetPortName].inputs) === 0;
       }
       return false;
@@ -365,7 +373,12 @@ export default class Visualizer {
         if (!targetChild || !sourceChild) {
           return;
         }
-        const sourcePort = sourceChild.o[link.get('source').port];
+
+        const srcPortName = link.get('source').port;
+        const sourcePort = this.paper.findViewByModel(link).sourceMagnet.getAttribute('port-group') === 'in' ?
+          sourceChild.i[srcPortName] :
+          sourceChild.o[srcPortName];
+
         const targetPort = targetChild.i[link.get('target').port];
         link.conn = targetPort.bind(sourcePort);
       }

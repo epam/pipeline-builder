@@ -60,8 +60,7 @@ export default class Paper extends joint.dia.Paper {
           return result;
         };
         // source
-        if (!magnetS || !isSuitablePortClass(magnetS) ||
-          magnetS.getAttribute('port-group') !== 'out') {
+        if (!magnetS || !isSuitablePortClass(magnetS)) {
           return false;
         }
         // target
