@@ -104,20 +104,12 @@ export default class WDLWorkflow {
    */
   parseIf(item, parent) {
     const opts = {
-      i: {
-        condition: {
-        },
+      data: {
+        expression: extractExpression(item.attributes.expression).string,
       },
     };
 
-    const condition = extractExpression(item.attributes.expression);
-
-    const port = WDLWorkflow.getPortForBinding(this.workflowStep, parent, condition);
-
-    opts.i.condition.type = 'Condition';
-
     const ifStatement = new Group(`if_${this.ifIndex}`, 'if', opts);
-    ifStatement.i.condition.bind(port);
 
     this.ifIndex += 1;
     parent.add(ifStatement);
@@ -132,21 +124,12 @@ export default class WDLWorkflow {
    */
   parseWhile(item, parent) {
     const opts = {
-      i: {
-        condition: {
-        },
+      data: {
+        expression: extractExpression(item.attributes.expression).string,
       },
     };
 
-    const condition = extractExpression(item.attributes.expression);
-
-    const port = WDLWorkflow.getPortForBinding(this.workflowStep, parent, condition);
-
-    opts.i.condition.type = 'Condition';
-    opts.i.condition.bind = port;
-
     const whileLoop = new Group(`whileloop_${this.loopIndex}`, 'whileloop', opts);
-    whileLoop.i.condition.bind(port);
 
     this.loopIndex += 1;
     parent.add(whileLoop);

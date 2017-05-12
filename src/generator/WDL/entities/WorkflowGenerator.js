@@ -203,11 +203,8 @@ export default class WorkflowGenerator {
 
     let res = '';
 
-    const item = child.i.condition;
-    if (_.isUndefined(item)) {
-      throw new Error('If statement model is not valid');
-    }
-    res += `${SCOPE_INDENT}${constants.IF} (${this.buildPortValue(item)}) ${constants.SCOPE_OPEN}${EOL}`;
+    const expression = child.action.data.expression;
+    res += `${SCOPE_INDENT}${constants.IF} (${expression}) ${constants.SCOPE_OPEN}${EOL}`;
 
     return this.genBodyCloser(res, child, prosessed);
   }
@@ -218,12 +215,8 @@ export default class WorkflowGenerator {
 
     let res = '';
 
-    const item = child.i.condition;
-    if (_.isUndefined(item)) {
-      throw new Error('If statement model is not valid');
-    }
-
-    res += `${SCOPE_INDENT}${constants.WHILE} (${this.buildPortValue(item)}) ${constants.SCOPE_OPEN}${EOL}`;
+    const expression = child.action.data.expression;
+    res += `${SCOPE_INDENT}${constants.WHILE} (${expression}) ${constants.SCOPE_OPEN}${EOL}`;
 
     return this.genBodyCloser(res, child, prosessed);
   }
