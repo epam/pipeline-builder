@@ -3,7 +3,8 @@ import joint from 'jointjs';
 
 const cDefaultWidth = 100;
 const cMinHeight = 100;
-const cPixelPerSymbol = 15;
+const cPixelPerSymbol = 10;
+const cLabelMargin = 20;
 const cHeightPerPort = 50;
 
 function findMaxLen(strList) {
@@ -50,7 +51,7 @@ export default class VisualStep extends joint.shapes.devs.Model {
     const outNames = Object.keys(step.o);
     const height = Math.max(cMinHeight, cHeightPerPort * Math.max(inNames.length, outNames.length));
     const label = this._getLabel();
-    const width = Math.max(cDefaultWidth, label.length * cPixelPerSymbol);
+    const width = Math.max(cDefaultWidth, label.length * cPixelPerSymbol + 2 * cLabelMargin);
     this.set({
       inPorts: inNames,
       outPorts: outNames,
