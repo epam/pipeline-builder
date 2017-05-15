@@ -170,29 +170,10 @@ export default class WDLWorkflow {
 
   resolveBinding(node, step, parentStep) {
     const nodeValue = node.attributes.value;
-    const attributes = nodeValue.attributes;
-
-    const declaration = node.attributes.key ? node.attributes.key.source_string : undefined;
-
-    if (declaration && nodeValue.name === 'MemberAccess') {
-      const rhsPart = attributes && attributes.rhs ? attributes.rhs.source_string : '';
-      const lhsPart = attributes && attributes.lhs ? attributes.lhs.source_string : '';
-
-      const startStep = WDLWorkflow.findStepInStructureRecursively(this.workflowStep, lhsPart);
-      if (startStep && step) {
-        step.i[declaration].bind(startStep.o[rhsPart]);
-      }
-    } else if (declaration && nodeValue.str === 'identifier') {
-      const portName = nodeValue.source_string;
-      const portStep = WDLWorkflow.groupNameResolver(parentStep, portName);
-      if (_.isUndefined(portStep)) {
-        step.i[declaration].bind(portName);
-      } else {
-        step.i[declaration].bind(portStep.i[portName]);
-      }
-    } else {
+    const declaration = node.attributes.key.source_string;
+    if (declaration) {
       const expression = extractExpression(nodeValue);
-      step.i[declaration].bind(expression.string);
+      step.i[declaration].bind(WDLWorkflow.getPortForBinding(this.workflowStep, parentStep, expression));
     }
   }
 
