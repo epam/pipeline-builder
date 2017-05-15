@@ -301,6 +301,130 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(workflow.workflowStep.children.scatter_0.type).to.equal('scatter');
     });
 
+    it('supports group level name resolving', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'File',
+                  line: 3,
+                  col: 1,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'wf_input',
+                  line: 3,
+                  col: 6,
+                },
+                expression: null,
+              },
+            },
+            {
+              name: 'Scatter',
+              attributes: {
+                item: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'i',
+                  line: 3,
+                  col: 11,
+                },
+                collection: {
+                  id: 14,
+                  str: 'string',
+                  source_string: '1234',
+                  line: 3,
+                  col: 16,
+                },
+                body: {
+                  list: [
+                    {
+                      name: 'Call',
+                      attributes: {
+                        task: {
+                          id: 11,
+                          str: 'fqn',
+                          source_string: 'bar',
+                          line: 3,
+                          col: 6,
+                        },
+                        alias: null,
+                        body: {
+                          name: 'CallBody',
+                          attributes: {
+                            declarations: {
+                              list: [],
+                            },
+                            io: {
+                              list: [
+                                {
+                                  name: 'Inputs',
+                                  attributes: {
+                                    map: {
+                                      list: [
+                                        {
+                                          name: 'IOMapping',
+                                          attributes: {
+                                            key: {
+                                              id: 14,
+                                              str: 'identifier',
+                                              source_string: 'currSample',
+                                              line: 8,
+                                              col: 9,
+                                            },
+                                            value: {
+                                              id: 14,
+                                              str: 'identifier',
+                                              source_string: 'wf_input',
+                                              line: 8,
+                                              col: 20,
+                                            },
+                                          },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      const context = {
+        actionMap: {
+          bar: {
+            i: {
+              currSample: new Port('currSample'),
+            },
+          },
+        },
+      };
+      const workflow = new WDLWorkflow(ast, context);
+      expect(workflow.workflowStep.children.scatter_0.type).to.equal('scatter');
+    });
+
     it('supports loop', () => {
       const ast = {
         name: {
@@ -590,7 +714,6 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
 
       expect(workflow.workflowStep.action.o).to.have.all.keys(['bar.out']);
     });
-
 
     it('supports workflow outputs with wildcard2', () => {
       const ast = {
