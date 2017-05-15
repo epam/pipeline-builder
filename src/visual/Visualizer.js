@@ -147,8 +147,19 @@ export default class Visualizer {
 
         if (magnetS.getAttribute('port-group') === 'in') {
           const sourceStep = cellViewS.model.step;
+          const recursiveCheck = (step, childName) => {
+            let res = false;
+            _.forEach(step.children, (child) => {
+              if (child.name === childName || recursiveCheck(child, childName)) {
+                res = true;
+                return false;
+              }
+              return undefined;
+            });
+            return res;
+          };
 
-          if (!_.has(sourceStep.children, targetStep.name)) {
+          if (!recursiveCheck(sourceStep, targetStep.name)) {
             return false;
           }
         }
