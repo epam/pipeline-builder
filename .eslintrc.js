@@ -46,6 +46,11 @@ module.exports = {
       property: 'pow',
       message: 'Use the exponentiation operator (**) instead.',
     }*/],
+    // We had to enable this in order to bundle jointjs
+    'import/no-extraneous-dependencies': ['error', {
+      devDependencies: true,
+      optionalDependencies: false,
+    }],
     'max-len': ['error', 120, 2, {
       ignoreUrls: true,
       ignoreComments: true,

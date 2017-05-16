@@ -23,8 +23,8 @@ export default {
     rollupPluginCommonJS({
       include: ['./node_modules/**', './src/parser/WDL/hermes/wdl_parser.js'],
       namedExports: {
-        './node_modules/jointjs/dist/joint.min.js': [ 'joint', 'V', 'g' ],
-      }
+        './node_modules/jointjs/dist/joint.min.js': ['joint', 'V', 'g'],
+      },
     }),
     rollupPluginBabel({
       babelrc: false,
