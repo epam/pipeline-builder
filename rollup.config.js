@@ -4,6 +4,7 @@
 import rollupPluginBabel from 'rollup-plugin-babel';
 import rollupPluginCommonJS from 'rollup-plugin-commonjs';
 import rollupPluginReplace from 'rollup-plugin-replace';
+import rollupPluginNodeResolve from 'rollup-plugin-node-resolve';
 
 const version = require('./version');
 const packageJson = require('./package.json');
@@ -13,14 +14,17 @@ const copyright = `${packageJson.description} v${version.combined} Copyright (c)
 export default {
   entry: './src/pipeline.js',
   banner: `/*! ${copyright} */`,
-  external: ['lodash', 'jointjs'],
+  external: ['lodash'],
   globals: {
     lodash: '_',
-    jointjs: 'joint',
   },
   plugins: [
+    rollupPluginNodeResolve(),
     rollupPluginCommonJS({
-      include: './src/parser/WDL/hermes/wdl_parser.js',
+      include: ['./node_modules/**', './src/parser/WDL/hermes/wdl_parser.js'],
+      namedExports: {
+        './node_modules/jointjs/dist/joint.min.js': ['joint', 'V', 'g'],
+      },
     }),
     rollupPluginBabel({
       babelrc: false,
