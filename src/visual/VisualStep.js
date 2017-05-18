@@ -49,9 +49,10 @@ export default class VisualStep extends joint.shapes.devs.Model {
     const step = this.step;
     const inNames = Object.keys(step.i);
     const outNames = Object.keys(step.o);
-    const height = Math.max(cMinHeight, cHeightPerPort * Math.max(inNames.length, outNames.length));
+    const size = this.attributes.size;
+    const height = Math.max(cMinHeight, cHeightPerPort * Math.max(inNames.length, outNames.length), size.height);
     const label = this._getLabel();
-    const width = Math.max(cDefaultWidth, label.length * cPixelPerSymbol + 2 * cLabelMargin);
+    const width = Math.max(cDefaultWidth, label.length * cPixelPerSymbol + 2 * cLabelMargin, size.width);
     this.set({
       inPorts: inNames,
       outPorts: outNames,
