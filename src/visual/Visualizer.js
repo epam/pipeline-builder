@@ -6,8 +6,6 @@ import VisualLink from './VisualLink';
 import VisualStep from './VisualStep';
 import VisualGroup from './VisualGroup';
 
-import Group from '../model/Group';
-
 import Zoom from './Zoom';
 
 // Code below is an official fix for Chrome 57 from JointJS
@@ -147,6 +145,25 @@ export default class Visualizer {
         const targetPortName = magnetT.attributes.port.value;
         const targetStep = cellViewT.model.step;
 
+        if (magnetS.getAttribute('port-group') === 'in') {
+          const sourceStep = cellViewS.model.step;
+          const recursiveCheck = (step, childName) => {
+            let res = false;
+            _.forEach(step.children, (child) => {
+              if (child.name === childName || recursiveCheck(child, childName)) {
+                res = true;
+                return false;
+              }
+              return undefined;
+            });
+            return res;
+          };
+
+          if (!recursiveCheck(sourceStep, targetStep.name)) {
+            return false;
+          }
+        }
+
         return _.size(targetStep.i[targetPortName].inputs) === 0;
       }
       return false;
@@ -229,14 +246,9 @@ export default class Visualizer {
     const links = this._graph.getConnectedLinks(source);
     _.forEach(ports, (port) => {
       _.forEach(port.outputs, (conn) => {
-        const srcIsGroup = conn.from.step instanceof Group;
-        const dstIsGroup = conn.to.step instanceof Group;
-
         const targetName = conn.to.step.name;
         if (children[targetName] &&
-          _.find(links, link => link.conn === conn) === undefined &&
-          !srcIsGroup &&
-          !dstIsGroup) {
+          _.find(links, link => link.conn === conn) === undefined) {
           const link = new VisualLink({
             source: {
               id: source.id,
@@ -372,7 +384,12 @@ export default class Visualizer {
         if (!targetChild || !sourceChild) {
           return;
         }
-        const sourcePort = sourceChild.o[link.get('source').port];
+
+        const srcPortName = link.get('source').port;
+        const sourcePort = this.paper.findViewByModel(link).sourceMagnet.getAttribute('port-group') === 'in' ?
+          sourceChild.i[srcPortName] :
+          sourceChild.o[srcPortName];
+
         const targetPort = targetChild.i[link.get('target').port];
         link.conn = targetPort.bind(sourcePort);
       }

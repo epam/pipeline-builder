@@ -54,10 +54,7 @@ export default class WorkflowGenerator {
 
     let res = '';
 
-    if (!step.type) {
-      res += buildDeclarations(declarations, this.settings);
-    }
-
+    res += buildDeclarations(declarations, this.settings);
 
     for (let i = 0, size = _.size(children); i < size; ++i) {
       const childName = this.getNextOrderedChild(children, prosessed);
@@ -184,9 +181,18 @@ export default class WorkflowGenerator {
 
     let res = '';
 
-    const item = child.action.data.variable;
-    const collection = child.action.data.collection;
-    res += `${SCOPE_INDENT}${constants.SCATTER} (${item} ${constants.IN} ${collection}) {${EOL}`;
+    let item;
+    _.forEach(child.i, (val) => {
+      if (val.desc.type === 'ScatterItem') {
+        item = val;
+      }
+    });
+
+    if (_.isUndefined(item)) {
+      throw new Error('Scatter model is not valid');
+    }
+
+    res += `${SCOPE_INDENT}${constants.SCATTER} (${item.name} ${constants.IN} ${this.buildPortValue(item)}) {${EOL}`;
 
     return this.genBodyCloser(res, child, prosessed);
   }

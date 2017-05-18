@@ -10,7 +10,9 @@ export function buildDeclarations(declarations, settings) { // eslint-disable-li
   let res = '';
 
   _.forEach(declarations, (decl, name) => {
-    res += `${SCOPE_INDENT}${decl.type} ${name}${decl.default ? buildDeclarationValue(decl.default) : ''}${EOL}`;
+    if (decl.type !== 'Condition' && decl.type !== 'ScatterItem') {
+      res += `${SCOPE_INDENT}${decl.type} ${name}${decl.default ? buildDeclarationValue(decl.default) : ''}${EOL}`;
+    }
   });
 
   return `${res}${EOL}`;
