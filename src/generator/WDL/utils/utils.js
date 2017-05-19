@@ -11,7 +11,7 @@ export function escapeWDLString(src) {
     '\\\\t': '\\\\t',
     '\\\\f': '\\\\f',
     '\\\\a': '\\\\a',
-    '\\\\v': '\\\\v'
+    '\\\\v': '\\\\v',
   };
 
   _.forEach(escapes, (val, key) => {
