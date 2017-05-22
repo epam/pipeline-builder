@@ -29,11 +29,9 @@ export default class VisualGroup extends VisualStep {
   }
 
   /**
-   * Updates visual step according to the model.
+   * Call fit embeds with default params.
    */
-  update() {
-    super.update();
-
+  fit() {
     if (this.graph) {
       this.fitEmbeds({
         padding: this.attributes.embedsPadding,

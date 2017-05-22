@@ -168,6 +168,15 @@ export default class Visualizer {
       }
       return false;
     };
+
+    graph.on('change:position', (cell) => {
+      let parentId = cell.get('parent');
+      while (parentId) {
+        const parent = graph.getCell(parentId);
+        parent.fit();
+        parentId = parent.get('parent');
+      }
+    });
   }
 
   /**
@@ -331,6 +340,7 @@ export default class Visualizer {
           this._graph.addCell(visChild);
           if (parent) {
             parent.embed(visChild);
+            parent.fit();
             parent.update();
           }
         } else {
