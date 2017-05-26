@@ -37,6 +37,8 @@ describe('model/Step', () => {
       expect(step.action).to.equal(action);
       expect(step.i).to.have.all.keys(Object.keys(config.i));
       expect(step.o).to.have.all.keys(Object.keys(config.o));
+      _.forEach(step.i, port => expect(step.hasInputPort(port)).to.be.true);
+      _.forEach(step.o, port => expect(step.hasOutputPort(port)).to.be.true);
     });
 
     it('creates an action automatically from a config', () => {

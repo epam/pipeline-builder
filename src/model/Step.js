@@ -272,6 +272,24 @@ export default class Step {
     return callback.after && callback.after(this);
   }
 
+  /**
+   * Checks whether or not a Port instance is an input port of this step.
+   * @param {Port} port
+   * @returns {boolean}
+   */
+  hasInputPort(port) {
+    return this.i[port.name] === port;
+  }
+
+  /**
+   * Checks whether or not a Port instance is an output port of this step.
+   * @param {Port} port
+   * @returns {boolean}
+   */
+  hasOutputPort(port) {
+    return this.o[port.name] === port;
+  }
+
   _onActionChanged() {
     this.i = syncPortsWithDesc(this.i, this.action.i, this);
     this.o = syncPortsWithDesc(this.o, this.action.o, this);
