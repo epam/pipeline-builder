@@ -250,7 +250,7 @@ export default class Visualizer {
     joint.layout.DirectedGraph.layout(newCells, settings);
   }
 
-  _loopPorts(ports, source) {
+  _loopPorts(ports, source, cellsToAdd) {
     const children = this._children;
     const links = this._graph.getConnectedLinks(source);
     _.forEach(ports, (port) => {
@@ -269,7 +269,7 @@ export default class Visualizer {
             },
             conn,
           });
-          link.addTo(this._graph);
+          cellsToAdd[cellsToAdd.length] = link;
         }
       });
     });
@@ -323,6 +323,7 @@ export default class Visualizer {
       delete children[child.step.name];
     });
 
+    const cellsToAdd = [];
     const updateOrCreateVisualSteps = (innerStep, parent = null) => {
       const innerChildren = innerStep.children;
       _.forEach(innerChildren, (child, name) => {
@@ -337,7 +338,7 @@ export default class Visualizer {
 
           children[name] = visChild;
 
-          this._graph.addCell(visChild);
+          cellsToAdd[cellsToAdd.length] = visChild;
           if (parent) {
             parent.embed(visChild);
             parent.fit();
@@ -361,9 +362,11 @@ export default class Visualizer {
     updateOrCreateVisualSteps(step);
 
     _.forEach(children, (child) => {
-      this._loopPorts(child.step.o, child);
-      this._loopPorts(child.step.i, child);
+      this._loopPorts(child.step.o, child, cellsToAdd);
+      this._loopPorts(child.step.i, child, cellsToAdd);
     });
+
+    this._graph.addCells(cellsToAdd);
   }
 
   _listenLinks() {
