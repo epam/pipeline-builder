@@ -43,17 +43,16 @@ export default class Paper extends joint.dia.Paper {
           return false;
         }
 
-        const hasEmptyPortClass = (magnet) => {
+        const hasPortClass = (magnet) => {
           const classStr = magnet.getAttribute('class');
-          return classStr && classStr.indexOf('empty') !== -1;
+          return classStr && classStr.indexOf('port-body') !== -1;
         };
         // source
-        if (!magnetS || !hasEmptyPortClass(magnetS)) {
+        if (!magnetS || !hasPortClass(magnetS)) {
           return false;
         }
         // target
-        if (!magnetT || !hasEmptyPortClass(magnetT) ||
-          magnetT.getAttribute('port-group') !== 'in') {
+        if (!magnetT || !hasPortClass(magnetT)) {
           return false;
         }
 

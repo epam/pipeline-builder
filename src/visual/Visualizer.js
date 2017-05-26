@@ -166,32 +166,40 @@ export default class Visualizer {
     this.paper.options.validateConnection = (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
       const args = [cellViewS, magnetS, cellViewT, magnetT, end, linkView];
 
-      if (validateConnection.apply(this.paper, args)) {
-        const targetPortName = magnetT.attributes.port.value;
-        const targetStep = cellViewT.model.step;
-
-        if (magnetS.getAttribute('port-group') === 'in') {
-          const sourceStep = cellViewS.model.step;
-          const recursiveCheck = (step, childName) => {
-            let res = false;
-            _.forEach(step.children, (child) => {
-              if (child.name === childName || recursiveCheck(child, childName)) {
-                res = true;
-                return false;
-              }
-              return undefined;
-            });
-            return res;
-          };
-
-          if (!recursiveCheck(sourceStep, targetStep.name)) {
-            return false;
-          }
-        }
-
-        return _.size(targetStep.i[targetPortName].inputs) === 0;
+      if (!validateConnection.apply(this.paper, args)) {
+        return false;
       }
-      return false;
+
+      const source = cellViewS.model;
+      const target = cellViewT.model;
+
+      const sourceIsAncestor = target.isEmbeddedIn(source, { deep: true });
+      const targetIsAncestor = source.isEmbeddedIn(target, { deep: true });
+      const sourcePortIsInput = magnetS.getAttribute('port-group') === 'in';
+      const targetPortIsInput = magnetT.getAttribute('port-group') === 'in';
+
+      // one may only link step's input if it is an ancestor
+      // and it is connected to descendants input
+      if (sourcePortIsInput && (!sourceIsAncestor || !targetPortIsInput)) {
+        return false;
+      }
+
+      // output port may only be a target port if the source port
+      // is the target port of a descendant
+      if (!targetPortIsInput && (!targetIsAncestor || sourcePortIsInput)) {
+        return false;
+      }
+
+      // one may not connect ancestor's/descendant's output
+      // with descendant's/ancestor's input
+      if ((sourceIsAncestor || targetIsAncestor) && !sourcePortIsInput && targetPortIsInput) {
+        return false;
+      }
+
+      const targetStep = target.step;
+      const targetPortName = magnetT.attributes.port.value;
+      const targetGroup = targetPortIsInput ? targetStep.i : targetStep.o;
+      return _.size(targetGroup[targetPortName].inputs) === 0;
     };
 
     graph.on('change:position', (cell) => {
@@ -432,7 +440,10 @@ export default class Visualizer {
           sourceChild.i[srcPortName] :
           sourceChild.o[srcPortName];
 
-        const targetPort = targetChild.i[link.get('target').port];
+        const dstPortName = link.get('target').port;
+        const targetPort = this.paper.findViewByModel(link).targetMagnet.getAttribute('port-group') === 'in' ?
+          targetChild.i[dstPortName] :
+          targetChild.o[dstPortName];
         link.conn = targetPort.bind(sourcePort);
       }
     }, this);
