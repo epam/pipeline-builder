@@ -83,6 +83,18 @@ function createSubstituteCells(graph) {
   return gr;
 }
 
+class VisualWorkflowView extends joint.dia.ElementView {
+  pointerdown(evt, x, y) {
+    if (evt.target.getAttribute('magnet') && evt.which === 1 && evt.shiftKey) {
+      const port = evt.target.getAttribute('port');
+      const isIn = evt.target.getAttribute('port-group') === 'in';
+      this.model.togglePort(isIn, port);
+    } else {
+      super.pointerdown(evt, x, y);
+    }
+  }
+}
+
 /**
  * Class that allows to work with graphical pipeline representation.
  *
@@ -109,6 +121,8 @@ export default class Visualizer {
       height: element.offsetHeight,
       model: graph,
       defaultLink: new VisualLink(),
+      elementView: VisualWorkflowView,
+      clickThreshold: 1,
     });
 
     /**
@@ -250,14 +264,18 @@ export default class Visualizer {
     joint.layout.DirectedGraph.layout(newCells, settings);
   }
 
-  _loopPorts(ports, source, cellsToAdd) {
+  _loopPorts(ports, source, cellsToAdd, isEnabled) {
     const children = this._children;
     const links = this._graph.getConnectedLinks(source);
     _.forEach(ports, (port) => {
+      if (!isEnabled(port.name)) {
+        return;
+      }
       _.forEach(port.outputs, (conn) => {
         const targetName = conn.to.step.name;
         if (children[targetName] &&
-          _.find(links, link => link.conn === conn) === undefined) {
+          _.find(links, link => link.conn === conn) === undefined &&
+          children[targetName].isPortEnabled(conn.to.step.hasInputPort(conn.to), conn.to.name)) {
           const link = new VisualLink({
             source: {
               id: source.id,
@@ -362,8 +380,8 @@ export default class Visualizer {
     updateOrCreateVisualSteps(step);
 
     _.forEach(children, (child) => {
-      this._loopPorts(child.step.o, child, cellsToAdd);
-      this._loopPorts(child.step.i, child, cellsToAdd);
+      this._loopPorts(child.step.o, child, cellsToAdd, portName => child.isPortEnabled(false, portName));
+      this._loopPorts(child.step.i, child, cellsToAdd, portName => child.isPortEnabled(true, portName));
     });
 
     this._graph.addCells(cellsToAdd);
@@ -371,8 +389,8 @@ export default class Visualizer {
 
   _listenLinks() {
     const graph = this._graph;
-    graph.on('remove', (cell) => {
-      if (cell instanceof VisualLink && cell.conn && cell.conn.isValid()) {
+    graph.on('remove', (cell, child, opts) => {
+      if (cell instanceof VisualLink && cell.conn && cell.conn.isValid() && !opts.silent) {
         cell.conn.unbind();
       }
     }, this);
