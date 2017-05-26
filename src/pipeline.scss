@@ -57,7 +57,7 @@ $port-color-available: $lime-green;
   }
 
   .port-body.empty {
-    stroke: $dark-green;
+    stroke: $port-color-empty;
     stroke-width: 1.5px;
     fill: $white;
   }
@@ -88,6 +88,10 @@ $port-color-available: $lime-green;
   .body {
     fill: transparent;
   }
+}
+
+.joint-type-visualworkflow {
+  @extend .joint-type-visualstep;
 }
 
 .joint-link {

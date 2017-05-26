@@ -1,10 +1,12 @@
 import _ from 'lodash';
 import joint, { V } from 'jointjs';
 
+import Workflow from '../model/Workflow';
 import Paper from './Paper';
 import VisualLink from './VisualLink';
 import VisualStep from './VisualStep';
 import VisualGroup from './VisualGroup';
+import VisualWorkflow from './VisualWorkflow';
 
 import Zoom from './Zoom';
 
@@ -31,6 +33,15 @@ V.prototype.transform = function fun(matrix, opt) {
   node.transform.baseVal.appendItem(svgTransform);
   return this;
 };
+
+function createVisual(opts) {
+  if (opts.step instanceof Workflow) {
+    return new VisualWorkflow(opts);
+  } else if (!_.isUndefined(opts.step.type)) {
+    return new VisualGroup(opts);
+  }
+  return new VisualStep(opts);
+}
 
 function getDescendants(cell, currDepth) {
   const embeds = cell.getEmbeddedCells();
@@ -311,6 +322,9 @@ export default class Visualizer {
 
     const toRemove = [];
     const findChildInModel = (visChild, name, modelChild) => {
+      if (modelChild.name === name) {
+        return true;
+      }
       const modelChildren = modelChild.children;
 
       if (_.has(modelChildren, name)) {
@@ -343,37 +357,34 @@ export default class Visualizer {
 
     const cellsToAdd = [];
     const updateOrCreateVisualSteps = (innerStep, parent = null) => {
-      const innerChildren = innerStep.children;
-      _.forEach(innerChildren, (child, name) => {
-        let visChild = children[name];
-        const opts = this.zoom.fromWidgetToLocal({
-          x: this.paper.el.offsetWidth / 2,
-          y: this.paper.el.offsetHeight / 2,
+      const name = innerStep.name;
+      let visChild = children[name];
+      const opts = this.zoom.fromWidgetToLocal({
+        x: this.paper.el.offsetWidth / 2,
+        y: this.paper.el.offsetHeight / 2,
+      });
+      opts.step = innerStep;
+      if (!visChild) {
+        visChild = createVisual(opts);
+        children[name] = visChild;
+        cellsToAdd[cellsToAdd.length] = visChild;
+        if (parent) {
+          parent.embed(visChild);
+          parent.fit();
+          parent.update();
+        }
+      } else {
+        // it is essential to update links before the step!
+        const links = this._graph.getConnectedLinks(visChild);
+        _.forEach(links, (link) => {
+          link.refresh();
         });
-        opts.step = child;
-        if (!visChild) {
-          visChild = _.isUndefined(child.type) ? new VisualStep(opts) : new VisualGroup(opts);
+        visChild.update();
+      }
 
-          children[name] = visChild;
-
-          cellsToAdd[cellsToAdd.length] = visChild;
-          if (parent) {
-            parent.embed(visChild);
-            parent.fit();
-            parent.update();
-          }
-        } else {
-          // it is essential to update links before the step!
-          const links = this._graph.getConnectedLinks(visChild);
-          _.forEach(links, (link) => {
-            link.refresh();
-          });
-          visChild.update();
-        }
-
-        if (child.children) {
-          updateOrCreateVisualSteps(child, visChild);
-        }
+      const innerChildren = innerStep.children;
+      _.forEach(innerChildren, (child) => {
+        updateOrCreateVisualSteps(child, visChild);
       });
     };
 
