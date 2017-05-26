@@ -164,7 +164,7 @@ const processors = {
   },
   default: (scope) => {
     if (scope.ast.str === 'string') {
-      scope.res.string = `"${scope.ast.source_string}"`;
+      scope.res.string = `"${JSON.stringify(scope.ast.source_string).slice(1, -1)}"`;
       scope.res.type = 'string';
     } else {
       scope.res.string = scope.ast.source_string;
