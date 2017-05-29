@@ -25,3 +25,15 @@ Demo app GUI consists of the following sections
     * `Fit to screen` button - scales and centers a pipeline representation to optimally fill available canvas space
 
 ![general-view](images/pb-manual-gui-sections.png)
+
+## Opening WDL from URL
+
+Pipeline-builder demo application also allows to use URL encoded references to the scripts
+
+There are two allowed parameters: 
+* `?url=<remote url>`
+* `?id=<demo name from tool library>`
+
+Examples:
+- [http://pb.opensource.epam.com:10000/?url=https://raw.githubusercontent.com/broadinstitute/wdl/develop/scripts/broad_dsde_workflows/ExtractSamHeadersWf_170107.wdl](http://pb.opensource.epam.com:10000/?url=https://raw.githubusercontent.com/broadinstitute/wdl/develop/scripts/broad_dsde_workflows/ExtractSamHeadersWf_170107.wdl)
+- [http://pb.opensource.epam.com:10000/?id=SimpleVariantSelection](http://pb.opensource.epam.com:10000/?id=SimpleVariantSelection)
