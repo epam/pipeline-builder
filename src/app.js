@@ -112,6 +112,14 @@ processButton('btn-layout', () => {
   diagram.layout();
 });
 
+processButton('btn-en-ports', () => {
+  diagram.togglePorts(true);
+});
+
+processButton('btn-dis-ports', () => {
+  diagram.togglePorts(false);
+});
+
 initialize();
 if (module.hot) {
   module.hot.accept(initialize);
