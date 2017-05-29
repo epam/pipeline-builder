@@ -112,7 +112,7 @@ export default class VisualStep extends joint.shapes.devs.Model {
     if (_.isUndefined(portsOn[portName])) {
       return;
     }
-    value = value || !portsOn[portName];
+    value = _.isUndefined(value) ? !portsOn[portName] : value;
     portsOn[portName] = value;
   }
 

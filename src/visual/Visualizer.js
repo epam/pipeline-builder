@@ -286,6 +286,13 @@ export default class Visualizer {
     joint.layout.DirectedGraph.layout(newCells, settings);
   }
 
+  togglePorts(value) {
+    _.forEach(this._children, (child) => {
+      _.forOwn(child.step.i, (port, name) => child.togglePort(true, name, value));
+      _.forOwn(child.step.o, (port, name) => child.togglePort(false, name, value));
+    });
+  }
+
   _loopPorts(ports, source, cellsToAdd, isEnabled) {
     const children = this._children;
     const links = this._graph.getConnectedLinks(source);
