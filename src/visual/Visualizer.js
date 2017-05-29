@@ -100,6 +100,9 @@ class VisualWorkflowView extends joint.dia.ElementView {
       const port = evt.target.getAttribute('port');
       const isIn = evt.target.getAttribute('port-group') === 'in';
       this.model.togglePort(isIn, port);
+      this._dx = x;
+      this._dy = y;
+      evt.stopPropagation();
     } else {
       super.pointerdown(evt, x, y);
     }
