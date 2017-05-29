@@ -25,6 +25,11 @@ To edit a built pipeline visual representation the following operations are supp
     * `Link` object from a WDL script will be deleted as well
 
     ![pd-edge-done](images/pd-edge-done.png)
+    
+* Enable/disable ports. Press *Shift+LMB* on a port to toggle its current state. Disabled ports
+  appear transparent and all adjacent `links` are hidden. Workflow ports are disabled by default. These 
+  changes only affect visual representation!
+  ![pd-ports-toggling](images/pb-ports-toggling.png)
 
 * Modify node properties (`task`)
     * Select a node by clicking it with a left mouse button

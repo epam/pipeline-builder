@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import Step from './Step';
+import Group from './Group';
 
 /**
  * Class representing the entire workflow.
@@ -14,7 +14,7 @@ import Step from './Step';
  * });
  * const hello = test.add(new Step('hello', ...));
  */
-class Workflow extends Step {
+class Workflow extends Group {
 
   /**
    * Create a workflow.
@@ -25,7 +25,7 @@ class Workflow extends Step {
    * @param {object} [config={}] - Workflow configuration containing input bindings.
    */
   constructor(name, config = {}) {
-    super(name, config);
+    super(name, 'workflow', config);
     /**
      * A dictionary of actions to be (probably) used in the workflow.
      *

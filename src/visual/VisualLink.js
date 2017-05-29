@@ -22,6 +22,15 @@ export default class VisualLink extends joint.shapes.devs.Link {
     }
   }
 
+  _checkPorts() {
+    const conn = this.conn;
+    const source = this.getSourceElement();
+    const target = this.getTargetElement();
+
+    return source.isPortEnabled(conn.from.step.hasInputPort(conn.from), this.get('source').port) &&
+           target.isPortEnabled(conn.to.step.hasInputPort(conn.to), this.get('target').port);
+  }
+
   /**
    * Updates visual link according to the model.
    */
@@ -30,11 +39,12 @@ export default class VisualLink extends joint.shapes.devs.Link {
     if (!conn) {
       return;
     }
-    if (conn.isValid()) {
+    const isValidConn = conn.isValid();
+    if (isValidConn && this._checkPorts()) {
       this._check('source', conn.from);
       this._check('target', conn.to);
     } else {
-      this.remove();
+      this.remove({ silent: isValidConn });
     }
   }
 

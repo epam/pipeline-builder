@@ -43,29 +43,16 @@ export default class Paper extends joint.dia.Paper {
           return false;
         }
 
-        const isSuitablePortClass = (magnet) => {
-          const availableClasses = [
-            'port-body',
-            'port-body-empty',
-            'available-magnet',
-          ];
-
-          let result = true;
-          const portClasses = magnet.getAttribute('class').split(/\s+/);
-
-          _.forEach(portClasses, (portClass) => {
-            result = result && (availableClasses.indexOf(portClass) >= 0);
-          });
-
-          return result;
+        const hasPortClass = (magnet) => {
+          const classStr = magnet.getAttribute('class');
+          return classStr && classStr.indexOf('port-body') !== -1;
         };
         // source
-        if (!magnetS || !isSuitablePortClass(magnetS)) {
+        if (!magnetS || !hasPortClass(magnetS)) {
           return false;
         }
         // target
-        if (!magnetT || !isSuitablePortClass(magnetT) ||
-          magnetT.getAttribute('port-group') !== 'in') {
+        if (!magnetT || !hasPortClass(magnetT)) {
           return false;
         }
 

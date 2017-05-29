@@ -56,14 +56,18 @@ $port-color-available: $lime-green;
     fill: $port-color;
   }
 
-  .port-body-empty {
+  .port-body.empty {
     stroke: $port-color-empty;
     stroke-width: 1.5px;
     fill: $white;
   }
 
-  .available-magnet {
+  .port-body.available-magnet {
     fill: $port-color-available;
+  }
+
+  .port-body.disabled {
+    opacity: 0.5;
   }
 
   .port-body:hover {
@@ -84,6 +88,10 @@ $port-color-available: $lime-green;
   .body {
     fill: transparent;
   }
+}
+
+.joint-type-visualworkflow {
+  @extend .joint-type-visualstep;
 }
 
 .joint-link {

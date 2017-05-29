@@ -1,10 +1,12 @@
 import _ from 'lodash';
 import joint, { V } from 'jointjs';
 
+import Workflow from '../model/Workflow';
 import Paper from './Paper';
 import VisualLink from './VisualLink';
 import VisualStep from './VisualStep';
 import VisualGroup from './VisualGroup';
+import VisualWorkflow from './VisualWorkflow';
 
 import Zoom from './Zoom';
 
@@ -31,6 +33,15 @@ V.prototype.transform = function fun(matrix, opt) {
   node.transform.baseVal.appendItem(svgTransform);
   return this;
 };
+
+function createVisual(opts) {
+  if (opts.step instanceof Workflow) {
+    return new VisualWorkflow(opts);
+  } else if (!_.isUndefined(opts.step.type)) {
+    return new VisualGroup(opts);
+  }
+  return new VisualStep(opts);
+}
 
 function getDescendants(cell, currDepth) {
   const embeds = cell.getEmbeddedCells();
@@ -83,6 +94,21 @@ function createSubstituteCells(graph) {
   return gr;
 }
 
+class VisualWorkflowView extends joint.dia.ElementView {
+  pointerdown(evt, x, y) {
+    if (evt.target.getAttribute('magnet') && evt.which === 1 && evt.shiftKey) {
+      const port = evt.target.getAttribute('port');
+      const isIn = evt.target.getAttribute('port-group') === 'in';
+      this.model.togglePort(isIn, port);
+      this._dx = x;
+      this._dy = y;
+      evt.stopPropagation();
+    } else {
+      super.pointerdown(evt, x, y);
+    }
+  }
+}
+
 /**
  * Class that allows to work with graphical pipeline representation.
  *
@@ -109,6 +135,8 @@ export default class Visualizer {
       height: element.offsetHeight,
       model: graph,
       defaultLink: new VisualLink(),
+      elementView: VisualWorkflowView,
+      clickThreshold: 1,
     });
 
     /**
@@ -141,32 +169,40 @@ export default class Visualizer {
     this.paper.options.validateConnection = (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
       const args = [cellViewS, magnetS, cellViewT, magnetT, end, linkView];
 
-      if (validateConnection.apply(this.paper, args)) {
-        const targetPortName = magnetT.attributes.port.value;
-        const targetStep = cellViewT.model.step;
-
-        if (magnetS.getAttribute('port-group') === 'in') {
-          const sourceStep = cellViewS.model.step;
-          const recursiveCheck = (step, childName) => {
-            let res = false;
-            _.forEach(step.children, (child) => {
-              if (child.name === childName || recursiveCheck(child, childName)) {
-                res = true;
-                return false;
-              }
-              return undefined;
-            });
-            return res;
-          };
-
-          if (!recursiveCheck(sourceStep, targetStep.name)) {
-            return false;
-          }
-        }
-
-        return _.size(targetStep.i[targetPortName].inputs) === 0;
+      if (!validateConnection.apply(this.paper, args)) {
+        return false;
       }
-      return false;
+
+      const source = cellViewS.model;
+      const target = cellViewT.model;
+
+      const sourceIsAncestor = target.isEmbeddedIn(source, { deep: true });
+      const targetIsAncestor = source.isEmbeddedIn(target, { deep: true });
+      const sourcePortIsInput = magnetS.getAttribute('port-group') === 'in';
+      const targetPortIsInput = magnetT.getAttribute('port-group') === 'in';
+
+      // one may only link step's input if it is an ancestor
+      // and it is connected to descendants input
+      if (sourcePortIsInput && (!sourceIsAncestor || !targetPortIsInput)) {
+        return false;
+      }
+
+      // output port may only be a target port if the source port
+      // is the target port of a descendant
+      if (!targetPortIsInput && (!targetIsAncestor || sourcePortIsInput)) {
+        return false;
+      }
+
+      // one may not connect ancestor's/descendant's output
+      // with descendant's/ancestor's input
+      if ((sourceIsAncestor || targetIsAncestor) && !sourcePortIsInput && targetPortIsInput) {
+        return false;
+      }
+
+      const targetStep = target.step;
+      const targetPortName = magnetT.attributes.port.value;
+      const targetGroup = targetPortIsInput ? targetStep.i : targetStep.o;
+      return _.size(targetGroup[targetPortName].inputs) === 0;
     };
 
     graph.on('change:position', (cell) => {
@@ -250,14 +286,25 @@ export default class Visualizer {
     joint.layout.DirectedGraph.layout(newCells, settings);
   }
 
-  _loopPorts(ports, source) {
+  togglePorts(value) {
+    _.forEach(this._children, (child) => {
+      _.forOwn(child.step.i, (port, name) => child.togglePort(true, name, value));
+      _.forOwn(child.step.o, (port, name) => child.togglePort(false, name, value));
+    });
+  }
+
+  _loopPorts(ports, source, cellsToAdd, isEnabled) {
     const children = this._children;
     const links = this._graph.getConnectedLinks(source);
     _.forEach(ports, (port) => {
+      if (!isEnabled(port.name)) {
+        return;
+      }
       _.forEach(port.outputs, (conn) => {
         const targetName = conn.to.step.name;
         if (children[targetName] &&
-          _.find(links, link => link.conn === conn) === undefined) {
+          _.find(links, link => link.conn === conn) === undefined &&
+          children[targetName].isPortEnabled(conn.to.step.hasInputPort(conn.to), conn.to.name)) {
           const link = new VisualLink({
             source: {
               id: source.id,
@@ -269,7 +316,7 @@ export default class Visualizer {
             },
             conn,
           });
-          link.addTo(this._graph);
+          cellsToAdd[cellsToAdd.length] = link;
         }
       });
     });
@@ -293,6 +340,9 @@ export default class Visualizer {
 
     const toRemove = [];
     const findChildInModel = (visChild, name, modelChild) => {
+      if (modelChild.name === name) {
+        return true;
+      }
       const modelChildren = modelChild.children;
 
       if (_.has(modelChildren, name)) {
@@ -323,53 +373,53 @@ export default class Visualizer {
       delete children[child.step.name];
     });
 
+    const cellsToAdd = [];
     const updateOrCreateVisualSteps = (innerStep, parent = null) => {
-      const innerChildren = innerStep.children;
-      _.forEach(innerChildren, (child, name) => {
-        let visChild = children[name];
-        const opts = this.zoom.fromWidgetToLocal({
-          x: this.paper.el.offsetWidth / 2,
-          y: this.paper.el.offsetHeight / 2,
+      const name = innerStep.name;
+      let visChild = children[name];
+      const opts = this.zoom.fromWidgetToLocal({
+        x: this.paper.el.offsetWidth / 2,
+        y: this.paper.el.offsetHeight / 2,
+      });
+      opts.step = innerStep;
+      if (!visChild) {
+        visChild = createVisual(opts);
+        children[name] = visChild;
+        cellsToAdd[cellsToAdd.length] = visChild;
+        if (parent) {
+          parent.embed(visChild);
+          parent.fit();
+          parent.update();
+        }
+      } else {
+        // it is essential to update links before the step!
+        const links = this._graph.getConnectedLinks(visChild);
+        _.forEach(links, (link) => {
+          link.refresh();
         });
-        opts.step = child;
-        if (!visChild) {
-          visChild = _.isUndefined(child.type) ? new VisualStep(opts) : new VisualGroup(opts);
+        visChild.update();
+      }
 
-          children[name] = visChild;
-
-          this._graph.addCell(visChild);
-          if (parent) {
-            parent.embed(visChild);
-            parent.fit();
-            parent.update();
-          }
-        } else {
-          // it is essential to update links before the step!
-          const links = this._graph.getConnectedLinks(visChild);
-          _.forEach(links, (link) => {
-            link.refresh();
-          });
-          visChild.update();
-        }
-
-        if (child.children) {
-          updateOrCreateVisualSteps(child, visChild);
-        }
+      const innerChildren = innerStep.children;
+      _.forEach(innerChildren, (child) => {
+        updateOrCreateVisualSteps(child, visChild);
       });
     };
 
     updateOrCreateVisualSteps(step);
 
     _.forEach(children, (child) => {
-      this._loopPorts(child.step.o, child);
-      this._loopPorts(child.step.i, child);
+      this._loopPorts(child.step.o, child, cellsToAdd, portName => child.isPortEnabled(false, portName));
+      this._loopPorts(child.step.i, child, cellsToAdd, portName => child.isPortEnabled(true, portName));
     });
+
+    this._graph.addCells(cellsToAdd);
   }
 
   _listenLinks() {
     const graph = this._graph;
-    graph.on('remove', (cell) => {
-      if (cell instanceof VisualLink && cell.conn && cell.conn.isValid()) {
+    graph.on('remove', (cell, child, opts) => {
+      if (cell instanceof VisualLink && cell.conn && cell.conn.isValid() && !opts.silent) {
         cell.conn.unbind();
       }
     }, this);
@@ -400,7 +450,10 @@ export default class Visualizer {
           sourceChild.i[srcPortName] :
           sourceChild.o[srcPortName];
 
-        const targetPort = targetChild.i[link.get('target').port];
+        const dstPortName = link.get('target').port;
+        const targetPort = this.paper.findViewByModel(link).targetMagnet.getAttribute('port-group') === 'in' ?
+          targetChild.i[dstPortName] :
+          targetChild.o[dstPortName];
         link.conn = targetPort.bind(sourcePort);
       }
     }, this);
