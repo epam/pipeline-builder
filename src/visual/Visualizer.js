@@ -286,8 +286,15 @@ export default class Visualizer {
     joint.layout.DirectedGraph.layout(newCells, settings);
   }
 
-  togglePorts(value) {
-    _.forEach(this._children, (child) => {
+  /**
+   * Toggles ports on a diagram depending on the onlyTopLevel flag value
+   *
+   * @param {boolean} onlyTopLevel - if true applies changes only to the top level step attached
+   * @param {boolean}[value] - optional value to set
+   */
+  togglePorts(onlyTopLevel, value) {
+    const groupToEdit = onlyTopLevel ? [this._children[this._step.name]] : this._children;
+    _.forEach(groupToEdit, (child) => {
       _.forOwn(child.step.i, (port, name) => child.togglePort(true, name, value));
       _.forOwn(child.step.o, (port, name) => child.togglePort(false, name, value));
     });
