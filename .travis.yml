@@ -43,4 +43,4 @@ deploy:
       on:
           branch: master
 after_deploy:
-    - "curl \"http://35.164.165.183:8080/job/pipeline-wdl-builder-$TRAVIS_BRANCH/build?token=$JENKINS_SECRET_TOKEN\""
+    - "curl \"http://$JENKINS_SRV/job/pipeline-wdl-builder-$TRAVIS_BRANCH/build?token=$JENKINS_SECRET_TOKEN\""
