@@ -298,6 +298,7 @@ export default class Visualizer {
       _.forOwn(child.step.i, (port, name) => child.togglePort(true, name, value));
       _.forOwn(child.step.o, (port, name) => child.togglePort(false, name, value));
     });
+    this._update();
   }
 
   _loopPorts(ports, source, cellsToAdd, isEnabled) {
