@@ -197,6 +197,302 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       })).to.throws(WDLParserError);
     });
 
+    it('throws error when trying attempt to undeclared workflow level variable', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Call',
+              attributes: {
+                task: {
+                  id: 11,
+                  str: 'fqn',
+                  source_string: 'bar',
+                  line: 3,
+                  col: 6,
+                },
+                alias: null,
+                body: {
+                  name: 'CallBody',
+                  attributes: {
+                    declarations: {
+                      list: [],
+                    },
+                    io: {
+                      list: [
+                        {
+                          name: 'Inputs',
+                          attributes: {
+                            map: {
+                              list: [
+                                {
+                                  name: 'IOMapping',
+                                  attributes: {
+                                    key: {
+                                      id: 14,
+                                      str: 'identifier',
+                                      source_string: 'a',
+                                      line: 8,
+                                      col: 9,
+                                    },
+                                    value: {
+                                      id: 14,
+                                      str: 'identifier',
+                                      source_string: 'i',
+                                      line: 8,
+                                      col: 20,
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, {
+        actionMap: {
+          bar: {
+            i: {},
+            o: {},
+          },
+        },
+      })).to.throws(WDLParserError);
+    });
+
+    it('throws error when trying attempt to undeclared other call output', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Call',
+              attributes: {
+                task: {
+                  id: 11,
+                  str: 'fqn',
+                  source_string: 'bar',
+                  line: 3,
+                  col: 6,
+                },
+                alias: null,
+                body: null,
+              },
+            },
+            {
+              name: 'Call',
+              attributes: {
+                task: {
+                  id: 11,
+                  str: 'fqn',
+                  source_string: 'baz',
+                  line: 3,
+                  col: 6,
+                },
+                alias: null,
+                body: {
+                  name: 'CallBody',
+                  attributes: {
+                    declarations: {
+                      list: [],
+                    },
+                    io: {
+                      list: [
+                        {
+                          name: 'Inputs',
+                          attributes: {
+                            map: {
+                              list: [
+                                {
+                                  name: 'IOMapping',
+                                  attributes: {
+                                    key: {
+                                      id: 14,
+                                      str: 'identifier',
+                                      source_string: 'a',
+                                      line: 8,
+                                      col: 9,
+                                    },
+                                    value: {
+                                      id: 14,
+                                      name: 'MemberAccess',
+                                      attributes: {
+                                        lhs: {
+                                          id: 14,
+                                          str: 'identifier',
+                                          source_string: 'bar',
+                                          line: 7,
+                                          col: 18,
+                                        },
+                                        rhs: {
+                                          id: 14,
+                                          str: 'identifier',
+                                          source_string: 'out',
+                                          line: 7,
+                                          col: 22,
+                                        },
+                                      },
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, {
+        actionMap: {
+          bar: {
+            i: {},
+            o: {},
+          },
+          baz: {
+            i: {},
+            o: {},
+          },
+        },
+      })).to.throws(WDLParserError);
+    });
+
+    it('throws error when trying attempt to undeclared call', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Call',
+              attributes: {
+                task: {
+                  id: 11,
+                  str: 'fqn',
+                  source_string: 'bar',
+                  line: 3,
+                  col: 6,
+                },
+                alias: null,
+                body: null,
+              },
+            },
+            {
+              name: 'Call',
+              attributes: {
+                task: {
+                  id: 11,
+                  str: 'fqn',
+                  source_string: 'baz',
+                  line: 3,
+                  col: 6,
+                },
+                alias: null,
+                body: {
+                  name: 'CallBody',
+                  attributes: {
+                    declarations: {
+                      list: [],
+                    },
+                    io: {
+                      list: [
+                        {
+                          name: 'Inputs',
+                          attributes: {
+                            map: {
+                              list: [
+                                {
+                                  name: 'IOMapping',
+                                  attributes: {
+                                    key: {
+                                      id: 14,
+                                      str: 'identifier',
+                                      source_string: 'a',
+                                      line: 8,
+                                      col: 9,
+                                    },
+                                    value: {
+                                      id: 14,
+                                      name: 'MemberAccess',
+                                      attributes: {
+                                        lhs: {
+                                          id: 14,
+                                          str: 'identifier',
+                                          source_string: 'HELLO_ERROR_HERE',
+                                          line: 7,
+                                          col: 18,
+                                        },
+                                        rhs: {
+                                          id: 14,
+                                          str: 'identifier',
+                                          source_string: 'out',
+                                          line: 7,
+                                          col: 22,
+                                        },
+                                      },
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, {
+        actionMap: {
+          bar: {
+            i: {},
+            o: {},
+          },
+          baz: {
+            i: {},
+            o: {},
+          },
+        },
+      })).to.throws(WDLParserError);
+    });
+
     it('supports scatter', () => {
       const ast = {
         name: {

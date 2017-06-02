@@ -319,9 +319,22 @@ export default class WDLWorkflow {
       const lhsPart = expression.accesses[0].lhs;
 
       const outputStep = WDLWorkflow.findStepInStructureRecursively(workflow, lhsPart);
-      binder = outputStep.o[rhsPart];
+      if (outputStep) {
+        if (outputStep.o[rhsPart]) {
+          binder = outputStep.o[rhsPart];
+        } else {
+          throw new WDLParserError(`Undeclared variable ${lhsPart}.${rhsPart} referencing`);
+        }
+      } else {
+        throw new WDLParserError(`Undeclared call ${lhsPart} referencing`);
+      }
     } else if (expression.type === 'identifier') {
-      binder = WDLWorkflow.groupNameResolver(parent, expression.string).i[expression.string];
+      const desiredStep = WDLWorkflow.groupNameResolver(parent, expression.string);
+      if (desiredStep) {
+        binder = desiredStep.i[expression.string];
+      } else {
+        throw new WDLParserError(`Undeclared variable ${expression.string} referencing`);
+      }
     }
 
     return binder;
