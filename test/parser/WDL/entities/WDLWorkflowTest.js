@@ -197,7 +197,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       })).to.throws(WDLParserError);
     });
 
-    it('throws error when trying attempt to undeclared workflow level variable', () => {
+    it('throws error when trying to assign undeclared call variable', () => {
       const ast = {
         name: {
           id: 14,
@@ -264,11 +264,89 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
           ],
         },
       };
-
       expect(() => new WDLWorkflow(ast, {
         actionMap: {
           bar: {
             i: {},
+            o: {},
+          },
+        },
+      })).to.throws(WDLParserError);
+    });
+
+    it('throws error when trying attempt to undeclared workflow level variable', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Call',
+              attributes: {
+                task: {
+                  id: 11,
+                  str: 'fqn',
+                  source_string: 'bar',
+                  line: 3,
+                  col: 6,
+                },
+                alias: null,
+                body: {
+                  name: 'CallBody',
+                  attributes: {
+                    declarations: {
+                      list: [],
+                    },
+                    io: {
+                      list: [
+                        {
+                          name: 'Inputs',
+                          attributes: {
+                            map: {
+                              list: [
+                                {
+                                  name: 'IOMapping',
+                                  attributes: {
+                                    key: {
+                                      id: 14,
+                                      str: 'identifier',
+                                      source_string: 'a',
+                                      line: 8,
+                                      col: 9,
+                                    },
+                                    value: {
+                                      id: 14,
+                                      str: 'identifier',
+                                      source_string: 'input',
+                                      line: 8,
+                                      col: 20,
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      };
+      expect(() => new WDLWorkflow(ast, {
+        actionMap: {
+          bar: {
+            i: {
+              a: new Port('a'),
+            },
             o: {},
           },
         },
@@ -369,7 +447,6 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
           ],
         },
       };
-
       expect(() => new WDLWorkflow(ast, {
         actionMap: {
           bar: {
@@ -377,7 +454,9 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
             o: {},
           },
           baz: {
-            i: {},
+            i: {
+              a: new Port('a'),
+            },
             o: {},
           },
         },
@@ -486,7 +565,9 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
             o: {},
           },
           baz: {
-            i: {},
+            i: {
+              a: new Port('a'),
+            },
             o: {},
           },
         },
@@ -1285,11 +1366,311 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       const workflow = new WDLWorkflow(ast, {
         actionMap: {
           bar: {
+            i: {},
+            o: {
+              out: new Port('out'),
+            },
           },
         },
       });
 
       expect(workflow.workflowStep.action.o).to.have.all.keys(['wfOut']);
+    });
+
+    it('throws error if workflow output referenced to unknown call', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 3,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'a',
+                  line: 3,
+                  col: 7,
+                },
+                expression: {
+                  id: 2,
+                  str: 'integer',
+                  source_string: '5',
+                  line: 3,
+                  col: 11,
+                },
+              },
+            },
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 4,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'b',
+                  line: 4,
+                  col: 7,
+                },
+                expression: {
+                  name: 'Add',
+                  attributes: {
+                    lhs: {
+                      id: 2,
+                      str: 'integer',
+                      source_string: '5',
+                      line: 4,
+                      col: 11,
+                    },
+                    rhs: {
+                      id: 14,
+                      str: 'identifier',
+                      source_string: 'a',
+                      line: 4,
+                      col: 15,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              name: 'Call',
+              attributes: {
+                task: {
+                  id: 11,
+                  str: 'fqn',
+                  source_string: 'bar',
+                  line: 5,
+                  col: 8,
+                },
+                alias: null,
+                body: null,
+              },
+            },
+            {
+              name: 'WorkflowOutputs',
+              attributes: {
+                outputs: {
+                  list: [
+                    {
+                      name: 'WorkflowOutputDeclaration',
+                      attributes: {
+                        type: {
+                          id: 43,
+                          str: 'type',
+                          source_string: 'Int',
+                          line: 7,
+                          col: 6,
+                        },
+                        name: {
+                          id: 14,
+                          str: 'identifier',
+                          source_string: 'wfOut',
+                          line: 7,
+                          col: 10,
+                        },
+                        expression: {
+                          name: 'MemberAccess',
+                          attributes: {
+                            lhs: {
+                              id: 14,
+                              str: 'identifier',
+                              source_string: 'fizzbuzz',
+                              line: 7,
+                              col: 18,
+                            },
+                            rhs: {
+                              id: 14,
+                              str: 'identifier',
+                              source_string: 'out',
+                              line: 7,
+                              col: 22,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, {
+        actionMap: {
+          bar: {
+          },
+        },
+      })).to.throws(WDLParserError);
+    });
+
+    it('throws error if workflow output referenced to unknown call variable', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 3,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'a',
+                  line: 3,
+                  col: 7,
+                },
+                expression: {
+                  id: 2,
+                  str: 'integer',
+                  source_string: '5',
+                  line: 3,
+                  col: 11,
+                },
+              },
+            },
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 4,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'b',
+                  line: 4,
+                  col: 7,
+                },
+                expression: {
+                  name: 'Add',
+                  attributes: {
+                    lhs: {
+                      id: 2,
+                      str: 'integer',
+                      source_string: '5',
+                      line: 4,
+                      col: 11,
+                    },
+                    rhs: {
+                      id: 14,
+                      str: 'identifier',
+                      source_string: 'a',
+                      line: 4,
+                      col: 15,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              name: 'Call',
+              attributes: {
+                task: {
+                  id: 11,
+                  str: 'fqn',
+                  source_string: 'bar',
+                  line: 5,
+                  col: 8,
+                },
+                alias: null,
+                body: null,
+              },
+            },
+            {
+              name: 'WorkflowOutputs',
+              attributes: {
+                outputs: {
+                  list: [
+                    {
+                      name: 'WorkflowOutputDeclaration',
+                      attributes: {
+                        type: {
+                          id: 43,
+                          str: 'type',
+                          source_string: 'Int',
+                          line: 7,
+                          col: 6,
+                        },
+                        name: {
+                          id: 14,
+                          str: 'identifier',
+                          source_string: 'wfOut',
+                          line: 7,
+                          col: 10,
+                        },
+                        expression: {
+                          name: 'MemberAccess',
+                          attributes: {
+                            lhs: {
+                              id: 14,
+                              str: 'identifier',
+                              source_string: 'bar',
+                              line: 7,
+                              col: 18,
+                            },
+                            rhs: {
+                              id: 14,
+                              str: 'identifier',
+                              source_string: 'out',
+                              line: 7,
+                              col: 22,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, {
+        actionMap: {
+          bar: {
+          },
+        },
+      })).to.throws(WDLParserError);
     });
 
     it('supports workflow to have a meta block', () => {
