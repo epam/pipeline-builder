@@ -171,9 +171,12 @@ export default class WDLWorkflow {
   resolveBinding(node, step, parentStep) {
     const nodeValue = node.attributes.value;
     const declaration = node.attributes.key.source_string;
-    if (declaration) {
-      const expression = extractExpression(nodeValue);
+    const expression = extractExpression(nodeValue);
+
+    if (step.i[declaration]) {
       step.i[declaration].bind(WDLWorkflow.getPortForBinding(this.workflowStep, parentStep, expression));
+    } else {
+      throw new WDLParserError(`Undeclared variable trying to be assigned: call '${step.name}' --> '${declaration}'`);
     }
   }
 
@@ -250,7 +253,17 @@ export default class WDLWorkflow {
         const startStep = WDLWorkflow.findStepInStructureRecursively(this.workflowStep, i.lhs);
 
         if (startStep) {
-          this.workflowStep.o[i.to].bind(startStep.o[i.rhs]);
+          if (startStep.o[i.rhs]) {
+            this.workflowStep.o[i.to].bind(startStep.o[i.rhs]);
+          } else {
+            throw new WDLParserError(
+              `In '${this.workflowStep.name}' 
+              output block undeclared variable is referenced: '${i.lhs}.${i.rhs}'`);
+          }
+        } else {
+          throw new WDLParserError(
+            `In '${this.workflowStep.name}' 
+            output block undeclared call is referenced: '${i.lhs}'`);
         }
       });
     });
@@ -319,9 +332,22 @@ export default class WDLWorkflow {
       const lhsPart = expression.accesses[0].lhs;
 
       const outputStep = WDLWorkflow.findStepInStructureRecursively(workflow, lhsPart);
-      binder = outputStep.o[rhsPart];
+      if (outputStep) {
+        if (outputStep.o[rhsPart]) {
+          binder = outputStep.o[rhsPart];
+        } else {
+          throw new WDLParserError(`Undeclared variable is referenced: '${lhsPart}.${rhsPart}'`);
+        }
+      } else {
+        throw new WDLParserError(`Undeclared call is referenced: '${lhsPart}'`);
+      }
     } else if (expression.type === 'identifier') {
-      binder = WDLWorkflow.groupNameResolver(parent, expression.string).i[expression.string];
+      const desiredStep = WDLWorkflow.groupNameResolver(parent, expression.string);
+      if (desiredStep) {
+        binder = desiredStep.i[expression.string];
+      } else {
+        throw new WDLParserError(`Undeclared variable is referenced: '${expression.string}'`);
+      }
     }
 
     return binder;
