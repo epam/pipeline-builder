@@ -86,7 +86,7 @@ processButton('btn-get-svg', () => {
 processButton('btn-get-png', () => {
   diagram.paper.getPNG((data) => {
     const element = document.createElement('a');
-    element.setAttribute('href', data);
+    element.setAttribute('href', window.URL.createObjectURL(data));
     element.setAttribute('download', 'diagram.png');
     element.style.display = 'none';
     document.body.appendChild(element);

@@ -106,7 +106,7 @@ export default class Paper extends joint.dia.Paper {
       context.fillStyle = opts.bgrColor || '#FFFFFF';
       context.fillRect(0, 0, canvas.width, canvas.height);
       context.drawImage(image, 0, 0);
-      callback(canvas.toDataURL('image/png'));
+      canvas.toBlob(callback, 'image/png');
     };
   }
 
