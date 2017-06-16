@@ -1,0 +1,39 @@
+{
+  "cases": [
+    {
+        "name": "ConvertPairedFastQToUnmappedBamWf_170107",
+        "wdl_url": "https://raw.githubusercontent.com/broadinstitute/wdl/develop/scripts/broad_dsde_workflows/ConvertPairedFastQToUnmappedBamWf_170107.wdl",
+        "reference_img": "ConvertPairedFastQToUnmappedBamWf_170107.png"
+    },
+    {
+        "name": "GenotypeGVCFsScatterWf_170204",
+        "wdl_url": "https://raw.githubusercontent.com/broadinstitute/wdl/develop/scripts/broad_dsde_workflows/GenotypeGVCFsScatterWf_170204.wdl",
+        "reference_img": "GenotypeGVCFsScatterWf_170204.png"
+    },
+    {
+        "name": "HaplotypeCallerGvcfScatterWf_170204",
+        "wdl_url": "https://raw.githubusercontent.com/broadinstitute/wdl/develop/scripts/broad_dsde_workflows/HaplotypeCallerGvcfScatterWf_170204.wdl",
+        "reference_img": "HaplotypeCallerGvcfScatterWf_170204.png"
+    },
+    {
+        "name": "JointDiscoveryWf_170305",
+        "wdl_url": "https://raw.githubusercontent.com/broadinstitute/wdl/develop/scripts/broad_dsde_workflows/JointDiscoveryWf_170305.wdl",
+        "reference_img": "JointDiscoveryWf_170305.png"
+    },
+    {
+        "name": "RevertBamToUnmappedRGBamsWf_170107",
+        "wdl_url": "https://raw.githubusercontent.com/broadinstitute/wdl/develop/scripts/broad_dsde_workflows/RevertBamToUnmappedRGBamsWf_170107.wdl",
+        "reference_img": "RevertBamToUnmappedRGBamsWf_170107.png"
+    },
+    {
+        "name": "ValidateBamsWf_170107",
+        "wdl_url": "https://raw.githubusercontent.com/broadinstitute/wdl/develop/scripts/broad_dsde_workflows/ValidateBamsWf_170107.wdl",
+        "reference_img": "ValidateBamsWf_170107.png"
+    },
+    {
+        "name": "VariantRecalibrationWf_170305",
+        "wdl_url": "https://raw.githubusercontent.com/broadinstitute/wdl/develop/scripts/broad_dsde_workflows/VariantRecalibrationWf_170305.wdl",
+        "reference_img": "VariantRecalibrationWf_170305.png"
+    }
+  ]
+}

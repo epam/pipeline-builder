@@ -95,6 +95,12 @@ gulp.task('test:coveralls', () =>
     .pipe(coveralls()),
 );
 
+gulp.task('integrations_test', () =>
+  gulp.src('integration_tests/pipeline_builder_functional_test.js', { read: false })
+    .pipe(mocha({ compilers: 'gulp-mocha' }))
+    .pipe(istanbul.writeReports()),
+);
+
 gulp.task('test:cover-hook', () =>
   gulp.src([
     'src/**/*.js',

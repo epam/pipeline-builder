@@ -80,6 +80,7 @@
     "mocha": "^3.2.0",
     "node-sass": "^4.5.0",
     "open": "^0.0.5",
+    "pixelmatch": "^4.0.2",
     "rollup": "^0.41.4",
     "rollup-plugin-babel": "^2.7.1",
     "rollup-plugin-commonjs": "^8.0.2",
@@ -88,9 +89,12 @@
     "run-sequence": "^1.2.2",
     "sass-loader": "^6.0.2",
     "sass-module-importer": "^1.4.0",
+    "saucelabs": "^1.4.0",
+    "selenium-webdriver": "^3.4.0",
     "sinon": "^1.17.7",
     "style-loader": "^0.13.2",
     "stylelint-config-standard": "^16.0.0",
+    "svg2png": "^4.1.1",
     "vinyl-ftp": "^0.6.0",
     "webpack": "^2.2.1",
     "webpack-dev-server": "^2.4.1",
@@ -102,6 +106,7 @@
   "directories": {
     "doc": "docs",
     "example": "examples",
-    "test": "test"
+    "test": "test",
+    "integration_test": "integration_tests"
   }
 }
