@@ -20,16 +20,12 @@ _index.html_
 
 ```html
 ...
+
 <link rel="stylesheet" href="dist/pipeline.min.css">
-
 <script src="node_modules/jquery/dist/jquery.min.js"></script>
-<script src="node_modules/graphlib/dist/graphlib.min.js"></script>
-<script src="node_modules/dagre/dist/dagre.min.js"></script>
-<script src="node_modules/jointjs/node_modules/lodash/index.js"></script>
-<script src="node_modules/backbone/backbone-min.js"></script>
-<script src="node_modules/jointjs/dist/joint.min.js"></script>
-
+<script src="node_modules/lodash/lodash.js"></script>
 <script src="dist/pipeline.min.js"></script>
+
 ...
 ```
 
