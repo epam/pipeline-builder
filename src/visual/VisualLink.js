@@ -7,10 +7,25 @@ import joint from 'jointjs';
  */
 export default class VisualLink extends joint.shapes.devs.Link {
 
-  constructor(opts) {
-    super(_.defaultsDeep(opts, {
+  constructor(opts, readOnly) {
+    const defaultLinkaAttr = readOnly ?
+    {
       conn: null,
-    }));
+      attrs: {
+        '.link-tools': {
+          display: 'none',
+        },
+        '.marker-arrowheads': {
+          display: 'none',
+        },
+      },
+    }
+    :
+    {
+      conn: null,
+    };
+
+    super(_.defaultsDeep(opts, defaultLinkaAttr));
     /** Connection from model. */
     this.conn = this.attributes.conn;
   }

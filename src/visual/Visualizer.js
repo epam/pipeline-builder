@@ -121,13 +121,16 @@ export default class Visualizer {
   /**
    * Create a pipeline visualizer.
    * @param {Element|string} element - DOM Element or its identifier to embed the visualizer into.
+   * @param {boolean} readOnly - specify the read only access mode
    */
-  constructor(element) {
+  constructor(element, readOnly = false) {
     const graph = new joint.dia.Graph();
 
     if (!(element instanceof Element)) {
       element = document.getElementById(element);
     }
+
+    this._readOnly = readOnly;
 
     const paper = new Paper({
       el: element,
@@ -136,6 +139,7 @@ export default class Visualizer {
       model: graph,
       defaultLink: new VisualLink(),
       elementView: VisualWorkflowView,
+      interactive: val => !this._readOnly || !(val.model instanceof VisualLink),
       clickThreshold: 1,
     });
 
@@ -164,9 +168,22 @@ export default class Visualizer {
     this._step = null;
     this.clear();
 
-    const validateConnection = this.paper.options.validateConnection;
+    const validateMagnet = this.paper.options.validateMagnet;
+    this.paper.options.validateMagnet = (cellView, magnet) => {
+      if (this._readOnly) {
+        return false;
+      }
 
+      const args = [cellView, magnet];
+      return validateMagnet.apply(this.paper, args);
+    };
+
+    const validateConnection = this.paper.options.validateConnection;
     this.paper.options.validateConnection = (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
+      if (this._readOnly) {
+        return false;
+      }
+
       const args = [cellViewS, magnetS, cellViewT, magnetT, end, linkView];
 
       if (!validateConnection.apply(this.paper, args)) {
@@ -322,7 +339,7 @@ export default class Visualizer {
               port: conn.to.name,
             },
             conn,
-          });
+          }, this._readOnly);
           cellsToAdd[cellsToAdd.length] = link;
         }
       });
@@ -426,12 +443,20 @@ export default class Visualizer {
   _listenLinks() {
     const graph = this._graph;
     graph.on('remove', (cell, child, opts) => {
+      if (this._readOnly) {
+        return;
+      }
+
       if (cell instanceof VisualLink && cell.conn && cell.conn.isValid() && !opts.silent) {
         cell.conn.unbind();
       }
     }, this);
 
     graph.on('change:source change:target', (link) => {
+      if (this._readOnly) {
+        return;
+      }
+
       if (link instanceof VisualLink) {
         const source = graph.getCell(link.get('source').id);
         const target = graph.getCell(link.get('target').id);
