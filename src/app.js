@@ -75,7 +75,8 @@ processButton('btn-generate', () => {
 
 processButton('btn-get-svg', () => {
   const element = document.createElement('a');
-  element.setAttribute('href', `data:text/plain;charset=utf-8,${diagram.paper.getSVG()}`);
+  const blob = new Blob([diagram.paper.getSVG()], { type: 'text/plain;charset=utf-8' });
+  element.setAttribute('href', window.URL.createObjectURL(blob));
   element.setAttribute('download', 'diagram.svg');
   element.style.display = 'none';
   document.body.appendChild(element);
@@ -86,7 +87,7 @@ processButton('btn-get-svg', () => {
 processButton('btn-get-png', () => {
   diagram.paper.getPNG((data) => {
     const element = document.createElement('a');
-    element.setAttribute('href', data);
+    element.setAttribute('href', window.URL.createObjectURL(data));
     element.setAttribute('download', 'diagram.png');
     element.style.display = 'none';
     document.body.appendChild(element);
