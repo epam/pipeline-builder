@@ -413,7 +413,7 @@ export default class Visualizer {
         if (parent) {
           parent.embed(visChild);
           parent.fit();
-          parent.update(this._readOnly);
+          parent.update();
         }
       } else {
         // it is essential to update links before the step!
@@ -421,7 +421,7 @@ export default class Visualizer {
         _.forEach(links, (link) => {
           link.refresh();
         });
-        visChild.update(this._readOnly);
+        visChild.update();
       }
 
       const innerChildren = innerStep.children;
