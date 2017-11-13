@@ -29,12 +29,12 @@ function ignoreFunctions(value, other) {
   return undefined;
 }
 
-function initialize() {
+async function initialize() {
   // create flow by API
   flow1 = example1.createFlow();
 
   // create flow by parsing a WDL file
-  const flow3 = example3.createFlow();
+  const flow3 = await example3.createFlow();
 
   // compare results
   const equal = _.isEqualWith(flow1, flow3, ignoreFunctions);
@@ -56,13 +56,14 @@ function initialize() {
 processButton('btn-build', () => {
   const elem = document.getElementById('txt-script');
   if (elem) {
-    const res = pipeline.parse(elem.value);
-    if (res.status) {
-      flow1 = res.model[0];
-      diagram.attachTo(flow1);
-    } else {
-      throw new Error(res.message, 'wdl parsing error');
-    }
+    pipeline.parse(elem.value).then((res) => {
+      if (res.status) {
+        flow1 = res.model[0];
+        diagram.attachTo(flow1);
+      } else {
+        throw new Error(res.message, 'wdl parsing error');
+      }
+    });
   }
 });
 
@@ -75,7 +76,7 @@ processButton('btn-generate', () => {
 
 processButton('btn-get-svg', () => {
   const element = document.createElement('a');
-  const blob = new Blob([diagram.paper.getSVG()], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob([diagram.paper.getSVG()], {type: 'text/plain;charset=utf-8'});
   element.setAttribute('href', window.URL.createObjectURL(blob));
   element.setAttribute('download', 'diagram.svg');
   element.style.display = 'none';
@@ -119,6 +120,29 @@ processButton('btn-en-ports', () => {
 
 processButton('btn-dis-ports', () => {
   diagram.togglePorts(false);
+});
+
+processButton('btn-load-zip', () => {
+  document.getElementById('file').click();
+});
+
+document.getElementById('file').addEventListener('change', (evt) => {
+  const file = evt.target.files[0];
+  const elem = document.getElementById('txt-script');
+  document.getElementById('file').value = '';
+
+  if (elem && elem.value && file && file.name.indexOf('.zip') === file.name.length - 4) {
+    pipeline.parse(elem.value, { zipFile: file }).then((res) => {
+      if (res.status) {
+        flow1 = res.model[0];
+        diagram.attachTo(flow1);
+      } else {
+        throw new Error(res.message, 'wdl parsing error');
+      }
+    });
+  } else {
+    throw new Error('No data to parse');
+  }
 });
 
 initialize();

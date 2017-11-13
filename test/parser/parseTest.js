@@ -1,25 +1,24 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 
 import parse from '../../src/parser/parse';
 
 describe('parser/parse()', () => {
 
   it('requires to parse WDL', () => {
-    const src = `
-workflow foo {
-}`;
+    const src = `workflow foo {}`;
 
     expect(() => parse(src)).to.not.throw(Error);
-    expect(parse(src).status).to.equal(true);
+    parse(src).then((res) => {
+      expect(res.status).to.equal(true);
+    });
   });
 
   it('does not support different formats, only WDL', () => {
-    const src = `
-foo bar {
-}`;
+    const src = `foo bar {}`;
 
-    expect(() => parse(src, {
-      format: 'cwl',
-    })).to.throw(Error);
+    parse(src, {format: 'cwl'}).then((res) => {
+      expect(res).to.throw(Error);
+    });
+
   });
 });

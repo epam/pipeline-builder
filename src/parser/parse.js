@@ -1,5 +1,10 @@
+import * as JSZip from 'jszip';
 import parseWDL from './WDL/parse';
 
+function parseWDLs(wdl, subWdls) {
+  // TODO: implement parse import
+  return parseWDL(subWdls[0]);
+}
 /**
  * Parsing result object
  * @typedef {Object} ParseResult
@@ -21,10 +26,30 @@ import parseWDL from './WDL/parse';
 function parse(text, opts = {}) {
   const format = opts.format || 'wdl';
   if (format === 'wdl') {
-    return parseWDL(text, opts);
+    if (opts.zipFile) {
+      return JSZip.loadAsync(opts.zipFile).then((files) => {
+        const zipWdlFiles = [];
+
+        files.forEach((relativePath, zipEntry) => {
+          if (!zipEntry.dir && zipEntry.name.indexOf('.wdl') === zipEntry.name.length - 4) {
+            zipWdlFiles.push(zipEntry);
+          }
+        });
+
+        return Promise.all(zipWdlFiles.map(zipWdlFile => zipWdlFile.async('string')))
+          .then(wdlArray => parseWDLs(text, wdlArray));
+      }, (e) => {
+        throw new Error(`Parse zip file: ${e}`);
+      });
+    }
+    return new Promise((resolve) => {
+      const data = parseWDL(text, opts);
+      resolve(data);
+    });
   }
   throw new Error(`Unsupported format: ${format}`);
 }
+
 
 // Workaround for JSDoc bug.
 // It doesn't understand "export default function ..." creating help for "exports.default" method.
