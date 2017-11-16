@@ -13,6 +13,7 @@ export default class WorkflowGenerator {
       scatter: this.genScatter,
       whileloop: this.genWhile,
       if: this.genIf,
+      workflow: this.genWorkflow,
     };
     this.wfName = wfStep.name;
     this.wfStep = wfStep;
@@ -114,7 +115,9 @@ export default class WorkflowGenerator {
   }
 
   buildPortValue(value) {
-    if (value.inputs && _.size(value.inputs) > 0) {
+    if (value.desc && value.desc.default && !_.isUndefined(value.desc.default)) {
+      return `${value.desc.default}`;
+    } else if (value.inputs && _.size(value.inputs) > 0) {
       if (_.size(value.inputs) > 1) {
         throw new Error('Multiple links into one input are prohibited');
       }
@@ -236,6 +239,46 @@ export default class WorkflowGenerator {
 
     res += `${SCOPE_INDENT}${constants.SCOPE_CLOSE}${EOL}`;
     return res;
+  }
+
+  genWorkflow(child) {
+    const EOL = this.settings.getValue('style.eol');
+    const SCOPE_INDENT = this.settings.getValue('style.scope_indent');
+    const DOUBLE_SCOPE_INDENT = `${SCOPE_INDENT}${SCOPE_INDENT}`;
+    const TRIPLE_SCOPE_INDENT = `${DOUBLE_SCOPE_INDENT}${SCOPE_INDENT}`;
+
+    let res = '';
+
+    const val = child;
+    let callString = `${SCOPE_INDENT}${constants.CALL} `;
+
+    if (val.action.name.name.source_string === val.name) {
+      callString += `${val.name}`;
+    } else {
+      callString += `${val.action.name.name.source_string} ${constants.AS} ${val.name}`;
+    }
+
+    res += `${callString}`;
+
+    if (_.size(val.i) > 0) {
+      let mappingWasFounded = false;
+
+      _.forEach(val.i, (pVal, pKey) => {
+        if (pVal.inputs && _.size(pVal.inputs) > 0) {
+          if (!mappingWasFounded) {
+            res += ` ${constants.SCOPE_OPEN}${EOL}`;
+            res += `${DOUBLE_SCOPE_INDENT}${constants.INPUT}${constants.COLON}${EOL}`;
+            mappingWasFounded = true;
+          }
+          res += `${TRIPLE_SCOPE_INDENT}${pKey} ${constants.EQ} ${this.buildPortValue(pVal)},${EOL}`;
+        }
+      });
+      if (mappingWasFounded) {
+        res += `${SCOPE_INDENT}${constants.SCOPE_CLOSE}`;
+      }
+    }
+
+    return `${res}${EOL}`;
   }
 
   buildOutputMap(outputMappings) {

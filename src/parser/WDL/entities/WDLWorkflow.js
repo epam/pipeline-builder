@@ -151,7 +151,10 @@ export default class WDLWorkflow {
       throw new WDLParserError(`Undeclared task call: '${task}'.`);
     }
 
-    const childStep = new Step(alias, _.get(this.context.actionMap, task));
+    const action = _.get(this.context.actionMap, task);
+    // TODO: remake
+    action.name = alias;
+    const childStep = action.type === 'workflow' ? action : new Step(alias, action);
     parentStep.add(childStep);
 
     this.findCallInputBinding(item.attributes, childStep, parentStep);

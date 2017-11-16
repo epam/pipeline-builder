@@ -17,7 +17,7 @@ export default class VisualWorkflow extends VisualGroup {
         },
       },
       type: 'VisualWorkflow',
-      portsEnabled: false,
+      portsEnabled: !!(opts && opts.step && opts.step.parent)
     }));
   }
 }

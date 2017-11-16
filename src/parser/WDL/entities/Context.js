@@ -2,7 +2,8 @@ import _ from 'lodash';
 
 import WDLWorkflow from './WDLWorkflow';
 import Task from './Task';
-import { WDLParserError } from '../utils/utils';
+import { WDLParserError, extractExpression, extractType } from '../utils/utils';
+import Workflow from '../../../model/Workflow';
 
 /** Class storing the parsing context during the building of destination Object Model */
 export default class Context {
@@ -126,12 +127,58 @@ export default class Context {
     const tasks = definitions.list.filter(item => item.name.toLowerCase() === 'task')
       .map(wfNode => new Task(wfNode.attributes));
 
+    const workflows = definitions.list.filter(item => item.name.toLowerCase() === 'workflow')
+      .map((wfNode) => {
+        const workflow = new Workflow(wfNode.attributes, {
+          i: this.getInputsWorkflow(wfNode.attributes.body),
+          o: this.getOutputsWorkflow(wfNode.attributes),
+        });
+        return workflow;
+      });
+
     tasks.forEach((task) => {
       const command = this.genericTaskCommandMap.get(task.name);
       actionMap[task.name] = task.constructAction(command);
     });
 
+    workflows.forEach((workflow) => {
+      actionMap[workflow.name.name.source_string] = workflow;
+    });
+
     return actionMap;
   }
+
+  getInputsWorkflow(ast) {
+    const inputs = {};
+    ast.list.filter(item => item.name.toLowerCase() === 'declaration')
+      .forEach((v) => {
+        inputs[v.attributes.name.source_string] = {
+          type: extractType(v.attributes.type),
+        };
+
+        const str = extractExpression(v.attributes.expression).string;
+        if (str !== '') {
+          inputs[v.attributes.name.source_string].default = str;
+        }
+      });
+
+    return inputs;
+  }
+
+  getOutputsWorkflow(ast) {
+    const outputs = {};
+    ast.body.list.filter(item => item.name.toLowerCase() === 'workflowoutputs')
+      .forEach((workflowoutputs) => {
+        workflowoutputs.attributes.outputs.list.forEach((v) => {
+          const node = v.attributes;
+          outputs[node.name.source_string] = {
+            type: extractType(node.type),
+            default: extractExpression(node.expression).string,
+          };
+        });
+      });
+    return outputs;
+  }
+
 }
 
