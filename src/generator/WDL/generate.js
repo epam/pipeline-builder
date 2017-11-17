@@ -17,7 +17,7 @@ export default function generate(objectModel) {
         const action = val.action;
         actionsToBeRendered[action.name] = action;
       } else if (val.type.toLowerCase() === 'workflow') {
-        actionsToBeRendered[val.action.name.name.source_string] = val;
+        actionsToBeRendered[val.action.name] = val;
       } else {
         actionSelector(val.children);
       }

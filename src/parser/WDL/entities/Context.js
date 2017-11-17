@@ -129,7 +129,7 @@ export default class Context {
 
     const workflows = definitions.list.filter(item => item.name.toLowerCase() === 'workflow')
       .map((wfNode) => {
-        const workflow = new Workflow(wfNode.attributes, {
+        const workflow = new Workflow(wfNode.attributes.name.source_string, {
           i: this.getInputsWorkflow(wfNode.attributes.body),
           o: this.getOutputsWorkflow(wfNode.attributes),
         });
@@ -142,7 +142,7 @@ export default class Context {
     });
 
     workflows.forEach((workflow) => {
-      actionMap[workflow.name.name.source_string] = workflow;
+      actionMap[workflow.name] = workflow;
     });
 
     return actionMap;

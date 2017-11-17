@@ -252,10 +252,10 @@ export default class WorkflowGenerator {
     const val = child;
     let callString = `${SCOPE_INDENT}${constants.CALL} `;
 
-    if (val.action.name.name.source_string === val.name) {
+    if (val.action.name === val.name) {
       callString += `${val.name}`;
     } else {
-      callString += `${val.action.name.name.source_string} ${constants.AS} ${val.name}`;
+      callString += `${val.action.name} ${constants.AS} ${val.name}`;
     }
 
     res += `${callString}`;
