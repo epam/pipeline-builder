@@ -152,9 +152,8 @@ export default class WDLWorkflow {
     }
 
     const action = _.get(this.context.actionMap, task);
-    // TODO: remake
-    action.name = alias;
-    const childStep = action.type === 'workflow' ? action : new Step(alias, action);
+    const childStep = action.type === 'workflow' ? new Workflow(alias, action) : new Step(alias, action);
+
     parentStep.add(childStep);
 
     this.findCallInputBinding(item.attributes, childStep, parentStep);
