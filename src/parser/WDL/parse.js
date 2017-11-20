@@ -6,6 +6,21 @@ import Parser from './hermes/wdl_parser';
 const Constants = {
   NS_SPLITTER: '.',
   NS_CONNECTOR: '_',
+
+  IMPORT_STATEMENT: 'import',
+  WORKFLOW: 'workflow',
+  TASK: 'task',
+
+  DECLARATION: 'declaration',
+  CALL: 'call',
+
+  CALL_INPUTS: 'inputs',
+  CALL_IO_MAPPING: 'iomapping',
+  WF_OUTPUTS: 'workflowoutputs',
+  WF_OUTPUT_DECLARATION: 'workflowoutputdeclaration',
+
+  IO_MEMBER_ACCESS: 'memberaccess',
+  IO_FUNCTION_CALL: 'functioncall',
 };
 
 function hermesStage(data) {
@@ -62,39 +77,11 @@ function logicParsingStage(ast, data) {
   };
 }
 
-export default function parse(data) {
-  let result = {
-    status: true,
-    message: '',
-    model: [],
-    actions: [],
-  };
-
-  let ast;
-  if (result.status) {
-    const ret = hermesStage(data);
-    result.status = ret.status;
-    result.message = ret.message;
-    ast = ret.ast;
-  }
-
-  if (result.status && (ast === undefined || ast === null)) {
-    result.status = false;
-    result.message = 'No data to parse';
-  }
-
-  if (result.status) {
-    result = logicParsingStage(ast, data);
-  }
-
-  return result;
-}
-
 function getImports(ast) {
   const importsDefinitions = ast.attributes.imports;
 
   return importsDefinitions ? importsDefinitions.list
-    .filter(item => item.name.toLowerCase() === 'import' && item.attributes.uri)
+    .filter(item => item.name.toLowerCase() === Constants.IMPORT_STATEMENT && item.attributes.uri)
     .map(imp => ({
       name: imp.attributes.namespace && imp.attributes.namespace.source_string
                 ? imp.attributes.namespace.source_string
@@ -104,15 +91,15 @@ function getImports(ast) {
 }
 
 function getWorkflows(ast) {
-  return ast.attributes.body.list.filter(item => item.name.toLowerCase() === 'workflow');
+  return ast.attributes.body.list.filter(item => item.name.toLowerCase() === Constants.WORKFLOW);
 }
 
 function getCallsNames(workflows) {
   const calls = [];
   workflows.forEach((wf) => {
     const findCalls = list => list.forEach((item) => {
-      if (item.name.toLowerCase() !== 'declaration' && item.name.toLowerCase() !== 'workflowoutputs') {
-        if (item.name.toLowerCase() === 'call') {
+      if (item.name.toLowerCase() !== Constants.DECLARATION && item.name.toLowerCase() !== Constants.WF_OUTPUTS) {
+        if (item.name.toLowerCase() === Constants.CALL) {
           calls.push(item.attributes.task.source_string);
           return;
         }
@@ -127,23 +114,23 @@ function getCallsNames(workflows) {
 }
 
 function getTaskNames(ast) {
-  return ast.attributes.body.list.filter(item => item.name.toLowerCase() === 'task')
+  return ast.attributes.body.list.filter(item => item.name.toLowerCase() === Constants.TASK)
     .map(task => task.attributes.name.source_string);
 }
 
 function proceedCallInputs(io, callNames, namespaces) {
-  if (io.name.toLowerCase() === 'inputs') {
+  if (io.name.toLowerCase() === Constants.CALL_INPUTS) {
     io.attributes.map.list = io.attributes.map.list.map((input) => {
-      if (input.name.toLowerCase() === 'iomapping') {
+      if (input.name.toLowerCase() === Constants.CALL_IO_MAPPING) {
         const valueType = input.attributes.value.name ? input.attributes.value.name.toLowerCase() : null;
 
-        if (valueType === 'memberaccess') {
+        if (valueType === Constants.IO_MEMBER_ACCESS) {
           const index = callNames.indexOf(input.attributes.value.attributes.lhs.source_string);
 
           if (index > -1) {
             input.attributes.value.attributes.lhs.source_string = `${namespaces[index]}_${callNames[index]}`;
           }
-        } else if (valueType === 'functioncall') {
+        } else if (valueType === Constants.IO_FUNCTION_CALL) {
           const index = callNames.indexOf(input.attributes.value.attributes.name.source_string);
 
           if (index > -1) {
@@ -166,13 +153,13 @@ function proceedCallInputs(io, callNames, namespaces) {
 }
 
 function proceedWfOutput(output, namespaces, callNames) {
-  if (output.name.toLowerCase() !== 'workflowoutputdeclaration') return output;
+  if (output.name.toLowerCase() !== Constants.WF_OUTPUT_DECLARATION) return output;
 
   const valueType = output.attributes.expression.name
     ? output.attributes.expression.name.toLowerCase()
     : null;
 
-  if (valueType === 'memberaccess') {
+  if (valueType === Constants.IO_MEMBER_ACCESS) {
     const index = callNames.indexOf(output.attributes.expression.attributes.lhs.source_string);
 
     if (index > -1) {
@@ -184,7 +171,7 @@ function proceedWfOutput(output, namespaces, callNames) {
 }
 
 /** Return ast with changed calls and workflow outputs */
-function changeCalls(firstAst, calls) {
+function changeCalls(firstAst, calls) { // todo find out a better function name
   const nsSplitter = Constants.NS_SPLITTER;
   const nsConnector = Constants.NS_CONNECTOR;
   const resAst = firstAst;
@@ -199,13 +186,13 @@ function changeCalls(firstAst, calls) {
 
   resAst.attributes.body.list = resAst.attributes.body.list
     .map((item) => {
-      if (item.name.toLowerCase() !== 'workflow') {
+      if (item.name.toLowerCase() !== Constants.WORKFLOW) {
         return item;
       }
 
       const change = list => list.map((i) => {
-        if (i.name.toLowerCase() !== 'declaration') {
-          if (i.name.toLowerCase() === 'call') {
+        if (i.name.toLowerCase() !== Constants.DECLARATION) {
+          if (i.name.toLowerCase() === Constants.CALL) {
             i.attributes.body.attributes.io.list = i.attributes.body.attributes.io.list
               .map(io => proceedCallInputs(io, callNames, namespaces));
 
@@ -216,7 +203,7 @@ function changeCalls(firstAst, calls) {
             }
 
             return i;
-          } else if (i.name.toLowerCase() === 'workflowoutputs') {
+          } else if (i.name.toLowerCase() === Constants.WF_OUTPUTS) {
             i.attributes.outputs.list = i.attributes.outputs.list
               .map(output => proceedWfOutput(output, namespaces, callNames));
 
@@ -238,6 +225,7 @@ function changeCalls(firstAst, calls) {
   return resAst;
 }
 
+// todo baseUrl files check
 function getPreparedSubWDLs(wdlArray) {
   const res = {};
 
@@ -251,14 +239,14 @@ function getPreparedSubWDLs(wdlArray) {
 function clearWorkflowCallsAndOutputs(workflows) {
   return workflows.map((wf) => {
     const clearWf = list => list.map((item) => {
-      if (item.name.toLowerCase() !== 'declaration' && item.name.toLowerCase() !== 'workflowoutputs') {
-        if (item.name.toLowerCase() === 'call') {
+      if (item.name.toLowerCase() !== Constants.DECLARATION && item.name.toLowerCase() !== Constants.WF_OUTPUTS) {
+        if (item.name.toLowerCase() === Constants.CALL) {
           return false;
         }
         return clearWf(item.attributes.body.list);
-      } else if (item.name.toLowerCase() === 'workflowoutputs') {
+      } else if (item.name.toLowerCase() === Constants.WF_OUTPUTS) {
         item.attributes.outputs.list = item.attributes.outputs.list.map((output) => {
-          if (output.name.toLowerCase() === 'workflowoutputdeclaration') {
+          if (output.name.toLowerCase() === Constants.WF_OUTPUT_DECLARATION) {
             const newOut = output;
             newOut.attributes.expression = null;
             return newOut;
@@ -310,7 +298,8 @@ function resolveCalls(calls, imports, preparedSubWdl) {
     if (!importAst) { return; }
     // find tasks
     importAst.attributes.body.list
-      .filter(item => item.name.toLowerCase() === 'task' && v.callNames.includes(item.attributes.name.source_string))
+      .filter(item => item.name.toLowerCase() === Constants.TASK
+        && v.callNames.includes(item.attributes.name.source_string))
       .forEach((task) => {
         task.attributes.name.source_string = `${nsName}_${task.attributes.name.source_string}`;
         foundTasks.push(task);
@@ -334,7 +323,7 @@ function resolveCalls(calls, imports, preparedSubWdl) {
           // const tasks = getTaskNames(wf);
 
           importAst.attributes.body.list
-            .filter(item => item.name.toLowerCase() === 'task' && wfCalls.includes(item.attributes.name.source_string))
+            .filter(item => item.name.toLowerCase() === Constants.TASK && wfCalls.includes(item.attributes.name.source_string))
             .forEach((task) => {
               // task.attributes.name.source_string = `${nsName}_${task.attributes.name.source_string}`;
               foundTasks.push(task);
@@ -356,26 +345,19 @@ function addSubWorkflows(ast, importedAst) {
 }
 
 /** Parse function with WDL imports support */
-export function importParse(wdl, subWDLs) {
-  let result = {
+function importParsingStage(firstAst, opts) {
+  const result = {
     status: true,
     message: '',
-    model: [],
-    actions: [],
+    ast: {},
   };
-  let firstAst;
   let astRes;
-
-  // first hermes parsing
-  const ret = hermesStage(wdl);
-  result.status = ret.status;
-  result.message = ret.message;
-  firstAst = ret.ast;
 
   // list parsed import statements in ast
   const imports = getImports(firstAst);
 
-  if (imports.length && subWDLs) {
+  // todo check imports in opts.wdlArray
+  if (imports.length && opts.wdlArray) {
     // find calls in firstAst
     let calls = getCallsNames(getWorkflows(firstAst));
 
@@ -388,24 +370,60 @@ export function importParse(wdl, subWDLs) {
       // change calls in firstAst (xxx.xxx to xxx_xxx) & change call's inputs
       firstAst = changeCalls(firstAst, calls);
       // returns calls with ast
-      const importedTasksAst = resolveCalls(calls, imports, getPreparedSubWDLs(subWDLs));
+      const importedTasksAst = resolveCalls(calls, imports, getPreparedSubWDLs(opts.wdlArray));
       // merge first hermes parsing ast with imports ast
       astRes = addSubWorkflows(firstAst, importedTasksAst);
 
-      if (!astRes) {
-        result.status = false;
-        result.message = 'Error resolving imports';
-      }
+      result.ast = astRes;
     }
   }
 
-  if (result.status && (astRes === undefined || astRes === null)) {
+  if (!astRes) {
+    result.status = false;
+    result.message = 'Error resolving imports';
+    result.ast = null;
+  }
+
+  return result;
+}
+
+export default function parse(data, opts) {
+  let result = {
+    status: true,
+    message: '',
+    model: [],
+    actions: [],
+  };
+
+  let ast;
+  if (result.status) {
+    const ret = hermesStage(data);
+    result.status = ret.status;
+    result.message = ret.message;
+    ast = ret.ast;
+  }
+
+  if (result.status) {
+    const importOpts = {};
+
+    if (opts.wdlArray) {
+      importOpts.wdlArray = opts.wdlArray;
+    }
+
+    const importRes = importParsingStage(ast, importOpts);
+
+    result.status = importRes.status;
+    result.message = importRes.message;
+    ast = importRes.ast;
+  }
+
+  if (result.status && (ast === undefined || ast === null)) {
     result.status = false;
     result.message = 'No data to parse';
   }
 
   if (result.status) {
-    result = logicParsingStage(astRes, wdl);
+    result = logicParsingStage(ast, data);
   }
 
   return result;
