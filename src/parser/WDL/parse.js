@@ -3,6 +3,7 @@ import _ from 'lodash';
 import Context from './entities/Context';
 import Parser from './hermes/wdl_parser';
 import * as Constants from './constants';
+import $http from './../../dataServices/data-services';
 
 function hermesStage(data) {
   let tokens;
@@ -212,8 +213,9 @@ function updateFirstAst(firstAst, calls) {
 }
 
 function getPreparedSubWDLs(opts) {
-  const { wdlArray, baseURI } = opts;
+  const { wdlArray, baseURI, imports } = opts;
   const res = {};
+  let status = true;
 
   if (wdlArray) {
     wdlArray.forEach((item) => {
@@ -221,11 +223,30 @@ function getPreparedSubWDLs(opts) {
     });
   }
 
-  if (baseURI) {
-    // todo try get .wdl by url and add it to res
-  }
+  const promises = [];
+  imports.map(imp => imp.uri).forEach((importUri) => {
+    if (!res[importUri]) {
+      if (!baseURI) {
+        status = false;
+        return;
+      }
 
-  return res;
+      promises.push($http('GET', baseURI.endsWith('/') ? `${baseURI}${importUri}` : `${baseURI}/${importUri}`)
+        .then(data => ({ importUri, data })));
+    }
+  });
+
+  return new Promise((resolve) => {
+    Promise.all(promises).then((response) => {
+      _.forEach(response, (source) => {
+        res[source.importUri] = source.data;
+      });
+      resolve({ status, res });
+    }).catch(() => {
+      status = false;
+      resolve({ status, res });
+    });
+  });
 }
 
 function clearWorkflowCallsAndOutputs(workflows) {
@@ -324,7 +345,7 @@ function addSubWorkflows(ast, importedAst) {
 }
 
 /** Parse function with WDL imports support */
-function importParsingStage(firstAst, opts) {
+async function importParsingStage(firstAst, opts) {
   const result = {
     status: true,
     hasImports: false,
@@ -349,7 +370,7 @@ function importParsingStage(firstAst, opts) {
     return result;
   }
 
-  const preparedSubWDLs = getPreparedSubWDLs({
+  const preparedSubWDLs = await getPreparedSubWDLs({
     imports,
     wdlArray: opts.wdlArray ? opts.wdlArray : null,
     baseURI: opts.baseURI ? opts.baseURI : null,
@@ -390,7 +411,7 @@ function importParsingStage(firstAst, opts) {
   return result;
 }
 
-export default function parse(data, opts) {
+export default async function parse(data, opts) {
   let result = {
     status: true,
     message: '',
@@ -399,20 +420,18 @@ export default function parse(data, opts) {
   };
 
   let ast;
-  if (result.status) {
-    const ret = hermesStage(data);
-    result.status = ret.status;
-    result.message = ret.message;
-    ast = ret.ast;
-  }
+  const ret = hermesStage(data);
+  result.status = ret.status;
+  result.message = ret.message;
+  ast = ret.ast;
 
-  if (result.status) {
+  if (result.status && ast) {
     const importOpts = {
       wdlArray: opts.wdlArray ? opts.wdlArray : null,
       baseURI: opts.baseURI ? opts.baseURI : null,
     };
 
-    const importRes = importParsingStage(ast, importOpts);
+    const importRes = await importParsingStage(ast, importOpts);
 
     if (importRes.hasImports) {
       result.status = importRes.status;

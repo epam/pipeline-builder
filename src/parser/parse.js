@@ -21,6 +21,7 @@ import parseWDL from './WDL/parse';
  */
 function parse(text, opts = {}) {
   const format = opts.format || 'wdl';
+  const baseURI = opts.baseURI;
   if (format === 'wdl') {
     if (opts.zipFile) {
       return JSZip.loadAsync(opts.zipFile).then((files) => {
@@ -36,15 +37,15 @@ function parse(text, opts = {}) {
           name: zipWdlFile.name.split('/').pop(),
           wdl: str,
         }))))
-          // todo baseURI
-          .then(wdlArray => parseWDL(text, { wdlArray }));
+          .then(wdlArray => parseWDL(text, { wdlArray, baseURI }));
       }, (e) => {
         throw new Error(`Parse zip file: ${e}`);
       });
     }
     return new Promise((resolve) => {
-      const data = parseWDL(text, opts);
-      resolve(data);
+      parseWDL(text, opts).then((data) => {
+        resolve(data);
+      });
     });
   }
   throw new Error(`Unsupported format: ${format}`);

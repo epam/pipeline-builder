@@ -55,8 +55,9 @@ async function initialize() {
 // build user WDL on demand
 processButton('btn-build', () => {
   const elem = document.getElementById('txt-script');
+  const baseUrl = document.getElementById('base-url').value || null;
   if (elem) {
-    pipeline.parse(elem.value).then((res) => {
+    pipeline.parse(elem.value, { baseUrl }).then((res) => {
       if (res.status) {
         flow1 = res.model[0];
         diagram.attachTo(flow1);
@@ -129,10 +130,12 @@ processButton('btn-load-zip', () => {
 document.getElementById('file').addEventListener('change', (evt) => {
   const file = evt.target.files[0];
   const elem = document.getElementById('txt-script');
+  const baseUrl = document.getElementById('base-url').value || null;
+
   document.getElementById('file').value = '';
 
   if (elem && elem.value && file && file.name.indexOf('.zip') === file.name.length - 4) {
-    pipeline.parse(elem.value, { zipFile: file }).then((res) => {
+    pipeline.parse(elem.value, { zipFile: file, baseUrl }).then((res) => {
       if (res.status) {
         flow1 = res.model[0];
         diagram.attachTo(flow1);
