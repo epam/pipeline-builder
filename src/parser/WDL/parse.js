@@ -2,26 +2,7 @@ import _ from 'lodash';
 
 import Context from './entities/Context';
 import Parser from './hermes/wdl_parser';
-
-const Constants = {
-  NS_SPLITTER: '.',
-  NS_CONNECTOR: '_',
-
-  IMPORT_STATEMENT: 'import',
-  WORKFLOW: 'workflow',
-  TASK: 'task',
-
-  DECLARATION: 'declaration',
-  CALL: 'call',
-
-  CALL_INPUTS: 'inputs',
-  CALL_IO_MAPPING: 'iomapping',
-  WF_OUTPUTS: 'workflowoutputs',
-  WF_OUTPUT_DECLARATION: 'workflowoutputdeclaration',
-
-  IO_MEMBER_ACCESS: 'memberaccess',
-  IO_FUNCTION_CALL: 'functioncall',
-};
+import * as Constants from './constants';
 
 function hermesStage(data) {
   let tokens;
@@ -81,7 +62,7 @@ function getImports(ast) {
   const importsDefinitions = ast.attributes.imports;
 
   return importsDefinitions ? importsDefinitions.list
-    .filter(item => item.name.toLowerCase() === Constants.IMPORT_STATEMENT && item.attributes.uri)
+    .filter(item => item.name.toLowerCase() === Constants.IMPORT && item.attributes.uri)
     .map(imp => ({
       name: imp.attributes.namespace && imp.attributes.namespace.source_string
                 ? imp.attributes.namespace.source_string
@@ -118,9 +99,9 @@ function getTaskNames(ast) {
     .map(task => task.attributes.name.source_string);
 }
 
-function proceedCallInputs(io, callNames, namespaces) {
-  if (io.name.toLowerCase() === Constants.CALL_INPUTS) {
-    io.attributes.map.list = io.attributes.map.list.map((input) => {
+function proceedCallInputs(ioItem, callNames, namespaces) {
+  if (ioItem.name.toLowerCase() === Constants.CALL_INPUTS) {
+    ioItem.attributes.map.list = ioItem.attributes.map.list.map((input) => {
       if (input.name.toLowerCase() === Constants.CALL_IO_MAPPING) {
         const valueType = input.attributes.value.name ? input.attributes.value.name.toLowerCase() : null;
 
@@ -149,7 +130,7 @@ function proceedCallInputs(io, callNames, namespaces) {
     });
   }
 
-  return io;
+  return ioItem;
 }
 
 function proceedWfOutput(output, namespaces, callNames) {
@@ -170,19 +151,23 @@ function proceedWfOutput(output, namespaces, callNames) {
   return output;
 }
 
-/** Return ast with changed calls and workflow outputs */
-function changeCalls(firstAst, calls) { // todo find out a better function name
-  const nsSplitter = Constants.NS_SPLITTER;
-  const nsConnector = Constants.NS_CONNECTOR;
-  const resAst = firstAst;
+function getNamespacesAndCallNames(calls) {
   const namespaces = [];
   const callNames = [];
 
   calls.forEach((c) => {
-    const arr = c.split(nsSplitter);
+    const arr = c.split(Constants.NS_SPLITTER);
     namespaces.push(arr.shift());
-    callNames.push((arr).join(nsSplitter));
+    callNames.push((arr).join(Constants.NS_SPLITTER));
   });
+
+  return [namespaces, callNames];
+}
+
+/** Returns ast with renamed calls, calls inputs and workflow outputs (xxx.xxx -> xxx_xxx) */
+function updateFirstAst(firstAst, calls) {
+  const resAst = firstAst;
+  const [namespaces, callNames] = getNamespacesAndCallNames(calls);
 
   resAst.attributes.body.list = resAst.attributes.body.list
     .map((item) => {
@@ -197,7 +182,8 @@ function changeCalls(firstAst, calls) { // todo find out a better function name
               .map(io => proceedCallInputs(io, callNames, namespaces));
 
             if (calls.includes(i.attributes.task.source_string)) {
-              i.attributes.task.source_string = i.attributes.task.source_string.split(nsSplitter).join(nsConnector);
+              i.attributes.task.source_string = i.attributes.task.source_string
+                .split(Constants.NS_SPLITTER).join(Constants.NS_CONNECTOR);
 
               return i;
             }
@@ -225,13 +211,19 @@ function changeCalls(firstAst, calls) { // todo find out a better function name
   return resAst;
 }
 
-// todo baseUrl files check
-function getPreparedSubWDLs(wdlArray) {
+function getPreparedSubWDLs(opts) {
+  const { wdlArray, baseURI } = opts;
   const res = {};
 
-  wdlArray.forEach((item) => {
-    res[item.name] = item.wdl;
-  });
+  if (wdlArray) {
+    wdlArray.forEach((item) => {
+      res[item.name] = item.wdl;
+    });
+  }
+
+  if (baseURI) {
+    // todo try get .wdl by url and add it to res
+  }
 
   return res;
 }
@@ -262,20 +254,17 @@ function clearWorkflowCallsAndOutputs(workflows) {
   });
 }
 
-/** Return array of ast tasks/workflows */
-function resolveCalls(calls, imports, preparedSubWdl) {
-  const nsSplitter = Constants.NS_SPLITTER;
-  const nsConnector = Constants.NS_CONNECTOR;
-  const importNames = imports.map(imp => imp.name);
+function getNounCalls(calls, imports) {
   const nounCalls = {};
+  const importNames = imports.map(imp => imp.name);
 
-  calls.filter(call => importNames.includes(call.split(nsSplitter)[0]))
+  calls.filter(call => importNames.includes(call.split(Constants.NS_SPLITTER)[0]))
     .forEach((call) => {
-      const [nsName, ...callNameRest] = call.split(nsSplitter);
+      const [nsName, ...callNameRest] = call.split(Constants.NS_SPLITTER);
       const chosenImport = imports.filter(imp => imp.name === nsName).shift();
 
       if (chosenImport) {
-        const callName = callNameRest.join(nsConnector);
+        const callName = callNameRest.join(Constants.NS_CONNECTOR);
         if (!nounCalls[nsName]) {
           nounCalls[nsName] = {};
         }
@@ -288,6 +277,13 @@ function resolveCalls(calls, imports, preparedSubWdl) {
         }
       }
     });
+
+  return nounCalls;
+}
+
+/** Return array of ast tasks/workflows */
+function resolveCalls(calls, imports, preparedSubWdl) {
+  const nounCalls = getNounCalls(calls, imports);
 
   const foundTasks = [];
   Object.entries(nounCalls).forEach((entry) => {
@@ -314,23 +310,6 @@ function resolveCalls(calls, imports, preparedSubWdl) {
         // clear wf calls and outputs expressions
         wf = clearWorkflowCallsAndOutputs([wf])[0];
         foundTasks.push(wf);
-        // region resolving wf calls (don't need it now)
-/*
-        // find calls in firstAst
-        const wfCalls = getCallsNames([wf]);
-
-        if (wfCalls.length) {
-          // const tasks = getTaskNames(wf);
-
-          importAst.attributes.body.list
-            .filter(item => item.name.toLowerCase() === Constants.TASK && wfCalls.includes(item.attributes.name.source_string))
-            .forEach((task) => {
-              // task.attributes.name.source_string = `${nsName}_${task.attributes.name.source_string}`;
-              foundTasks.push(task);
-            });
-        }
-*/
-        // endregion
       });
   });
 
@@ -348,6 +327,7 @@ function addSubWorkflows(ast, importedAst) {
 function importParsingStage(firstAst, opts) {
   const result = {
     status: true,
+    hasImports: false,
     message: '',
     ast: {},
   };
@@ -356,26 +336,49 @@ function importParsingStage(firstAst, opts) {
   // list parsed import statements in ast
   const imports = getImports(firstAst);
 
-  // todo check imports in opts.wdlArray
-  if (imports.length && opts.wdlArray) {
-    // find calls in firstAst
-    let calls = getCallsNames(getWorkflows(firstAst));
+  if (!imports.length) {
+    return result;
+  }
 
-    if (calls.length) {
-      const tasks = getTaskNames(firstAst);
+  result.hasImports = true;
 
-      // check if calls're already in existing tasks
-      calls = calls.filter(call => !tasks.includes(call));
+  if (!opts.wdlArray && !opts.baseURI) {
+    result.status = false;
+    result.message = 'Can\'t resolve imports';
 
-      // change calls in firstAst (xxx.xxx to xxx_xxx) & change call's inputs
-      firstAst = changeCalls(firstAst, calls);
-      // returns calls with ast
-      const importedTasksAst = resolveCalls(calls, imports, getPreparedSubWDLs(opts.wdlArray));
-      // merge first hermes parsing ast with imports ast
-      astRes = addSubWorkflows(firstAst, importedTasksAst);
+    return result;
+  }
 
-      result.ast = astRes;
-    }
+  const preparedSubWDLs = getPreparedSubWDLs({
+    imports,
+    wdlArray: opts.wdlArray ? opts.wdlArray : null,
+    baseURI: opts.baseURI ? opts.baseURI : null,
+  });
+
+  if (!preparedSubWDLs.status) {
+    result.status = false;
+    result.message = 'Can\'t resolve imports';
+
+    return result;
+  }
+
+  // find calls in firstAst
+  let calls = getCallsNames(getWorkflows(firstAst));
+
+  if (calls.length) {
+    const tasks = getTaskNames(firstAst);
+
+    // check if calls're already in existing tasks
+    calls = calls.filter(call => !tasks.includes(call));
+
+    // change calls in firstAst, call's inputs & workflow outputs (xxx.xxx -> xxx_xxx)
+    firstAst = updateFirstAst(firstAst, calls);
+    // returns calls with ast
+    const importedTasksAst = resolveCalls(calls, imports, preparedSubWDLs.res);
+    // merge first hermes parsing ast with imports ast
+    astRes = addSubWorkflows(firstAst, importedTasksAst);
+
+    result.ast = astRes;
   }
 
   if (!astRes) {
@@ -404,17 +407,18 @@ export default function parse(data, opts) {
   }
 
   if (result.status) {
-    const importOpts = {};
-
-    if (opts.wdlArray) {
-      importOpts.wdlArray = opts.wdlArray;
-    }
+    const importOpts = {
+      wdlArray: opts.wdlArray ? opts.wdlArray : null,
+      baseURI: opts.baseURI ? opts.baseURI : null,
+    };
 
     const importRes = importParsingStage(ast, importOpts);
 
-    result.status = importRes.status;
-    result.message = importRes.message;
-    ast = importRes.ast;
+    if (importRes.hasImports) {
+      result.status = importRes.status;
+      result.message = importRes.message;
+      ast = importRes.ast;
+    }
   }
 
   if (result.status && (ast === undefined || ast === null)) {

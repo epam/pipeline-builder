@@ -36,6 +36,7 @@ function parse(text, opts = {}) {
           name: zipWdlFile.name.split('/').pop(),
           wdl: str,
         }))))
+          // todo baseURI
           .then(wdlArray => parseWDL(text, { wdlArray }));
       }, (e) => {
         throw new Error(`Parse zip file: ${e}`);
