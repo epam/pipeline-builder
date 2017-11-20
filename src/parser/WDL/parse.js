@@ -3,6 +3,11 @@ import _ from 'lodash';
 import Context from './entities/Context';
 import Parser from './hermes/wdl_parser';
 
+const Constants = {
+  NS_SPLITTER: '.',
+  NS_CONNECTOR: '_',
+};
+
 function hermesStage(data) {
   let tokens;
   let parseResult;
@@ -80,6 +85,327 @@ export default function parse(data) {
 
   if (result.status) {
     result = logicParsingStage(ast, data);
+  }
+
+  return result;
+}
+
+function getImports(ast) {
+  const importsDefinitions = ast.attributes.imports;
+
+  return importsDefinitions ? importsDefinitions.list
+    .filter(item => item.name.toLowerCase() === 'import' && item.attributes.uri)
+    .map(imp => ({
+      name: imp.attributes.namespace && imp.attributes.namespace.source_string
+                ? imp.attributes.namespace.source_string
+                : imp.attributes.uri.source_string,
+      uri: imp.attributes.uri.source_string,
+    })) : [];
+}
+
+function getWorkflows(ast) {
+  return ast.attributes.body.list.filter(item => item.name.toLowerCase() === 'workflow');
+}
+
+function getCallsNames(workflows) {
+  const calls = [];
+  workflows.forEach((wf) => {
+    const findCalls = list => list.forEach((item) => {
+      if (item.name.toLowerCase() !== 'declaration' && item.name.toLowerCase() !== 'workflowoutputs') {
+        if (item.name.toLowerCase() === 'call') {
+          calls.push(item.attributes.task.source_string);
+          return;
+        }
+        findCalls(item.attributes.body.list);
+      }
+    });
+
+    findCalls(wf.attributes.body.list);
+  });
+
+  return calls;
+}
+
+function getTaskNames(ast) {
+  return ast.attributes.body.list.filter(item => item.name.toLowerCase() === 'task')
+    .map(task => task.attributes.name.source_string);
+}
+
+function proceedCallInputs(io, callNames, namespaces) {
+  if (io.name.toLowerCase() === 'inputs') {
+    io.attributes.map.list = io.attributes.map.list.map((input) => {
+      if (input.name.toLowerCase() === 'iomapping') {
+        const valueType = input.attributes.value.name ? input.attributes.value.name.toLowerCase() : null;
+
+        if (valueType === 'memberaccess') {
+          const index = callNames.indexOf(input.attributes.value.attributes.lhs.source_string);
+
+          if (index > -1) {
+            input.attributes.value.attributes.lhs.source_string = `${namespaces[index]}_${callNames[index]}`;
+          }
+        } else if (valueType === 'functioncall') {
+          const index = callNames.indexOf(input.attributes.value.attributes.name.source_string);
+
+          if (index > -1) {
+            input.attributes.value.attributes.name.source_string = `${namespaces[index]}_${callNames[index]}`;
+          }
+        } else {
+          const index = callNames.indexOf(input.attributes.value.source_string);
+
+          if (index > -1) {
+            input.attributes.value.source_string = `${namespaces[index]}_${callNames[index]}`;
+          }
+        }
+      }
+
+      return input;
+    });
+  }
+
+  return io;
+}
+
+function proceedWfOutput(output, namespaces, callNames) {
+  if (output.name.toLowerCase() !== 'workflowoutputdeclaration') return output;
+
+  const valueType = output.attributes.expression.name
+    ? output.attributes.expression.name.toLowerCase()
+    : null;
+
+  if (valueType === 'memberaccess') {
+    const index = callNames.indexOf(output.attributes.expression.attributes.lhs.source_string);
+
+    if (index > -1) {
+      output.attributes.expression.attributes.lhs.source_string = `${namespaces[index]}_${callNames[index]}`;
+    }
+  }
+
+  return output;
+}
+
+/** Return ast with changed calls and workflow outputs */
+function changeCalls(firstAst, calls) {
+  const nsSplitter = Constants.NS_SPLITTER;
+  const nsConnector = Constants.NS_CONNECTOR;
+  const resAst = firstAst;
+  const namespaces = [];
+  const callNames = [];
+
+  calls.forEach((c) => {
+    const arr = c.split(nsSplitter);
+    namespaces.push(arr.shift());
+    callNames.push((arr).join(nsSplitter));
+  });
+
+  resAst.attributes.body.list = resAst.attributes.body.list
+    .map((item) => {
+      if (item.name.toLowerCase() !== 'workflow') {
+        return item;
+      }
+
+      const change = list => list.map((i) => {
+        if (i.name.toLowerCase() !== 'declaration') {
+          if (i.name.toLowerCase() === 'call') {
+            i.attributes.body.attributes.io.list = i.attributes.body.attributes.io.list
+              .map(io => proceedCallInputs(io, callNames, namespaces));
+
+            if (calls.includes(i.attributes.task.source_string)) {
+              i.attributes.task.source_string = i.attributes.task.source_string.split(nsSplitter).join(nsConnector);
+
+              return i;
+            }
+
+            return i;
+          } else if (i.name.toLowerCase() === 'workflowoutputs') {
+            i.attributes.outputs.list = i.attributes.outputs.list
+              .map(output => proceedWfOutput(output, namespaces, callNames));
+
+            return i;
+          }
+
+          i.attributes.body.list = change(i.attributes.body.list);
+
+          return i;
+        }
+
+        return i;
+      });
+
+      item.attributes.body.list = change(item.attributes.body.list);
+      return item;
+    });
+
+  return resAst;
+}
+
+function getPreparedSubWDLs(wdlArray) {
+  const res = {};
+
+  wdlArray.forEach((item) => {
+    res[item.name] = item.wdl;
+  });
+
+  return res;
+}
+
+function clearWorkflowCallsAndOutputs(workflows) {
+  return workflows.map((wf) => {
+    const clearWf = list => list.map((item) => {
+      if (item.name.toLowerCase() !== 'declaration' && item.name.toLowerCase() !== 'workflowoutputs') {
+        if (item.name.toLowerCase() === 'call') {
+          return false;
+        }
+        return clearWf(item.attributes.body.list);
+      } else if (item.name.toLowerCase() === 'workflowoutputs') {
+        item.attributes.outputs.list = item.attributes.outputs.list.map((output) => {
+          if (output.name.toLowerCase() === 'workflowoutputdeclaration') {
+            const newOut = output;
+            newOut.attributes.expression = null;
+            return newOut;
+          }
+          return output;
+        });
+      }
+      return item;
+    }).filter(i => !!i);
+
+    wf.attributes.body.list = clearWf(wf.attributes.body.list);
+    return wf;
+  });
+}
+
+/** Return array of ast tasks/workflows */
+function resolveCalls(calls, imports, preparedSubWdl) {
+  const nsSplitter = Constants.NS_SPLITTER;
+  const nsConnector = Constants.NS_CONNECTOR;
+  const importNames = imports.map(imp => imp.name);
+  const nounCalls = {};
+
+  calls.filter(call => importNames.includes(call.split(nsSplitter)[0]))
+    .forEach((call) => {
+      const [nsName, ...callNameRest] = call.split(nsSplitter);
+      const chosenImport = imports.filter(imp => imp.name === nsName).shift();
+
+      if (chosenImport) {
+        const callName = callNameRest.join(nsConnector);
+        if (!nounCalls[nsName]) {
+          nounCalls[nsName] = {};
+        }
+        nounCalls[nsName].importObject = chosenImport;
+
+        if (nounCalls[nsName].callNames && _.isArray(nounCalls[nsName].callNames)) {
+          nounCalls[nsName].callNames.push(callName);
+        } else {
+          nounCalls[nsName].callNames = [callName];
+        }
+      }
+    });
+
+  const foundTasks = [];
+  Object.entries(nounCalls).forEach((entry) => {
+    const [nsName, v] = entry;
+    const hermesRes = hermesStage(preparedSubWdl[v.importObject.uri]);
+    const importAst = hermesRes.status ? hermesRes.ast : null;
+
+    if (!importAst) { return; }
+    // find tasks
+    importAst.attributes.body.list
+      .filter(item => item.name.toLowerCase() === 'task' && v.callNames.includes(item.attributes.name.source_string))
+      .forEach((task) => {
+        task.attributes.name.source_string = `${nsName}_${task.attributes.name.source_string}`;
+        foundTasks.push(task);
+      });
+
+    // and find workFlows
+    getWorkflows(importAst)
+      .filter(item => v.callNames.includes(item.attributes.name.source_string))
+      // convert workflow to task to enable it's presentation
+      .forEach((wf) => {
+        wf.attributes.name.source_string = `${nsName}_${wf.attributes.name.source_string}`;
+        // clear wf calls and outputs expressions
+        wf = clearWorkflowCallsAndOutputs([wf])[0];
+        foundTasks.push(wf);
+        // region resolving wf calls (don't need it now)
+/*
+        // find calls in firstAst
+        const wfCalls = getCallsNames([wf]);
+
+        if (wfCalls.length) {
+          // const tasks = getTaskNames(wf);
+
+          importAst.attributes.body.list
+            .filter(item => item.name.toLowerCase() === 'task' && wfCalls.includes(item.attributes.name.source_string))
+            .forEach((task) => {
+              // task.attributes.name.source_string = `${nsName}_${task.attributes.name.source_string}`;
+              foundTasks.push(task);
+            });
+        }
+*/
+        // endregion
+      });
+  });
+
+  return foundTasks;
+}
+
+function addSubWorkflows(ast, importedAst) {
+  const resAst = ast;
+  importedAst.forEach(item => resAst.attributes.body.list.push(item));
+
+  return resAst;
+}
+
+/** Parse function with WDL imports support */
+export function importParse(wdl, subWDLs) {
+  let result = {
+    status: true,
+    message: '',
+    model: [],
+    actions: [],
+  };
+  let firstAst;
+  let astRes;
+
+  // first hermes parsing
+  const ret = hermesStage(wdl);
+  result.status = ret.status;
+  result.message = ret.message;
+  firstAst = ret.ast;
+
+  // list parsed import statements in ast
+  const imports = getImports(firstAst);
+
+  if (imports.length && subWDLs) {
+    // find calls in firstAst
+    let calls = getCallsNames(getWorkflows(firstAst));
+
+    if (calls.length) {
+      const tasks = getTaskNames(firstAst);
+
+      // check if calls're already in existing tasks
+      calls = calls.filter(call => !tasks.includes(call));
+
+      // change calls in firstAst (xxx.xxx to xxx_xxx) & change call's inputs
+      firstAst = changeCalls(firstAst, calls);
+      // returns calls with ast
+      const importedTasksAst = resolveCalls(calls, imports, getPreparedSubWDLs(subWDLs));
+      // merge first hermes parsing ast with imports ast
+      astRes = addSubWorkflows(firstAst, importedTasksAst);
+
+      if (!astRes) {
+        result.status = false;
+        result.message = 'Error resolving imports';
+      }
+    }
+  }
+
+  if (result.status && (astRes === undefined || astRes === null)) {
+    result.status = false;
+    result.message = 'No data to parse';
+  }
+
+  if (result.status) {
+    result = logicParsingStage(astRes, wdl);
   }
 
   return result;

@@ -1,10 +1,6 @@
 import * as JSZip from 'jszip';
-import parseWDL from './WDL/parse';
+import parseWDL, { importParse } from './WDL/parse';
 
-function parseWDLs(wdl, subWdls) {
-  // TODO: implement parse import
-  return parseWDL(subWdls[0]);
-}
 /**
  * Parsing result object
  * @typedef {Object} ParseResult
@@ -36,8 +32,11 @@ function parse(text, opts = {}) {
           }
         });
 
-        return Promise.all(zipWdlFiles.map(zipWdlFile => zipWdlFile.async('string')))
-          .then(wdlArray => parseWDLs(text, wdlArray));
+        return Promise.all(zipWdlFiles.map(zipWdlFile => zipWdlFile.async('string').then(str => ({
+          name: zipWdlFile.name,
+          wdl: str,
+        }))))
+          .then(wdlArray => importParse(text, wdlArray));
       }, (e) => {
         throw new Error(`Parse zip file: ${e}`);
       });
