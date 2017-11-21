@@ -11,7 +11,7 @@ describe('parser/WDL/parse()', () => {
   it('does not allow to parse empty data', () => {
     const src = '';
 
-    expect(parse(src).status).to.equal(false);
+    parse(src).then(res => expect(res.status).to.equal(false));
   });
 
   it('allow to parse empty workflow', () => {
@@ -19,7 +19,7 @@ describe('parser/WDL/parse()', () => {
 workflow foo {
 }`;
 
-    expect(parse(src).status).to.equal(true);
+    parse(src).then(res => expect(res.status).to.equal(true));
   });
 
   it('returns with error flag if source syntax is incorrect', () => {
@@ -34,7 +34,7 @@ task b {
   File a
 }`;
 
-    expect(parse(src).status).to.equal(false);
+    parse(src).then(res => expect(res.status).to.equal(false));
   });
 
   it('requires to parse valid wdl script', () => {
@@ -162,10 +162,13 @@ task merge {
   }
 }
 `;
-    const parsedFlow = parse(src);
-    expect(parsedFlow.status).to.equal(true);
-    // TODO: place here the deep comparison for two objects with circular references
-    expect(parsedFlow.model[0].name).to.equal(flow.name);
+    parse(src).then((res) => {
+      const parsedFlow = res;
+
+      expect(parsedFlow.status).to.equal(true);
+      // TODO: place here the deep comparison for two objects with circular references
+      expect(parsedFlow.model[0].name).to.equal(flow.name);
+    });
   });
 
   it('returns with error flag if syntax error was occurred', () => {
@@ -173,7 +176,7 @@ task merge {
 fizz buzz {
 }`;
 
-    expect(parse(src).status).to.equal(false);
+    parse(src).then(res => expect(res.status).to.equal(false));
   });
 
 });

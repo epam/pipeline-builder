@@ -8,6 +8,7 @@ describe('parser/WDL/entities/Context', () => {
 
     it('requires an empty workflow', () => {
 
+      const name = 'foo';
       const ast = {
         name: 'Namespace',
         attributes: {
@@ -22,7 +23,7 @@ describe('parser/WDL/entities/Context', () => {
                   name: {
                     id: 14,
                     str: 'identifier',
-                    source_string: 'foo',
+                    source_string: name,
                     line: 2,
                     col: 10,
                   },
@@ -39,7 +40,8 @@ describe('parser/WDL/entities/Context', () => {
       const ctx = new Context(ast);
 
       expect(ctx.workflowList.length).to.equal(1);
-      expect(ctx.actionMap).to.be.empty;
+      expect(Object.entries(ctx.actionMap).length).to.equal(1);
+      expect(ctx.actionMap[name]).to.be.not.empty;
     });
 
   });

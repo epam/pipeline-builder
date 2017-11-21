@@ -411,7 +411,7 @@ async function importParsingStage(firstAst, opts) {
   return result;
 }
 
-export default async function parse(data, opts) {
+export default async function parse(data, opts = {}) {
   let result = {
     status: true,
     message: '',

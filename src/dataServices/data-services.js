@@ -2,7 +2,7 @@ export default function $http(method, url, data) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
 
-    xhr.addEventListener('load', () => resolve(xhr.response));
+    xhr.addEventListener('load', () => (xhr.status !== 200 ? reject(xhr.response) : resolve(xhr.response)));
     xhr.addEventListener('error', () => reject);
     xhr.addEventListener('abort', () => reject);
     xhr.open(method, url);
