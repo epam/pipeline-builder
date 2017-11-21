@@ -28,6 +28,7 @@ export default class Context {
    * @param {ast} ast - Root ast tree node of parsing result
    */
   buildWorkflowList(ast) {
+    this.hasImports = !!(ast.attributes.imports && ast.attributes.imports.list.length);
     const definitions = ast.attributes.body;
     return definitions ? definitions.list
       .filter(item => item.name.toLowerCase() === 'workflow')
@@ -128,13 +129,10 @@ export default class Context {
       .map(wfNode => new Task(wfNode.attributes));
 
     const workflows = definitions.list.filter(item => item.name.toLowerCase() === 'workflow')
-      .map((wfNode) => {
-        const workflow = new Workflow(wfNode.attributes.name.source_string, {
-          i: this.getInputsWorkflow(wfNode.attributes.body),
-          o: this.getOutputsWorkflow(wfNode.attributes),
-        });
-        return workflow;
-      });
+      .map(wfNode => (new Workflow(wfNode.attributes.name.source_string, {
+        i: this.getInputsWorkflow(wfNode.attributes.body),
+        o: this.getOutputsWorkflow(wfNode.attributes),
+      })));
 
     tasks.forEach((task) => {
       const command = this.genericTaskCommandMap.get(task.name);
