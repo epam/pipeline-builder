@@ -55,9 +55,9 @@ async function initialize() {
 // build user WDL on demand
 processButton('btn-build', () => {
   const elem = document.getElementById('txt-script');
-  const baseUrl = document.getElementById('base-url').value || null;
+  const baseURI = document.getElementById('base-url').value || null;
   if (elem) {
-    pipeline.parse(elem.value, { baseUrl }).then((res) => {
+    pipeline.parse(elem.value, { baseURI }).then((res) => {
       if (res.status) {
         flow1 = res.model[0];
         diagram.attachTo(flow1);
