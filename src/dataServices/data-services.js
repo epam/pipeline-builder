@@ -12,8 +12,6 @@ export default function $http(method, url, data) {
     switch (true) {
       case data === undefined:
         return xhr.send();
-      case data instanceof ArrayBuffer:
-      case data instanceof Blob:
       case typeof data === 'string':
         return xhr.send(data);
       default:
