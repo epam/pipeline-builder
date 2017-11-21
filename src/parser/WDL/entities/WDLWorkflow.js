@@ -12,7 +12,7 @@ export default class WDLWorkflow {
    * @param {ast} wfNode - Workflow ast tree node
    * @param {Context} context - Parsing context
    */
-  constructor(wfNode, context) {
+  constructor(wfNode, context = {}) {
     this.parsingProcessors = {
       declaration: this.parseDeclaration,
       workflowoutputs: this.parseWfOutputs,
