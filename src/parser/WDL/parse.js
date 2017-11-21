@@ -64,12 +64,27 @@ function getImports(ast) {
 
   return importsDefinitions ? importsDefinitions.list
     .filter(item => item.name.toLowerCase() === Constants.IMPORT && item.attributes.uri)
-    .map(imp => ({
-      name: imp.attributes.namespace && imp.attributes.namespace.source_string
-                ? imp.attributes.namespace.source_string
-                : imp.attributes.uri.source_string,
-      uri: imp.attributes.uri.source_string,
-    })) : [];
+    .map((imp) => {
+      let name;
+      if (imp.attributes.namespace && imp.attributes.namespace.source_string) {
+        name = imp.attributes.namespace.source_string;
+      } else {
+        const uri = imp.attributes.uri.source_string.split('/').pop();
+        const index = uri.indexOf('.wdl');
+        const length = uri.length;
+
+        if (length - index === 4) {
+          name = uri.slice(0, index - length);
+        } else {
+          name = uri;
+        }
+      }
+
+      return {
+        name,
+        uri: imp.attributes.uri.source_string,
+      };
+    }) : [];
 }
 
 function getWorkflows(ast) {
@@ -212,10 +227,11 @@ function updateFirstAst(firstAst, calls) {
   return resAst;
 }
 
-function getPreparedSubWDLs(opts) {
+function getPreparedSubWDLs(opts = {}) {
   const { wdlArray, baseURI, imports } = opts;
   const res = {};
   let status = true;
+  let message = '';
 
   if (wdlArray) {
     wdlArray.forEach((item) => {
@@ -224,27 +240,45 @@ function getPreparedSubWDLs(opts) {
   }
 
   const promises = [];
-  imports.map(imp => imp.uri).forEach((importUri) => {
+  /* eslint-disable */
+  _.forEach(imports.map(imp => imp.uri), (importUri) => {
     if (!res[importUri]) {
+      if (importUri.indexOf('file://') === 0) {
+        message = '"file://" protocol for imports is not supported';
+        status = false;
+
+        // exit forEach
+        return false;
+      }
+
+      if (importUri.indexOf('http://') === 0 || importUri.indexOf('https://') === 0) {
+        promises.push($http('GET', `${importUri}`).then(data => ({ importUri, data })));
+
+        return;
+      }
+
       if (!baseURI) {
         status = false;
-        return;
+
+        // exit forEach
+        return false;
       }
 
       promises.push($http('GET', baseURI.endsWith('/') ? `${baseURI}${importUri}` : `${baseURI}/${importUri}`)
         .then(data => ({ importUri, data })));
     }
   });
+  /* eslint-enable */
 
   return new Promise((resolve) => {
     Promise.all(promises).then((response) => {
       _.forEach(response, (source) => {
         res[source.importUri] = source.data;
       });
-      resolve({ status, res });
+      resolve({ status, res, message });
     }).catch(() => {
       status = false;
-      resolve({ status, res });
+      resolve({ status, res, message });
     });
   });
 }
@@ -363,13 +397,6 @@ async function importParsingStage(firstAst, opts) {
 
   result.hasImports = true;
 
-  if (!opts.wdlArray && !opts.baseURI) {
-    result.status = false;
-    result.message = 'Can\'t resolve imports';
-
-    return result;
-  }
-
   const preparedSubWDLs = await getPreparedSubWDLs({
     imports,
     wdlArray: opts.wdlArray ? opts.wdlArray : null,
@@ -378,7 +405,7 @@ async function importParsingStage(firstAst, opts) {
 
   if (!preparedSubWDLs.status) {
     result.status = false;
-    result.message = 'Can\'t resolve imports';
+    result.message = preparedSubWDLs.message ? preparedSubWDLs.message : 'Can\'t resolve imports';
 
     return result;
   }
