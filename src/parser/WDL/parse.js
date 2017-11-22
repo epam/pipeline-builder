@@ -382,7 +382,6 @@ function addSubWorkflows(ast, importedAst) {
 async function importParsingStage(firstAst, opts) {
   const result = {
     status: true,
-    hasImports: false,
     message: '',
     ast: firstAst,
   };
@@ -393,8 +392,6 @@ async function importParsingStage(firstAst, opts) {
   if (!imports.length) {
     return result;
   }
-
-  result.hasImports = true;
 
   // find calls in firstAst
   let calls = getCallsNames(getWorkflows(firstAst));
