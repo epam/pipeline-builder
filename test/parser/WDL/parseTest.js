@@ -256,7 +256,36 @@ workflow Workflow {
     return parse(src, { wdlArray }).then(res => expect(res.status).to.equal(true));
   });
 
+  it('requires to parse valid wdl script with unused imports and no import\'s wdl presented', () => {
+    // language=wdl
+    const src = `
+import "tasks.wdl"
+import "sub_workflow.wdl" as SubWorkflow
+
+workflow RootWorkflow {
+    File? wfInput
+    File? wfInputTwo
+    File? wfInputThree
+
+    call task2
+
+    output {
+    }
+}
+
+task task2 {
+  String str
+
+  output {
+    String outStr = str
+  }
+}`;
+
+    return parse(src).then(res => expect(res.status).to.equal(true));
+  });
+
   it('returns with error when parsing valid wdl script with import statements and no import\'s wdl presented', () => {
+    // language=wdl
     const src = `
 import "tasks.wdl"
 import "sub_workflow.wdl" as SubWorkflow
