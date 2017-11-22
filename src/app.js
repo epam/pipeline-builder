@@ -77,7 +77,7 @@ processButton('btn-generate', () => {
 
 processButton('btn-get-svg', () => {
   const element = document.createElement('a');
-  const blob = new Blob([diagram.paper.getSVG()], {type: 'text/plain;charset=utf-8'});
+  const blob = new Blob([diagram.paper.getSVG()], { type: 'text/plain;charset=utf-8' });
   element.setAttribute('href', window.URL.createObjectURL(blob));
   element.setAttribute('download', 'diagram.svg');
   element.style.display = 'none';

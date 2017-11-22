@@ -71,8 +71,7 @@ describe('parser/WDL/entities/Context', () => {
     };
 
     it('returns inputs workflow', () => {
-      const ctx = new Context(ast);
-      const inputsWorkflow = ctx.getInputsWorkflow(partAst);
+      const inputsWorkflow = Context.getInputsWorkflow(partAst);
 
       expect(inputsWorkflow[inputName]).to.be.not.empty;
       expect(inputsWorkflow[inputName].type).to.be.equal(inputType);
@@ -146,8 +145,7 @@ describe('parser/WDL/entities/Context', () => {
         },
       };
 
-      const ctx = new Context(ast);
-      const outputsWorkflow = ctx.getOutputsWorkflow(partAst);
+      const outputsWorkflow = Context.getOutputsWorkflow(partAst);
 
       expect(outputsWorkflow[outputName]).to.be.not.empty;
       expect(outputsWorkflow[outputName].type).to.be.equal(outputType);

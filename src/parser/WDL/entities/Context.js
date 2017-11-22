@@ -130,8 +130,8 @@ export default class Context {
 
     const workflows = definitions.list.filter(item => item.name.toLowerCase() === 'workflow')
       .map(wfNode => (new Workflow(wfNode.attributes.name.source_string, {
-        i: this.getInputsWorkflow(wfNode.attributes.body),
-        o: this.getOutputsWorkflow(wfNode.attributes),
+        i: Context.getInputsWorkflow(wfNode.attributes.body),
+        o: Context.getOutputsWorkflow(wfNode.attributes),
       })));
 
     tasks.forEach((task) => {
@@ -146,7 +146,7 @@ export default class Context {
     return actionMap;
   }
 
-  getInputsWorkflow(ast) {
+  static getInputsWorkflow(ast) {
     const inputs = {};
     ast.list.filter(item => item.name.toLowerCase() === 'declaration')
       .forEach((v) => {
@@ -163,7 +163,7 @@ export default class Context {
     return inputs;
   }
 
-  getOutputsWorkflow(ast) {
+  static getOutputsWorkflow(ast) {
     const outputs = {};
     ast.body.list.filter(item => item.name.toLowerCase() === 'workflowoutputs')
       .forEach((workflowoutputs) => {
