@@ -352,8 +352,21 @@ workflow Workflow {
   String wf_input
   String wf_input_two
 
+  call convert
   output {
-      String output_string = "outputString"
+      String output_string = convert.converted
+      String output_string_two = 'test'
+  }
+}
+task convert {
+  File in
+
+  command {
+    convert -fin
+  }
+
+  output {
+    File converted = "converted.txt"
   }
 }`;
 
