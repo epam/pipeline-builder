@@ -469,5 +469,36 @@ task convert {
         expect(res.model[0].name).to.equal('RootWorkflow');
       });
     });
+
+    it('return status false if import request respons with 404', () => {
+      // language=wdl
+      const src = `
+import "http://test.com/sub_workflow.wdl" as SubWorkflow
+
+workflow RootWorkflow {
+    File? wfInput
+    File? wfInputTwo
+    File? wfInputThree
+
+    call SubWorkflow.Workflow {
+        input:
+            wf_input = wfInputTwo,
+            wf_input_two = wfInput
+    }
+
+    output {
+        String output_1 = "test"
+    }
+}`;
+
+      const promise = parse(src);
+
+      requests[0].respond(404, { 'Content-Type': 'text' }, 'Not found');
+
+      return promise.then((res) => {
+        expect(res.status).to.equal(false);
+        expect(res.model[0]).to.be.empty;
+      });
+    });
   });
 });

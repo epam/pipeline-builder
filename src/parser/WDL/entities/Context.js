@@ -28,7 +28,7 @@ export default class Context {
    * @param {ast} ast - Root ast tree node of parsing result
    */
   buildWorkflowList(ast) {
-    this.hasImports = !!(ast.attributes.imports && ast.attributes.imports.list.length);
+    if (ast.attributes.imports && ast.attributes.imports.list.length) this.hasImports = true;
     const definitions = ast.attributes.body;
     return definitions ? definitions.list
       .filter(item => item.name.toLowerCase() === 'workflow')

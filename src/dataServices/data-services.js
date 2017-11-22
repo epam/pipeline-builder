@@ -3,8 +3,8 @@ export default function $http(method, url, data) {
     const xhr = new XMLHttpRequest();
 
     xhr.addEventListener('load', () => (xhr.status !== 200 ? reject(xhr.response) : resolve(xhr.response)));
-    xhr.addEventListener('error', () => reject);
-    xhr.addEventListener('abort', () => reject);
+    xhr.addEventListener('error', e => reject(e));
+    xhr.addEventListener('abort', e => reject(e));
     xhr.open(method, url);
 
     xhr.responseType = 'text';
