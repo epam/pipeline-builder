@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 
 import Action from '../../../src/model/Action';
 import Workflow from '../../../src/model/Workflow';
@@ -7,7 +8,6 @@ import Step from '../../../src/model/Step';
 import parse from '../../../src/parser/WDL/parse';
 
 describe('parser/WDL/parse()', () => {
-
   it('does not allow to parse empty data', () => {
     const src = '';
 
@@ -38,7 +38,6 @@ task b {
   });
 
   it('requires to parse valid wdl script', () => {
-
     const flow = new Workflow('example1', {
       i: {
         a: {
@@ -285,4 +284,59 @@ workflow RootWorkflow {
     return parse(src).then(res => expect(res.status).to.equal(false));
   });
 
+  describe('import http', () => {
+    let xhr;
+    const requests = [];
+    beforeEach(() => {
+      xhr = sinon.useFakeXMLHttpRequest();
+      global.XMLHttpRequest = xhr;
+      xhr.onCreate = (request) => {
+        requests.push(request);
+      };
+    });
+
+    afterEach(() => {
+      xhr.restore();
+    });
+
+    it('requires to parse valid wdl script with http import statements', () => {
+      const src = `
+import "sub_workflow.wdl" as SubWorkflow
+
+workflow RootWorkflow {
+    File? wfInput
+    File? wfInputTwo
+    File? wfInputThree
+
+    call SubWorkflow.Workflow {
+        input:
+            wf_input = wfInputTwo,
+            wf_input_two = wfInput
+    }
+
+    output {
+        String output_1 = 'test'
+    }
+}`;
+      const subWdl = `
+workflow Workflow {
+  String wf_input
+  String wf_input_two
+
+  output {
+      String output_string = "outputString"
+  }
+}`;
+
+
+      const promise = parse(src, { baseURI: 'http://test.com' });
+
+      requests[0].respond(200, { 'Content-Type': 'text' }, subWdl);
+
+      return promise.then((res) => {
+        expect(res.status).to.equal(true);
+        expect(res.model[0].name).to.equal('RootWorkflow');
+      });
+    });
+  });
 });
