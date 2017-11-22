@@ -11,7 +11,7 @@ describe('parser/WDL/parse()', () => {
   it('does not allow to parse empty data', () => {
     const src = '';
 
-    parse(src).then(res => expect(res.status).to.equal(false));
+    return parse(src).then(res => expect(res.status).to.equal(false));
   });
 
   it('allow to parse empty workflow', () => {
@@ -19,7 +19,7 @@ describe('parser/WDL/parse()', () => {
 workflow foo {
 }`;
 
-    parse(src).then(res => expect(res.status).to.equal(true));
+    return parse(src).then(res => expect(res.status).to.equal(true));
   });
 
   it('returns with error flag if source syntax is incorrect', () => {
@@ -34,7 +34,7 @@ task b {
   File a
 }`;
 
-    parse(src).then(res => expect(res.status).to.equal(false));
+    return parse(src).then(res => expect(res.status).to.equal(false));
   });
 
   it('requires to parse valid wdl script', () => {
@@ -162,7 +162,7 @@ task merge {
   }
 }
 `;
-    parse(src).then((res) => {
+    return parse(src).then((res) => {
       const parsedFlow = res;
 
       expect(parsedFlow.status).to.equal(true);
@@ -176,7 +176,113 @@ task merge {
 fizz buzz {
 }`;
 
-    parse(src).then(res => expect(res.status).to.equal(false));
+    return parse(src).then(res => expect(res.status).to.equal(false));
+  });
+
+  it('requires to parse valid wdl script with import statements', () => {
+    // language=wdl
+    const src = `
+import "tasks.wdl"
+import "sub_workflow.wdl" as SubWorkflow
+
+workflow RootWorkflow {
+    File? wfInput
+    File? wfInputTwo
+    File? wfInputThree
+
+    call tasks.TaskOne {
+        input:
+            taskInput = wfInput
+    }
+
+    call SubWorkflow.Workflow {
+        input:
+            wf_input = TaskOne.task_output,
+            wf_input_two = wfInput
+    }
+
+    call SubWorkflow.Workflow as WorkflowAliasOne {
+        input:
+            wf_input = TaskOne.task_output,
+            wf_input_two = wfInputTwo
+    }
+
+    call SubWorkflow.Workflow as WorkflowAliasTwo {
+        input:
+            wf_input = TaskOne.task_output,
+            wf_input_two = wfInputThree
+    }
+
+    output {
+        String output_1 = WorkflowAliasTwo.output_string
+        String? output_2 = Workflow.output_string
+        String? output_3 = WorkflowAliasOne.output_string
+    }
+}`;
+    const wdlArray = [{
+      name: 'tasks.wdl',
+      // language=wdl
+      wdl: `
+task TaskOne {
+  File taskInput
+
+  command <<<
+      echo "test"; \\
+  >>>
+
+  runtime {
+      test: "test"
+  }
+
+  output {
+      String task_output = "outputString"
+  }
+}
+`,
+    }, {
+      name: 'sub_workflow.wdl',
+      // language=wdl
+      wdl: `
+workflow Workflow {
+  String wf_input
+  String wf_input_two
+
+  output {
+      String output_string = "outputString"
+  }
+}`,
+    }];
+
+    return parse(src, { wdlArray }).then(res => expect(res.status).to.equal(true));
+  });
+
+  it('returns with error when parsing valid wdl script with import statements and no import\'s wdl presented', () => {
+    const src = `
+import "tasks.wdl"
+import "sub_workflow.wdl" as SubWorkflow
+
+workflow RootWorkflow {
+    File? wfInput
+    File? wfInputTwo
+    File? wfInputThree
+
+    call tasks.TaskOne {
+        input:
+            taskInput = wfInput
+    }
+
+    call SubWorkflow.Workflow as WorkflowAliasOne {
+        input:
+            wf_input = TaskOne.task_output,
+            wf_input_two = wfInputTwo
+    }
+
+    output {
+        String? output_3 = WorkflowAliasOne.output_string
+    }
+}`;
+
+    return parse(src).then(res => expect(res.status).to.equal(false));
   });
 
 });
