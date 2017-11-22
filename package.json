@@ -96,7 +96,8 @@
     "vinyl-ftp": "^0.6.0",
     "webpack": "^2.2.1",
     "webpack-dev-server": "^2.4.1",
-    "yargs": "^6.6.0"
+    "yargs": "^6.6.0",
+    "file-system": "^2.2.2"
   },
   "dependencies": {
     "jszip": "^3.1.4",

@@ -8,16 +8,16 @@ let requests = [];
 describe('data-services $http', () => {
   let xhr;
 
-  beforeEach(function () {
+  beforeEach(() => {
     xhr = sinon.useFakeXMLHttpRequest();
     global.XMLHttpRequest = xhr;
     requests = [];
-    xhr.onCreate = function (xhr) {
-      requests.push(xhr);
+    xhr.onCreate = (request) => {
+      requests.push(request);
     };
   });
 
-  afterEach(function () {
+  afterEach(() => {
     xhr.restore();
   });
 
@@ -28,25 +28,25 @@ describe('data-services $http', () => {
   });
 
   it('resolves as promised with JSON data', () => {
-    let data = {foo: 'bar'};
-    let dataJson = JSON.stringify(data);
+    const data = { foo: 'bar' };
+    const dataJson = JSON.stringify(data);
 
-    let promise = $http('get', 'test_url', data);
+    const promise = $http('get', 'test_url', data);
 
-    requests[0].respond(200, {'Content-Type': 'text'}, dataJson);
+    requests[0].respond(200, { 'Content-Type': 'text' }, dataJson);
 
     return promise.then((result) => {
       expect(result).to.be.equal(dataJson);
     });
-  })
+  });
 
   it('resolves as promised with string data', () => {
-    let promise = $http('get', 'test_url', 'data');
+    const promise = $http('get', 'test_url', 'data');
 
-    requests[0].respond(200, {'Content-Type': 'text'}, 'data');
+    requests[0].respond(200, { 'Content-Type': 'text' }, 'data');
 
     return promise.then((data) => {
       expect(data).to.be.equal('data');
     });
-  })
+  });
 });

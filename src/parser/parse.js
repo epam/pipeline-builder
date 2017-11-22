@@ -17,7 +17,7 @@ import parseWDL from './WDL/parse';
  * @param {string} text - Text file contents to parse.
  * @param {object} [opts={}] - Parser options.
  * @param {string} [opts.format='wdl'] - Workflow definition format ('wdl', 'cwl').
- * @returns {ParseResult} Parsing result object
+ * @returns {Promise} Parsing result object
  */
 function parse(text, opts = {}) {
   const format = opts.format || 'wdl';
@@ -48,7 +48,7 @@ function parse(text, opts = {}) {
       });
     });
   }
-  throw new Error(`Unsupported format: ${format}`);
+  return Promise.reject(new Error(`Unsupported format: ${format}`));
 }
 
 
