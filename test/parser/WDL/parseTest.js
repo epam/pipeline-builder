@@ -313,10 +313,42 @@ workflow RootWorkflow {
     return parse(src).then(res => expect(res.status).to.equal(false));
   });
 
+  it('returns with error when parsing valid wdl script with "file://" protocol in import statement', () => {
+    // language=wdl
+    const src = `
+import "file://tasks.wdl"
+import "sub_workflow.wdl" as SubWorkflow
+
+workflow RootWorkflow {
+    File? wfInput
+    File? wfInputTwo
+    File? wfInputThree
+
+    call tasks.TaskOne {
+        input:
+            taskInput = wfInput
+    }
+
+    call SubWorkflow.Workflow as WorkflowAliasOne {
+        input:
+            wf_input = TaskOne.task_output,
+            wf_input_two = wfInputTwo
+    }
+
+    output {
+        String? output_3 = WorkflowAliasOne.output_string
+    }
+}`;
+
+    return parse(src).then(res => expect(res.status).to.equal(false));
+  });
+
+
   describe('import http', () => {
     let xhr;
-    const requests = [];
+    let requests = [];
     beforeEach(() => {
+      requests = [];
       xhr = sinon.useFakeXMLHttpRequest();
       global.XMLHttpRequest = xhr;
       xhr.onCreate = (request) => {
@@ -329,6 +361,7 @@ workflow RootWorkflow {
     });
 
     it('requires to parse valid wdl script with http import statements', () => {
+      // language=wdl
       const src = `
 import "sub_workflow.wdl" as SubWorkflow
 
@@ -344,9 +377,10 @@ workflow RootWorkflow {
     }
 
     output {
-        String output_1 = 'test'
+        String output_1 = "test"
     }
 }`;
+      // language=wdl
       const subWdl = `
 workflow Workflow {
   String wf_input
@@ -355,11 +389,11 @@ workflow Workflow {
   call convert
   output {
       String output_string = convert.converted
-      String output_string_two = 'test'
+      String output_string_two = "test"
   }
 }
 task convert {
-  File in
+  File ins
 
   command {
     convert -fin
@@ -372,6 +406,61 @@ task convert {
 
 
       const promise = parse(src, { baseURI: 'http://test.com' });
+
+      requests[0].respond(200, { 'Content-Type': 'text' }, subWdl);
+
+      return promise.then((res) => {
+        expect(res.status).to.equal(true);
+        expect(res.model[0].name).to.equal('RootWorkflow');
+      });
+    });
+
+    it('requires to parse valid wdl script with "http://" protocol in import statements', () => {
+      // language=wdl
+      const src = `
+import "http://test.com/sub_workflow.wdl" as SubWorkflow
+
+workflow RootWorkflow {
+    File? wfInput
+    File? wfInputTwo
+    File? wfInputThree
+
+    call SubWorkflow.Workflow {
+        input:
+            wf_input = wfInputTwo,
+            wf_input_two = wfInput
+    }
+
+    output {
+        String output_1 = "test"
+    }
+}`;
+      // language=wdl
+      const subWdl = `
+workflow Workflow {
+  String wf_input
+  String wf_input_two
+
+  call convert
+  output {
+      String output_string = convert.converted
+      String output_string_two = "test"
+  }
+}
+task convert {
+  File ins
+
+  command {
+    convert -fin
+  }
+
+  output {
+    File converted = "converted.txt"
+  }
+}`;
+
+
+      const promise = parse(src);
 
       requests[0].respond(200, { 'Content-Type': 'text' }, subWdl);
 
