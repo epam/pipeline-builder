@@ -384,9 +384,8 @@ async function importParsingStage(firstAst, opts) {
     status: true,
     hasImports: false,
     message: '',
-    ast: {},
+    ast: firstAst,
   };
-  let astRes;
 
   // list parsed import statements in ast
   const imports = getImports(firstAst);
@@ -396,6 +395,15 @@ async function importParsingStage(firstAst, opts) {
   }
 
   result.hasImports = true;
+
+  // find calls in firstAst
+  let calls = getCallsNames(getWorkflows(firstAst));
+
+  const tasks = getTaskNames(firstAst);
+
+  // check if calls're already in existing tasks
+  calls = calls.filter(call => !tasks.includes(call));
+  if (!calls.length) return result;
 
   const preparedSubWDLs = await getPreparedSubWDLs({
     imports,
@@ -410,30 +418,12 @@ async function importParsingStage(firstAst, opts) {
     return result;
   }
 
-  // find calls in firstAst
-  let calls = getCallsNames(getWorkflows(firstAst));
-
-  if (calls.length) {
-    const tasks = getTaskNames(firstAst);
-
-    // check if calls're already in existing tasks
-    calls = calls.filter(call => !tasks.includes(call));
-
-    // change calls in firstAst, call's inputs & workflow outputs (xxx.xxx -> xxx_xxx)
-    firstAst = updateFirstAst(firstAst, calls);
-    // returns calls with ast
-    const importedTasksAst = resolveCalls(calls, imports, preparedSubWDLs.res);
-    // merge first hermes parsing ast with imports ast
-    astRes = addSubWorkflows(firstAst, importedTasksAst);
-
-    result.ast = astRes;
-  }
-
-  if (!astRes) {
-    result.status = false;
-    result.message = 'Error resolving imports';
-    result.ast = null;
-  }
+  // change calls in firstAst, call's inputs & workflow outputs (xxx.xxx -> xxx_xxx)
+  firstAst = updateFirstAst(firstAst, calls);
+  // returns calls with ast
+  const importedTasksAst = resolveCalls(calls, imports, preparedSubWDLs.res);
+  // merge first hermes parsing ast with imports ast
+  result.ast = addSubWorkflows(firstAst, importedTasksAst);
 
   return result;
 }
@@ -460,11 +450,9 @@ export default async function parse(data, opts = {}) {
 
     const importRes = await importParsingStage(ast, importOpts);
 
-    if (importRes.hasImports) {
-      result.status = importRes.status;
-      result.message = importRes.message;
-      ast = importRes.ast;
-    }
+    result.status = importRes.status;
+    result.message = importRes.message;
+    ast = importRes.ast;
   }
 
   if (result.status && (ast === undefined || ast === null)) {
