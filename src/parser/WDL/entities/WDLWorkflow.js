@@ -246,6 +246,7 @@ export default class WDLWorkflow {
       if (expression.type !== 'MemberAccess') {
         obj[name].default = expression.string;
       } else {
+// eslint-disable-next-line no-return-assign
         expression.accesses.forEach(v => (v.to = name));
         wfOutLinksList = expression.accesses;
       }

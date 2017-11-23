@@ -1,4 +1,4 @@
-/* GLOBAL KEYWORDS*/
+/* GLOBAL KEYWORDS */
 export const TASK = 'task';
 export const WORKFLOW = 'workflow';
 export const CALL = 'call';

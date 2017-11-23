@@ -194,6 +194,15 @@ workflow RootWorkflow {
             taskInput = wfInput
     }
 
+    if (wfInput) {
+      call tasks.TaskOne as Two {
+          input:
+              taskInput = wfInput
+      }
+    }
+
+    call task2 
+    
     call SubWorkflow.Workflow {
         input:
             wf_input = TaskOne.task_output,
@@ -208,7 +217,7 @@ workflow RootWorkflow {
 
     call SubWorkflow.Workflow as WorkflowAliasTwo {
         input:
-            wf_input = TaskOne.task_output,
+            wf_input = Two.task_output,
             wf_input_two = wfInputThree
     }
 
@@ -217,7 +226,16 @@ workflow RootWorkflow {
         String? output_2 = Workflow.output_string
         String? output_3 = WorkflowAliasOne.output_string
     }
-}`;
+}
+
+task task2 {
+  String str
+
+  output {
+    String outStr = str
+  }
+}
+`;
     const wdlArray = [{
       name: 'tasks.wdl',
       // language=wdl
@@ -246,10 +264,25 @@ workflow Workflow {
   String wf_input
   String wf_input_two
 
+  call task2
+  
+  if (wf_input) {
+    call task2 as task3
+  }
+  
   output {
       String output_string = "outputString"
   }
-}`,
+}
+
+task task2 {
+  String str
+
+  output {
+    String outStr = str
+  }
+}
+`,
     }];
 
     return parse(src, { wdlArray }).then(res => expect(res.status).to.equal(true));
@@ -311,6 +344,73 @@ workflow RootWorkflow {
 }`;
 
     return parse(src).then(res => expect(res.status).to.equal(false));
+  });
+
+  it('returns with error when parsing valid wdl script with import statements and incorrect import\'s wdl presented', () => {
+    // language=wdl
+    const src = `
+import "tasks.wdl"
+import "sub_workflow.wdl" as SubWorkflow
+
+workflow RootWorkflow {
+    File? wfInput
+    File? wfInputTwo
+    File? wfInputThree
+
+    call tasks.TaskOne {
+        input:
+            taskInput = wfInput
+    }
+
+    call SubWorkflow.Workflow as WorkflowAliasOne {
+        input:
+            wf_input = TaskOne.task_output,
+            wf_input_two = wfInputTwo
+    }
+
+    output {
+        String? output_3 = WorkflowAliasOne.output_string
+    }
+}`;
+    const wdlArray = [{
+      name: 'tasks.wdl',
+      // language=wdl
+      wdl: `
+task TaskOne {
+  File taskInput
+
+  command <<<
+      echo "test"; \\
+  >>>
+
+  runtime {
+      test: "test"
+  }
+
+  output {
+      String task_output = "outputString"
+  }
+}
+`,
+    }, {
+      name: 'sub_workflow.wdl',
+      // language=wdl
+      wdl: `
+workflow Workflow {
+  # this is an error: task should be declared outside of workflow
+  task task2 {
+    String str
+  
+    output {
+      String outStr = str
+    }
+  }
+
+}
+`,
+    }];
+
+    return parse(src, { wdlArray }).then(res => expect(res.status).to.equal(false));
   });
 
   it('returns with error when parsing valid wdl script with "file://" protocol in import statement', () => {
@@ -415,15 +515,27 @@ task convert {
       });
     });
 
-    it('requires to parse valid wdl script with "http://" protocol in import statements', () => {
+    it('requires to parse valid wdl script with "http://" and "https://" protocol in import statements and baseURI', () => {
       // language=wdl
       const src = `
-import "http://test.com/sub_workflow.wdl" as SubWorkflow
+import "http://test.com/sub_workflow" as SubWorkflow
+import "https://test.com/tasks"
+import "tasks_two"
 
 workflow RootWorkflow {
     File? wfInput
     File? wfInputTwo
     File? wfInputThree
+
+    call tasks.TaskOne {
+        input:
+            taskInput = wfInput
+    }
+
+    call tasks_two.TaskTwo {
+        input:
+            taskInput = wfInput
+    }
 
     call SubWorkflow.Workflow {
         input:
@@ -459,10 +571,50 @@ task convert {
   }
 }`;
 
+      // language=wdl
+      const subWdlHttps = `
+task TaskOne {
+  File taskInput
 
-      const promise = parse(src);
+  command <<<
+      echo "test"; \\
+  >>>
+
+  runtime {
+      test: "test"
+  }
+
+  output {
+      String task_output = "outputString"
+  }
+}
+`;
+
+      // language=wdl
+      const subWdlBaseUri = `
+task TaskTwo {
+  File taskInput
+
+  command <<<
+      echo "test"; \\
+  >>>
+
+  runtime {
+      test: "test"
+  }
+
+  output {
+      String task_output = "outputString"
+  }
+}
+`;
+
+
+      const promise = parse(src, { baseURI: 'http://test.com/' });
 
       requests[0].respond(200, { 'Content-Type': 'text' }, subWdl);
+      requests[1].respond(200, { 'Content-Type': 'text' }, subWdlHttps);
+      requests[2].respond(200, { 'Content-Type': 'text' }, subWdlBaseUri);
 
       return promise.then((res) => {
         expect(res.status).to.equal(true);

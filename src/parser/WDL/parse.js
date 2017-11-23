@@ -194,8 +194,10 @@ function updateFirstAst(firstAst, calls) {
       const change = list => list.map((i) => {
         if (i.name.toLowerCase() !== Constants.DECLARATION) {
           if (i.name.toLowerCase() === Constants.CALL) {
-            i.attributes.body.attributes.io.list = i.attributes.body.attributes.io.list
-              .map(io => proceedCallInputs(io, callNames, namespaces));
+            if (i.attributes.body && i.attributes.body.attributes && i.attributes.body.attributes.io) {
+              i.attributes.body.attributes.io.list = i.attributes.body.attributes.io.list
+                .map(io => proceedCallInputs(io, callNames, namespaces));
+            }
 
             if (calls.includes(i.attributes.task.source_string)) {
               i.attributes.task.source_string = i.attributes.task.source_string
@@ -302,7 +304,7 @@ function clearWorkflowCallsAndOutputs(workflows) {
         });
       }
       return item;
-    }).filter(i => !!i);
+    }).filter(i => !!i && !_.isArray(i));
 
     wf.attributes.body.list = clearWf(wf.attributes.body.list);
     return wf;
@@ -362,7 +364,7 @@ function resolveCalls(calls, imports, preparedSubWdl) {
       // convert workflow to task to enable it's presentation
       .forEach((wf) => {
         wf.attributes.name.source_string = `${nsName}_${wf.attributes.name.source_string}`;
-        // clear wf calls and outputs expressions
+        // clear sub wf calls and outputs expressions
         wf = clearWorkflowCallsAndOutputs([wf])[0];
         foundTasks.push(wf);
       });

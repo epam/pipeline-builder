@@ -81,6 +81,7 @@ class Workflow extends Group {
         });
       } else {
         let found = false;
+// eslint-disable-next-line no-return-assign
         this.walk(step => !found && !(found = (step.action === action)));
         if (found) {
           throw new Error('Cannot remove action in use');
