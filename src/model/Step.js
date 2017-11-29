@@ -147,6 +147,21 @@ export default class Step {
      */
     this.o = _.mapValues(action.o, (portDesc, portName) => new Port(portName, this, portDesc));
     bindPorts(config.o || {}, this.o);
+
+    const updateParentName = (parent, newName) => {
+      parent.name = newName;
+      if (parent.parent) {
+        updateParentName(parent.parent, parent.name);
+      }
+    };
+
+    _.forEach(config.children, (child, childName) => {
+      const copyChildParent = _.clone(child.parent);
+      updateParentName(copyChildParent, this.name);
+      const copyChild = _.clone(child);
+      copyChild.parent = copyChildParent;
+      this.children[childName] = copyChild;
+    });
   }
 
   /**
@@ -175,7 +190,7 @@ export default class Step {
         _.forEach(actions, action => root.addAction(action));
       }
     } else if (existing !== child) {
-      throw new Error('Cannot add a child step with the same name');
+      throw new Error(`Cannot add a child step with the same name ${child.name}`);
     }
     return child;
   }

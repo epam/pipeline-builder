@@ -31,7 +31,7 @@ class Group extends Step {
       throw new Error('Group could be created only using config object');
     }
 
-    super(name, new Action(name, config));
+    super(name, new Action(name, config), config);
 
     this.type = type || 'default';
   }

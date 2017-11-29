@@ -4,6 +4,7 @@ import WDLWorkflow from './WDLWorkflow';
 import Task from './Task';
 import { WDLParserError, extractExpression, extractType } from '../utils/utils';
 import Workflow from '../../../model/Workflow';
+import * as Constants from '../constants';
 
 /** Class storing the parsing context during the building of destination Object Model */
 export default class Context {
@@ -16,6 +17,9 @@ export default class Context {
     this.genericTaskCommandMap = new Map();
     this.preprocessTheTaskOntoCommandMap(src);
     this.actionMap = this.buildActionMap(ast);
+
+    this._updateChildrenSubWorkflow(ast);
+
     try {
       this.workflowList = this.buildWorkflowList(ast);
     } catch (e) {
@@ -125,14 +129,16 @@ export default class Context {
   buildActionMap(ast) {
     const actionMap = {};
     const definitions = ast.attributes.body;
-    const tasks = definitions.list.filter(item => item.name.toLowerCase() === 'task')
+    const tasks = definitions.list.filter(item => item.name.toLowerCase() === Constants.TASK)
       .map(wfNode => new Task(wfNode.attributes));
 
-    const workflows = definitions.list.filter(item => item.name.toLowerCase() === 'workflow')
-      .map(wfNode => (new Workflow(wfNode.attributes.name.source_string, {
-        i: Context.getInputsWorkflow(wfNode.attributes.body),
-        o: Context.getOutputsWorkflow(wfNode.attributes),
-      })));
+    const workflows = definitions.list.filter(item => item.name.toLowerCase() === Constants.WORKFLOW)
+      .map((wfNode) => {
+        const workflow = new Workflow(wfNode.attributes.name.source_string);
+        workflow.i = Context.getInputsWorkflow(wfNode.attributes.body);
+        workflow.o = Context.getOutputsWorkflow(wfNode.attributes);
+        return workflow;
+      });
 
     tasks.forEach((task) => {
       const command = this.genericTaskCommandMap.get(task.name);
@@ -148,7 +154,7 @@ export default class Context {
 
   static getInputsWorkflow(ast) {
     const inputs = {};
-    ast.list.filter(item => item.name.toLowerCase() === 'declaration')
+    ast.list.filter(item => item.name.toLowerCase() === Constants.DECLARATION)
       .forEach((v) => {
         inputs[v.attributes.name.source_string] = {
           type: extractType(v.attributes.type),
@@ -165,7 +171,7 @@ export default class Context {
 
   static getOutputsWorkflow(ast) {
     const outputs = {};
-    ast.body.list.filter(item => item.name.toLowerCase() === 'workflowoutputs')
+    ast.body.list.filter(item => item.name.toLowerCase() === Constants.WF_OUTPUTS)
       .forEach((workflowoutputs) => {
         workflowoutputs.attributes.outputs.list.forEach((v) => {
           const node = v.attributes;
@@ -178,5 +184,17 @@ export default class Context {
     return outputs;
   }
 
+  _updateChildrenSubWorkflow(ast) {
+    const workflows = ast.attributes.body.list.filter(item => item.name.toLowerCase() === Constants.WORKFLOW)
+      .map(wfNode => (new WDLWorkflow(wfNode.attributes, this)));
+
+    _.forEach(this.actionMap, (value, key) => {
+      const [workflowStep] =
+        workflows.filter(workflow => workflow.name === key).map(workflow => workflow.workflowStep);
+      if (workflowStep) {
+        this.actionMap[key].children = workflowStep.children;
+      }
+    });
+  }
 }
 

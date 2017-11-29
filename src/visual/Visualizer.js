@@ -184,6 +184,9 @@ export default class Visualizer {
         return false;
       }
 
+      if (this._isChildSubWorkflow(cellViewS.model.step)) return false;
+      if (this._isChildSubWorkflow(cellViewT.model.step)) return false;
+
       const args = [cellViewS, magnetS, cellViewT, magnetT, end, linkView];
 
       if (!validateConnection.apply(this.paper, args)) {
@@ -555,5 +558,11 @@ export default class Visualizer {
       }
       paper.setDimensions(elem.offsetWidth, elem.offsetHeight);
     };
+  }
+
+  _isChildSubWorkflow(step) {
+    if (!step.parent) return false;
+    if (step.parent instanceof Workflow && step.parent.name !== this._step.name) return true;
+    return this._isChildSubWorkflow(step.parent);
   }
 }
