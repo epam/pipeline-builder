@@ -181,9 +181,10 @@ function getNamespacesAndCallNames(calls) {
 }
 
 /** Returns ast with renamed calls, calls inputs and workflow outputs (xxx.xxx -> xxx_xxx) */
-function updateFirstAst(firstAst, calls) {
+function updateFirstAst(firstAst, calls = [], notRootAst = false) {
   const resAst = firstAst;
   const [namespaces, callNames] = getNamespacesAndCallNames(calls);
+  notRootAst = !!notRootAst;
 
   resAst.attributes.body.list = resAst.attributes.body.list
     .map((item) => {
@@ -199,7 +200,18 @@ function updateFirstAst(firstAst, calls) {
                 .map(io => proceedCallInputs(io, callNames, namespaces));
             }
 
-            if (calls.includes(i.attributes.task.source_string)) {
+            if (notRootAst) {
+              if (callNames.includes(i.attributes.task.source_string)) {
+                const index = callNames.indexOf(i.attributes.task.source_string);
+                const prefix = namespaces[index] && namespaces[index].split(Constants.NS_CONNECTOR).length > 1
+                  ? namespaces[index].split(Constants.NS_CONNECTOR).shift() : namespaces[index];
+
+                i.attributes.task.source_string = `${prefix}_${i.attributes.task.source_string
+                  .split(Constants.NS_SPLITTER).join(Constants.NS_CONNECTOR)}`;
+
+                return i;
+              }
+            } else if (calls.includes(i.attributes.task.source_string)) {
               i.attributes.task.source_string = i.attributes.task.source_string
                 .split(Constants.NS_SPLITTER).join(Constants.NS_CONNECTOR);
 
@@ -339,38 +351,67 @@ function getNounCalls(calls, imports) {
 }
 
 /** Return array of ast tasks/workflows */
-function resolveCalls(calls, imports, preparedSubWdl) {
+async function resolveCalls(calls, imports, preparedSubWdl, opts = {}) {
   const nounCalls = getNounCalls(calls, imports);
+  const subWfDetailing = (opts.subWfDetailing && _.isArray(opts.subWfDetailing)) ? opts.subWfDetailing : [];
+  const deepResolving = opts.deepResolving || 0;
+  const wdlArray = opts.wdlArray ? opts.wdlArray : null;
+  const baseURI = opts.baseURI ? opts.baseURI : null;
 
-  const foundTasks = [];
-  Object.entries(nounCalls).forEach((entry) => {
+
+  const foundAsts = [];
+  await Promise.all(Object.entries(nounCalls).map(async (entry) => {
     const [nsName, v] = entry;
     const hermesRes = hermesStage(preparedSubWdl[v.importObject.uri]);
-    const importAst = hermesRes.status ? hermesRes.ast : null;
+    let importAst = hermesRes.status ? hermesRes.ast : null;
+    let subAst;
 
     if (!importAst) { return; }
-    // find tasks
+
+    const workflows = getWorkflows(importAst);
+
+    let includesWf = false;
+    const wfNames = workflows.map(wf => wf.attributes.name.source_string);
+
+    if (subWfDetailing.includes('*')) {
+      includesWf = true;
+    } else {
+      _.forEach(wfNames, (name) => {
+        if (subWfDetailing.includes(name)) {
+          includesWf = true;
+          return false;
+        }
+        return true;
+      });
+    }
+
+    if (deepResolving > 0 && workflows.length > 0 && (subWfDetailing.includes('*') || includesWf)) {
+      // eslint-disable-next-line no-use-before-define
+      subAst = await importParsingStage(importAst,
+        { deepResolving: deepResolving - 1, subWfDetailing, wdlArray, baseURI });
+      if (subAst.status) {
+        subAst.modifiedUnfilteredCalls = subAst.modifiedUnfilteredCalls.map(call => `${nsName}${call.split(Constants.NS_SPLITTER).length > 1 ? '_' : '.'}${call}`);
+        importAst = updateFirstAst(subAst.ast, subAst.modifiedUnfilteredCalls, true);
+      }
+    }
+
+    // find tasks and workFlows
     importAst.attributes.body.list
-      .filter(item => item.name.toLowerCase() === Constants.TASK
-        && v.callNames.includes(item.attributes.name.source_string))
-      .forEach((task) => {
-        task.attributes.name.source_string = `${nsName}_${task.attributes.name.source_string}`;
-        foundTasks.push(task);
+    // if deep resolving this wf - need all tasks, otherwise - only those used in root wf
+      .filter(item => includesWf || v.callNames.includes(item.attributes.name.source_string))
+      .forEach((astItem) => {
+        astItem.attributes.name.source_string = `${nsName}_${astItem.attributes.name.source_string}`;
+        if (astItem.name.toLowerCase() === Constants.WORKFLOW) {
+          if (!subWfDetailing.includes('*') && !subWfDetailing.includes(astItem.attributes.name.source_string)) {
+            // clear sub wf calls and outputs expressions
+            astItem = clearWorkflowCallsAndOutputs([astItem])[0];
+          }
+        }
+        foundAsts.push(astItem);
       });
+  }));
 
-    // and find workFlows
-    getWorkflows(importAst)
-      .filter(item => v.callNames.includes(item.attributes.name.source_string))
-      // convert workflow to task to enable it's presentation
-      .forEach((wf) => {
-        wf.attributes.name.source_string = `${nsName}_${wf.attributes.name.source_string}`;
-        // clear sub wf calls and outputs expressions
-        wf = clearWorkflowCallsAndOutputs([wf])[0];
-        foundTasks.push(wf);
-      });
-  });
-
-  return foundTasks;
+  return foundAsts;
 }
 
 function addSubWorkflows(ast, importedAst) {
@@ -380,35 +421,43 @@ function addSubWorkflows(ast, importedAst) {
   return resAst;
 }
 
+function modifyUnfilteredCalls(unfilteredCalls) {
+  return unfilteredCalls.map(call => call.split(Constants.NS_SPLITTER).join(Constants.NS_CONNECTOR));
+}
+
 /** Parse function with WDL imports support */
-async function importParsingStage(firstAst, opts) {
+async function importParsingStage(firstAst, opts = {}) {
   const result = {
     status: true,
     message: '',
     ast: firstAst,
+    unfilteredCalls: [],
+    filteredCalls: [],
+    modifiedUnfilteredCalls: [],
   };
+  const subWfDetailing = opts.subWfDetailing || null;
+  const deepResolving = opts.deepResolving || null;
+  const wdlArray = opts.wdlArray ? opts.wdlArray : null;
+  const baseURI = opts.baseURI ? opts.baseURI : null;
 
   // list parsed import statements in ast
   const imports = getImports(firstAst);
+
+  // find calls in firstAst
+  result.unfilteredCalls = getCallsNames(getWorkflows(firstAst));
+  result.modifiedUnfilteredCalls = result.unfilteredCalls;
 
   if (!imports.length) {
     return result;
   }
 
-  // find calls in firstAst
-  let calls = getCallsNames(getWorkflows(firstAst));
-
   const tasks = getTaskNames(firstAst);
 
   // check if calls're already in existing tasks
-  calls = calls.filter(call => !tasks.includes(call));
-  if (!calls.length) return result;
+  result.filteredCalls = result.unfilteredCalls.filter(call => !tasks.includes(call));
+  if (!result.filteredCalls.length) return result;
 
-  const preparedSubWDLs = await getPreparedSubWDLs({
-    imports,
-    wdlArray: opts.wdlArray ? opts.wdlArray : null,
-    baseURI: opts.baseURI ? opts.baseURI : null,
-  });
+  const preparedSubWDLs = await getPreparedSubWDLs({ imports, wdlArray, baseURI });
 
   if (!preparedSubWDLs.status) {
     result.status = false;
@@ -416,11 +465,14 @@ async function importParsingStage(firstAst, opts) {
 
     return result;
   }
+  result.modifiedUnfilteredCalls = modifyUnfilteredCalls(result.unfilteredCalls);
 
   // change calls in firstAst, call's inputs & workflow outputs (xxx.xxx -> xxx_xxx)
-  firstAst = updateFirstAst(firstAst, calls);
+  firstAst = updateFirstAst(firstAst, result.filteredCalls);
   // returns calls with ast
-  const importedTasksAst = resolveCalls(calls, imports, preparedSubWDLs.res);
+  const importedTasksAst = await resolveCalls(result.filteredCalls, imports, preparedSubWDLs.res,
+    { subWfDetailing, deepResolving, wdlArray, baseURI });
+
   // merge first hermes parsing ast with imports ast
   result.ast = addSubWorkflows(firstAst, importedTasksAst);
 
@@ -443,8 +495,10 @@ export default async function parse(data, opts = {}) {
 
   if (result.status && ast) {
     const importOpts = {
-      wdlArray: opts.wdlArray ? opts.wdlArray : null,
-      baseURI: opts.baseURI ? opts.baseURI : null,
+      wdlArray: opts.wdlArray || null,
+      baseURI: opts.baseURI || null,
+      subWfDetailing: opts.subWfDetailing || null,
+      deepResolving: opts.deepResolving || null,
     };
 
     const importRes = await importParsingStage(ast, importOpts);

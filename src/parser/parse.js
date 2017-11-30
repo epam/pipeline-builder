@@ -21,7 +21,11 @@ import parseWDL from './WDL/parse';
  */
 function parse(text, opts = {}) {
   const format = opts.format || 'wdl';
-  const baseURI = opts.baseURI;
+  // const subWfDetailing = (opts.subWfDetailing && _.isArray(opts.subWfDetailing)) ? opts.subWfDetailing : null;// todo uncomment
+  const subWfDetailing = ['*'];// TumorCopyRatioWorkflow
+  // const deepResolving = opts.deepResolving || null;// todo uncomment
+  const deepResolving = 1;
+  const baseURI = opts.baseURI || null;
   if (format === 'wdl') {
     if (opts.zipFile) {
       return JSZip.loadAsync(opts.zipFile).then((files) => {
@@ -37,7 +41,7 @@ function parse(text, opts = {}) {
           name: zipWdlFile.name.split('/').pop(),
           wdl: str,
         }))))
-          .then(wdlArray => parseWDL(text, { wdlArray, baseURI }));
+          .then(wdlArray => parseWDL(text, { wdlArray, baseURI, subWfDetailing, deepResolving }));
       }, (e) => {
         throw new Error(`Parse zip file: ${e}`);
       });
