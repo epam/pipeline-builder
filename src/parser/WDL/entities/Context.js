@@ -185,16 +185,11 @@ export default class Context {
   }
 
   _updateChildrenSubWorkflow(ast) {
-    const workflows = ast.attributes.body.list.filter(item => item.name.toLowerCase() === Constants.WORKFLOW)
-      .map(wfNode => (new WDLWorkflow(wfNode.attributes, this)));
-
-    _.forEach(this.actionMap, (value, key) => {
-      const [workflowStep] =
-        workflows.filter(workflow => workflow.name === key).map(workflow => workflow.workflowStep);
-      if (workflowStep) {
-        this.actionMap[key].children = workflowStep.children;
-      }
-    });
+    ast.attributes.body.list.filter(item => item.name.toLowerCase() === Constants.WORKFLOW).reverse()
+      .forEach((wfNode) => {
+        const wfNode2 = new WDLWorkflow(wfNode.attributes, this).workflowStep;
+        this.actionMap[wfNode2.name] = wfNode2;
+      });
   }
 }
 

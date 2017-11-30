@@ -4,6 +4,7 @@ import Workflow from '../../../model/Workflow';
 import Step from '../../../model/Step';
 import Group from '../../../model/Group';
 import { extractExpression, extractType, extractMetaBlock, WDLParserError } from '../utils/utils';
+import * as Constants from '../constants';
 
 /** Class representing a Workflow object of WDL script entity */
 export default class WDLWorkflow {
@@ -155,7 +156,15 @@ export default class WDLWorkflow {
     }
 
     const action = _.get(this.context.actionMap, task);
-    const childStep = action.type === 'workflow' ? new Workflow(alias, action) : new Step(alias, action);
+
+    let childStep;
+    if (action.type === Constants.WORKFLOW) {
+      const cloneWorkflow = _.clone(action);
+      cloneWorkflow.name = alias;
+      childStep = cloneWorkflow;
+    } else {
+      childStep = new Step(alias, action);
+    }
 
     parentStep.add(childStep);
 
