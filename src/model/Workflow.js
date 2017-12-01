@@ -36,6 +36,10 @@ class Workflow extends Group {
      * @type {Object.<string, Action>}
      */
     this.actions = {};
+    if (config.ast) {
+      this.ast = config.ast;
+    }
+    this.initialName = config.initialName || null;
     this.addAction(this.action);
   }
 
