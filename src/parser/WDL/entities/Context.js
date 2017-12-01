@@ -18,8 +18,6 @@ export default class Context {
     this.preprocessTheTaskOntoCommandMap(src);
     this.actionMap = this.buildActionMap(ast);
 
-    this._updateChildrenSubWorkflow(ast);
-
     try {
       this.workflowList = this.buildWorkflowList(ast);
     } catch (e) {
@@ -134,7 +132,7 @@ export default class Context {
 
     const workflows = definitions.list.filter(item => item.name.toLowerCase() === Constants.WORKFLOW)
       .map((wfNode) => {
-        const workflow = new Workflow(wfNode.attributes.name.source_string);
+        const workflow = new Workflow(wfNode.attributes.name.source_string, { ast: wfNode });
         workflow.i = Context.getInputsWorkflow(wfNode.attributes.body);
         workflow.o = Context.getOutputsWorkflow(wfNode.attributes);
         return workflow;
@@ -182,14 +180,6 @@ export default class Context {
         });
       });
     return outputs;
-  }
-
-  _updateChildrenSubWorkflow(ast) {
-    ast.attributes.body.list.filter(item => item.name.toLowerCase() === Constants.WORKFLOW).reverse()
-      .forEach((wfNode) => {
-        const wfNode2 = new WDLWorkflow(wfNode.attributes, this).workflowStep;
-        this.actionMap[wfNode2.name] = wfNode2;
-      });
   }
 }
 

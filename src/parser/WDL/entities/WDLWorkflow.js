@@ -13,7 +13,7 @@ export default class WDLWorkflow {
    * @param {ast} wfNode - Workflow ast tree node
    * @param {Context} context - Parsing context
    */
-  constructor(wfNode, context = {}) {
+  constructor(wfNode, context = {}, initialName = null) {
     this.parsingProcessors = {
       declaration: this.parseDeclaration,
       workflowoutputs: this.parseWfOutputs,
@@ -31,7 +31,7 @@ export default class WDLWorkflow {
 
     this.context = context;
     this.name = wfNode.name.source_string;
-    this.workflowStep = new Workflow(this.name);
+    this.workflowStep = new Workflow(this.name, { initialName: initialName || this.name });
     if (Object.prototype.hasOwnProperty.call(context, 'hasImports')) {
       this.workflowStep.hasImports = !!context.hasImports;
     }
@@ -150,6 +150,7 @@ export default class WDLWorkflow {
     const parentStep = parent;
     const task = item.attributes.task.source_string;
     const alias = item.attributes.alias ? item.attributes.alias.source_string : task;
+    const initialName = task;
 
     if (!_.has(this.context.actionMap, task)) {
       throw new WDLParserError(`Undeclared task call: '${task}'.`);
@@ -159,9 +160,9 @@ export default class WDLWorkflow {
 
     let childStep;
     if (action.type === Constants.WORKFLOW) {
-      const cloneWorkflow = _.clone(action);
-      cloneWorkflow.name = alias;
-      childStep = cloneWorkflow;
+      const cloneAst = _.clone(action.ast);
+      cloneAst.attributes.name.source_string = alias;
+      childStep = new WDLWorkflow(cloneAst.attributes, this.context, initialName).workflowStep;
     } else {
       childStep = new Step(alias, action);
     }
