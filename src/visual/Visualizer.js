@@ -340,6 +340,8 @@ export default class Visualizer {
         if (children[targetName] &&
           _.find(links, link => link.conn === conn) === undefined &&
           children[targetName].isPortEnabled(conn.to.step.hasInputPort(conn.to), conn.to.name)) {
+          const isReadOnly = this._readOnly || this._isChildSubWorkflow(source.step) ||
+            this._isChildSubWorkflow(children[targetName].step);
           const link = new VisualLink({
             source: {
               id: source.id,
@@ -350,7 +352,7 @@ export default class Visualizer {
               port: conn.to.name,
             },
             conn,
-          }, this._readOnly);
+          }, isReadOnly);
           cellsToAdd[cellsToAdd.length] = link;
         }
       });
@@ -571,7 +573,7 @@ export default class Visualizer {
   }
 
   _isChildSubWorkflow(step) {
-    if (!step.parent) return false;
+    if (!step || !step.parent) return false;
     if (step.parent instanceof Workflow && step.parent.name !== this._step.name) return true;
     return this._isChildSubWorkflow(step.parent);
   }

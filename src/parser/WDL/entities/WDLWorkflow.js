@@ -31,7 +31,7 @@ export default class WDLWorkflow {
 
     this.context = context;
     this.name = wfNode.name.source_string;
-    this.workflowStep = new Workflow(this.name, { initialName: initialName || this.name });
+    this.workflowStep = new Workflow(this.name, { initialName: initialName || null });
     if (Object.prototype.hasOwnProperty.call(context, 'hasImports')) {
       this.workflowStep.hasImports = !!context.hasImports;
     }

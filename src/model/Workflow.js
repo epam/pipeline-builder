@@ -15,7 +15,6 @@ import Group from './Group';
  * const hello = test.add(new Step('hello', ...));
  */
 class Workflow extends Group {
-
   /**
    * Create a workflow.
    * A workflow is a compound {@link Step} which also keeps track of all {@link Action Actions} used
@@ -39,7 +38,9 @@ class Workflow extends Group {
     if (config.ast) {
       this.ast = config.ast;
     }
-    this.initialName = config.initialName || null;
+    if (config.initialName) {
+      this.initialName = config.initialName;
+    }
     this.addAction(this.action);
   }
 
