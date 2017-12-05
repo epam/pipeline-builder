@@ -3,7 +3,7 @@ import _ from 'lodash';
 import Context from './entities/Context';
 import Parser from './hermes/wdl_parser';
 import * as Constants from './constants';
-import $http from './../../dataServices/data-services';
+import DataService from './../../dataServices/data-services';
 
 function hermesStage(data) {
   let tokens;
@@ -266,7 +266,7 @@ function getPreparedSubWDLs(opts = {}) {
       }
 
       if (importUri.indexOf('http://') === 0 || importUri.indexOf('https://') === 0) {
-        promises.push($http('GET', `${importUri}`).then(data => ({ importUri, data })));
+        promises.push(DataService.get(`${importUri}`).then(data => ({ importUri, data })));
 
         return;
       }
@@ -278,7 +278,7 @@ function getPreparedSubWDLs(opts = {}) {
         return false;
       }
 
-      promises.push($http('GET', baseURI.endsWith('/') ? `${baseURI}${importUri}` : `${baseURI}/${importUri}`)
+      promises.push(DataService.get(baseURI.endsWith('/') ? `${baseURI}${importUri}` : `${baseURI}/${importUri}`)
         .then(data => ({ importUri, data })));
     }
   });
@@ -517,5 +517,5 @@ export default async function parse(data, opts = {}) {
     result = logicParsingStage(ast, data);
   }
 
-  return result;
+  return result.status ? Promise.resolve(result) : Promise.reject(result.message);
 }

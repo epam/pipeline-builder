@@ -30,7 +30,9 @@ export default class Context {
    * @param {ast} ast - Root ast tree node of parsing result
    */
   buildWorkflowList(ast) {
-    if (ast.attributes.imports && ast.attributes.imports.list.length) this.hasImports = true;
+    if (ast.attributes.imports && ast.attributes.imports.list.length) {
+      this.hasImports = true;
+    }
     const definitions = ast.attributes.body;
     return definitions ? definitions.list
       .filter(item => item.name.toLowerCase() === 'workflow')
@@ -150,6 +152,10 @@ export default class Context {
     return actionMap;
   }
 
+  /**
+   * Get all inputs workflow
+   * @param {ast} ast - part ast tree node of parsing result
+   */
   static getInputsWorkflow(ast) {
     const inputs = {};
     ast.list.filter(item => item.name.toLowerCase() === Constants.DECLARATION)
@@ -167,6 +173,10 @@ export default class Context {
     return inputs;
   }
 
+  /**
+   * Get all outputs workflow
+   * @param {ast} ast - part ast tree node of parsing result
+   */
   static getOutputsWorkflow(ast) {
     const outputs = {};
     ast.body.list.filter(item => item.name.toLowerCase() === Constants.WF_OUTPUTS)

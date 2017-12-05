@@ -1,5 +1,6 @@
-import { expect } from 'chai';
 import sinon from 'sinon';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 
 import Action from '../../../src/model/Action';
 import Workflow from '../../../src/model/Workflow';
@@ -7,11 +8,14 @@ import Step from '../../../src/model/Step';
 
 import parse from '../../../src/parser/WDL/parse';
 
+chai.use(chaiAsPromised);
+const { expect } = chai;
+
 describe('parser/WDL/parse()', () => {
   it('does not allow to parse empty data', () => {
     const src = '';
 
-    return parse(src).then(res => expect(res.status).to.equal(false));
+    return expect(parse(src)).to.be.rejected;
   });
 
   it('allow to parse empty workflow', () => {
@@ -19,7 +23,7 @@ describe('parser/WDL/parse()', () => {
 workflow foo {
 }`;
 
-    return parse(src).then(res => expect(res.status).to.equal(true));
+    return expect(parse(src)).to.be.fulfilled;
   });
 
   it('returns with error flag if source syntax is incorrect', () => {
@@ -34,7 +38,7 @@ task b {
   File a
 }`;
 
-    return parse(src).then(res => expect(res.status).to.equal(false));
+    return expect(parse(src)).to.be.rejected;
   });
 
   it('requires to parse valid wdl script', () => {
@@ -161,13 +165,14 @@ task merge {
   }
 }
 `;
-    return parse(src).then((res) => {
-      const parsedFlow = res;
-
-      expect(parsedFlow.status).to.equal(true);
-      // TODO: place here the deep comparison for two objects with circular references
-      expect(parsedFlow.model[0].name).to.equal(flow.name);
-    });
+    return expect(parse(src)).to.be.fulfilled;
+    // return parse(src).then((res) => {
+    //   const parsedFlow = res;
+    //
+    //   expect(parsedFlow.status).to.equal(true);
+    //   // TODO: place here the deep comparison for two objects with circular references
+    //   expect(parsedFlow.model[0].name).to.equal(flow.name);
+    // });
   });
 
   it('returns with error flag if syntax error was occurred', () => {
@@ -175,7 +180,7 @@ task merge {
 fizz buzz {
 }`;
 
-    return parse(src).then(res => expect(res.status).to.equal(false));
+    return expect(parse(src)).to.be.rejected;
   });
 
   it('requires to parse valid wdl script with import statements', () => {
@@ -285,7 +290,7 @@ task task2 {
 `,
     }];
 
-    return parse(src, { wdlArray }).then(res => expect(res.status).to.equal(true));
+    return expect(parse(src, { wdlArray })).to.be.fulfilled;
   });
 
   it('requires to parse valid wdl script with unused imports and no import\'s wdl presented', () => {
@@ -312,8 +317,7 @@ task task2 {
     String outStr = str
   }
 }`;
-
-    return parse(src).then(res => expect(res.status).to.equal(true));
+    return expect(parse(src)).to.be.fulfilled;
   });
 
   it('returns with error when parsing valid wdl script with import statements and no import\'s wdl presented', () => {
@@ -343,7 +347,7 @@ workflow RootWorkflow {
     }
 }`;
 
-    return parse(src).then(res => expect(res.status).to.equal(false));
+    return expect(parse(src)).to.be.rejected;
   });
 
   it('returns with error when parsing valid wdl script with import statements and incorrect import\'s wdl presented', () => {
@@ -409,8 +413,7 @@ workflow Workflow {
 }
 `,
     }];
-
-    return parse(src, { wdlArray }).then(res => expect(res.status).to.equal(false));
+    return expect(parse(src, { wdlArray })).to.be.rejected;
   });
 
   it('returns with error when parsing valid wdl script with "file://" protocol in import statement', () => {
@@ -439,8 +442,7 @@ workflow RootWorkflow {
         String? output_3 = WorkflowAliasOne.output_string
     }
 }`;
-
-    return parse(src).then(res => expect(res.status).to.equal(false));
+    return expect(parse(src)).to.be.rejected;
   });
 
 
@@ -508,11 +510,11 @@ task convert {
       const promise = parse(src, { baseURI: 'http://test.com' });
 
       requests[0].respond(200, { 'Content-Type': 'text' }, subWdl);
-
-      return promise.then((res) => {
-        expect(res.status).to.equal(true);
-        expect(res.model[0].name).to.equal('RootWorkflow');
-      });
+      return expect(promise).to.be.fulfilled;
+      // return promise.then((res) => {
+      //   expect(res.status).to.equal(true);
+      //   expect(res.model[0].name).to.equal('RootWorkflow');
+      // });
     });
 
     it('requires to parse valid wdl script with "http://" and "https://" protocol in import statements and baseURI', () => {
@@ -615,11 +617,11 @@ task TaskTwo {
       requests[0].respond(200, { 'Content-Type': 'text' }, subWdl);
       requests[1].respond(200, { 'Content-Type': 'text' }, subWdlHttps);
       requests[2].respond(200, { 'Content-Type': 'text' }, subWdlBaseUri);
-
-      return promise.then((res) => {
-        expect(res.status).to.equal(true);
-        expect(res.model[0].name).to.equal('RootWorkflow');
-      });
+      return expect(promise).to.be.fulfilled;
+      // return promise.then((res) => {
+      //   expect(res.status).to.equal(true);
+      //   expect(res.model[0].name).to.equal('RootWorkflow');
+      // });
     });
 
     it('return status false if import request respons with 404', () => {
@@ -647,10 +649,7 @@ workflow RootWorkflow {
 
       requests[0].respond(404, { 'Content-Type': 'text' }, 'Not found');
 
-      return promise.then((res) => {
-        expect(res.status).to.equal(false);
-        expect(res.model[0]).to.be.empty;
-      });
+      return expect(promise).to.be.rejected;
     });
   });
 });

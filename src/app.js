@@ -58,12 +58,10 @@ processButton('btn-build', () => {
   const baseURI = document.getElementById('base-url').value || null;
   if (elem) {
     pipeline.parse(elem.value, { baseURI }).then((res) => {
-      if (res.status) {
-        flow1 = res.model[0];
-        diagram.attachTo(flow1);
-      } else {
-        throw new Error(res.message, 'wdl parsing error');
-      }
+      flow1 = res.model[0];
+      diagram.attachTo(flow1);
+    }).catch((message) => {
+      throw new Error(message);
     });
   }
 });
@@ -136,12 +134,10 @@ document.getElementById('file').addEventListener('change', (evt) => {
 
   if (elem && elem.value && file && file.name.indexOf('.zip') === file.name.length - 4) {
     pipeline.parse(elem.value, { zipFile: file, baseUrl }).then((res) => {
-      if (res.status) {
-        flow1 = res.model[0];
-        diagram.attachTo(flow1);
-      } else {
-        throw new Error(res.message, 'wdl parsing error');
-      }
+      flow1 = res.model[0];
+      diagram.attachTo(flow1);
+    }).catch((message) => {
+      throw new Error(message);
     });
   } else {
     throw new Error('No data to parse');

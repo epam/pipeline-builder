@@ -1,4 +1,4 @@
-export default function $http(method, url, data) {
+function $http(method, url, data) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
 
@@ -19,4 +19,26 @@ export default function $http(method, url, data) {
         return xhr.send(JSON.stringify(data));
     }
   });
+}
+
+export default class DataService {
+  /**
+   *
+   * @param url
+   * @param config
+   * @returns {promise}
+   */
+  static get(url, data) {
+    return $http('get', url, data);
+  }
+
+  /**
+   *
+   * @param url
+   * @param data
+   * @returns {promise}
+   */
+  static post(url, data) {
+    return $http('post', url, data);
+  }
 }

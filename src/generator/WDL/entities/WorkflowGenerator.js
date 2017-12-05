@@ -242,43 +242,8 @@ export default class WorkflowGenerator {
   }
 
   genWorkflow(child) {
-    const EOL = this.settings.getValue('style.eol');
-    const SCOPE_INDENT = this.settings.getValue('style.scope_indent');
-    const DOUBLE_SCOPE_INDENT = `${SCOPE_INDENT}${SCOPE_INDENT}`;
-    const TRIPLE_SCOPE_INDENT = `${DOUBLE_SCOPE_INDENT}${SCOPE_INDENT}`;
-
-    let res = '';
-
-    const val = child;
-    let callString = `${SCOPE_INDENT}${constants.CALL} `;
-
-    if (val.action.name === val.name) {
-      callString += `${val.name}`;
-    } else {
-      callString += `${val.action.name} ${constants.AS} ${val.name}`;
-    }
-
-    res += `${callString}`;
-
-    if (_.size(val.i) > 0) {
-      let mappingWasFounded = false;
-
-      _.forEach(val.i, (pVal, pKey) => {
-        if (pVal.inputs && _.size(pVal.inputs) > 0) {
-          if (!mappingWasFounded) {
-            res += ` ${constants.SCOPE_OPEN}${EOL}`;
-            res += `${DOUBLE_SCOPE_INDENT}${constants.INPUT}${constants.COLON}${EOL}`;
-            mappingWasFounded = true;
-          }
-          res += `${TRIPLE_SCOPE_INDENT}${pKey} ${constants.EQ} ${this.buildPortValue(pVal)},${EOL}`;
-        }
-      });
-      if (mappingWasFounded) {
-        res += `${SCOPE_INDENT}${constants.SCOPE_CLOSE}`;
-      }
-    }
-
-    return `${res}${EOL}`;
+    // TODO: add generation workflow
+    this.genCall(child);
   }
 
   buildOutputMap(outputMappings) {

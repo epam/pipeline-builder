@@ -1,7 +1,7 @@
 import sinon from 'sinon';
 import { expect } from 'chai';
 
-import $http from '../../src/dataServices/data-services';
+import DataService from '../../src/dataServices/data-services';
 
 let requests = [];
 
@@ -22,7 +22,7 @@ describe('data-services $http', () => {
   });
 
   it('resolves as promised', () => {
-    const promise = $http('get', 'test_url');
+    const promise = DataService.get('test_url');
     requests[0].respond(200, { 'Content-Type': 'text' }, 'OK');
     return promise.then((result) => {
       expect(requests[0].method).to.be.equal('get');
@@ -32,7 +32,7 @@ describe('data-services $http', () => {
   });
 
   it('reject when response status 404 promised', () => {
-    const promise = $http('get', 'test_url');
+    const promise = DataService.get('test_url');
     requests[0].respond(404, { 'Content-Type': 'text' }, 'Not found');
     return promise.catch((result) => {
       expect(requests[0].method).to.be.equal('get');
@@ -43,7 +43,7 @@ describe('data-services $http', () => {
   });
 
   it('xhr error as promised', () => {
-    const promise = $http('get', 'test_url');
+    const promise = DataService.get('test_url');
     requests[0].respond(0, { 'Content-Type': 'text' }, 'OK');
     return promise.catch((result) => {
       expect(result.type).to.be.equal('error');
@@ -51,7 +51,7 @@ describe('data-services $http', () => {
   });
 
   it('xhr abort as promised', () => {
-    const promise = $http('get', 'test_url');
+    const promise = DataService.get('test_url');
     requests[0].abort();
     return promise.catch((result) => {
       expect(result.type).to.be.equal('abort');
@@ -62,7 +62,7 @@ describe('data-services $http', () => {
     const data = { foo: 'bar' };
     const dataJson = JSON.stringify(data);
 
-    const promise = $http('get', 'test_url', data);
+    const promise = DataService.get('test_url', data);
 
     requests[0].respond(200, { 'Content-Type': 'text' }, dataJson);
 
@@ -72,7 +72,7 @@ describe('data-services $http', () => {
   });
 
   it('resolves as promised with string data', () => {
-    const promise = $http('get', 'test_url', 'data');
+    const promise = DataService.get('test_url', 'data');
 
     requests[0].respond(200, { 'Content-Type': 'text' }, 'data');
 

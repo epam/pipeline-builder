@@ -1,7 +1,10 @@
-import { expect } from 'chai';
 import fs from 'file-system';
-
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import parse from '../../src/parser/parse';
+
+chai.use(chaiAsPromised);
+const { expect } = chai;
 
 describe('parser/parse()', () => {
   const wdl = `
@@ -46,21 +49,15 @@ workflow RootWorkflow {
   it('requires to parse WDL', () => {
     const src = 'workflow foo {}';
 
-    expect(() => parse(src)).to.not.throw(Error);
-    return parse(src).then((res) => {
-      expect(res.status).to.equal(true);
-    });
+    return expect(parse(src)).to.be.fulfilled;
   });
 
   it('does not support different formats, only WDL', () => {
     const src = 'foo bar {}';
-
-    return parse(src, { format: 'cwl' }).catch((e) => {
-      expect(e).to.be.an('Error');
-    });
+    return expect(parse(src, { format: 'cwl' })).to.be.rejectedWith('Unsupported format: cwl');
   });
 
-  it('requires to parse WDL with zip', () => new Promise((resolve, reject) => {
+  it('requires to parse WDL with zip', () => expect(new Promise((resolve, reject) => {
     fs.readFile('test/testData/importsTestArchive.zip', (err, data) => {
       if (err) {
         reject(err);
@@ -68,11 +65,8 @@ workflow RootWorkflow {
         resolve(data);
       }
     });
-  }).then(data => parse(wdl, { zipFile: data }).then((res) => {
-    expect(res.status).to.equal(true);
-  })));
+  }).then(data => parse(wdl, { zipFile: data }))).to.be.fulfilled);
 
-  it('returns with error if source zip is incorrect', () => parse(wdl, { zipFile: 'test' }).catch((e) => {
-    expect(e).to.be.an('Error');
-  }));
+  it('returns with error if source zip is incorrect', () =>
+    expect(parse(wdl, { zipFile: 'test' })).to.be.rejectedWith('Error'));
 });

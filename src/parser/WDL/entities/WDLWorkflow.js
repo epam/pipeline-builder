@@ -11,7 +11,8 @@ export default class WDLWorkflow {
   /**
    * Process through the hole entire ast tree and builds the desired Object Model
    * @param {ast} wfNode - Workflow ast tree node
-   * @param {Context} context - Parsing context
+   * @param {Context} [context={}] - Parsing context
+   * @param {String?} [initialName=null] - initial Name
    */
   constructor(wfNode, context = {}, initialName = null) {
     this.parsingProcessors = {
@@ -256,8 +257,9 @@ export default class WDLWorkflow {
       if (expression.type !== 'MemberAccess') {
         obj[name].default = expression.string;
       } else {
-// eslint-disable-next-line no-return-assign
-        expression.accesses.forEach(v => (v.to = name));
+        _.forEach(expression.accesses, (v) => {
+          v.to = name;
+        });
         wfOutLinksList = expression.accesses;
       }
 

@@ -24,7 +24,7 @@ function parse(text, opts = {}) {
   // const subWfDetailing = (opts.subWfDetailing && _.isArray(opts.subWfDetailing)) ? opts.subWfDetailing : null;// todo uncomment
   const subWfDetailing = ['*'];// TumorCopyRatioWorkflow
   // const deepResolving = opts.deepResolving || null;// todo uncomment
-  const deepResolving = 1;
+  const deepResolving = 10;
   const baseURI = opts.baseURI || null;
   if (format === 'wdl') {
     if (opts.zipFile) {
@@ -42,17 +42,11 @@ function parse(text, opts = {}) {
           wdl: str,
         }))))
           .then(wdlArray => parseWDL(text, { wdlArray, baseURI, subWfDetailing, deepResolving }));
-      }, (e) => {
-        throw new Error(`Parse zip file: ${e}`);
-      });
+      }, e => Promise.reject(`Parse zip file: ${e}`));
     }
-    return new Promise((resolve) => {
-      parseWDL(text, opts).then((data) => {
-        resolve(data);
-      });
-    });
+    return parseWDL(text, opts);
   }
-  return Promise.reject(new Error(`Unsupported format: ${format}`));
+  return Promise.reject(`Unsupported format: ${format}`);
 }
 
 
