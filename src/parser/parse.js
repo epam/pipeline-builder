@@ -42,17 +42,11 @@ function parse(text, opts = {}) {
           wdl: str,
         }))))
           .then(wdlArray => parseWDL(text, { wdlArray, baseURI, subWfDetailing, recursionDepth }));
-      }, (e) => {
-        throw new Error(`Parse zip file: ${e}`);
-      });
+      }, e => Promise.reject(`Parse zip file: ${e}`));
     }
-    return new Promise((resolve) => {
-      parseWDL(text, opts).then((data) => {
-        resolve(data);
-      });
-    });
+    return parseWDL(text, opts);
   }
-  return Promise.reject(new Error(`Unsupported format: ${format}`));
+  return Promise.reject(`Unsupported format: ${format}`);
 }
 
 
