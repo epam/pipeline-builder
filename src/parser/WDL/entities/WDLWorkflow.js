@@ -92,7 +92,7 @@ export default class WDLWorkflow {
     opts.i[itemName] = {};
     opts.i[itemName].type = 'ScatterItem';
 
-    const scatter = new Group(`scatter_${this.scatterIndex}`, 'scatter', opts);
+    const scatter = new Group(`${this.name}_scatter_${this.scatterIndex}`, 'scatter', opts);
     scatter.i[itemName].bind(port);
 
     this.scatterIndex += 1;
@@ -113,7 +113,7 @@ export default class WDLWorkflow {
       },
     };
 
-    const ifStatement = new Group(`if_${this.ifIndex}`, 'if', opts);
+    const ifStatement = new Group(`${this.name}_if_${this.ifIndex}`, 'if', opts);
 
     this.ifIndex += 1;
     parent.add(ifStatement);
@@ -133,7 +133,7 @@ export default class WDLWorkflow {
       },
     };
 
-    const whileLoop = new Group(`whileloop_${this.loopIndex}`, 'whileloop', opts);
+    const whileLoop = new Group(`${this.name}_whileloop_${this.loopIndex}`, 'whileloop', opts);
 
     this.loopIndex += 1;
     parent.add(whileLoop);

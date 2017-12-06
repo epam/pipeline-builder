@@ -87,158 +87,137 @@ function getImports(ast) {
     }) : [];
 }
 
-function getWorkflows(ast) {
-  return ast.attributes.body.list.filter(item => item.name.toLowerCase() === Constants.WORKFLOW);
-}
-
-function getCallsNames(workflows) {
-  const calls = [];
-  workflows.forEach((wf) => {
-    const findCalls = list => list.forEach((item) => {
-      if (item.name.toLowerCase() !== Constants.DECLARATION && item.name.toLowerCase() !== Constants.WF_OUTPUTS) {
-        if (item.name.toLowerCase() === Constants.CALL) {
-          calls.push(item.attributes.task.source_string);
-          return;
-        }
-        findCalls(item.attributes.body.list);
-      }
-    });
-
-    findCalls(wf.attributes.body.list);
-  });
-
-  return calls;
-}
-
-function getTaskNames(ast) {
-  return ast.attributes.body.list.filter(item => item.name.toLowerCase() === Constants.TASK)
-    .map(task => task.attributes.name.source_string);
-}
-
-function proceedCallInputs(ioItem, callNames, namespaces) {
-  if (ioItem.name.toLowerCase() === Constants.CALL_INPUTS) {
-    ioItem.attributes.map.list = ioItem.attributes.map.list.map((input) => {
-      if (input.name.toLowerCase() === Constants.CALL_IO_MAPPING) {
-        const valueType = input.attributes.value.name ? input.attributes.value.name.toLowerCase() : null;
-
-        if (valueType === Constants.IO_MEMBER_ACCESS) {
-          const index = callNames.indexOf(input.attributes.value.attributes.lhs.source_string);
-
-          if (index > -1) {
-            input.attributes.value.attributes.lhs.source_string = `${namespaces[index]}_${callNames[index]}`;
-          }
-        } else if (valueType === Constants.IO_FUNCTION_CALL) {
-          const index = callNames.indexOf(input.attributes.value.attributes.name.source_string);
-
-          if (index > -1) {
-            input.attributes.value.attributes.name.source_string = `${namespaces[index]}_${callNames[index]}`;
-          }
-        } else {
-          const index = callNames.indexOf(input.attributes.value.source_string);
-
-          if (index > -1) {
-            input.attributes.value.source_string = `${namespaces[index]}_${callNames[index]}`;
-          }
-        }
-      }
-
-      return input;
-    });
+function replaceDot(name) {
+  let res;
+  const splitted = name.split(Constants.NS_SPLITTER);
+  if (splitted.length > 2) {
+    const last = splitted.pop();
+    res = `${splitted.join(Constants.NS_CONNECTOR)}${Constants.NS_SPLITTER}${last}`;
+  } else {
+    res = splitted.join(Constants.NS_CONNECTOR);
   }
 
-  return ioItem;
+  return res;
 }
 
-function proceedWfOutput(output, namespaces, callNames) {
-  if (output.name.toLowerCase() !== Constants.WF_OUTPUT_DECLARATION) return output;
-
-  const valueType = output.attributes.expression.name
-    ? output.attributes.expression.name.toLowerCase()
-    : null;
-
-  if (valueType === Constants.IO_MEMBER_ACCESS) {
-    const index = callNames.indexOf(output.attributes.expression.attributes.lhs.source_string);
-
-    if (index > -1) {
-      output.attributes.expression.attributes.lhs.source_string = `${namespaces[index]}_${callNames[index]}`;
+function renameCallInput(callInput, prefix = '', initialCalls = []) {
+  if (callInput.name.toLowerCase() === Constants.CALL_IO_MAPPING) {
+    const valueType = callInput.attributes.value.name ? callInput.attributes.value.name.toLowerCase() : null;
+    if (valueType === Constants.IO_MEMBER_ACCESS) {
+      const calls = initialCalls.map(call => call.split(Constants.NS_SPLITTER).pop());
+      const index = calls.indexOf(callInput.attributes.value.attributes.lhs.source_string);
+      if (index > -1) {
+        callInput.attributes.value.attributes.lhs.source_string = `${prefix}${replaceDot(initialCalls[index])}`;
+      } else {
+        callInput.attributes.value.attributes.lhs.source_string = `${prefix}${callInput.attributes.value.attributes.lhs.source_string}`;
+      }
     }
+  }
+
+  return callInput;
+}
+
+function renameCallInputs(callInputsItem, prefix = '', initialCalls = []) {
+  if (callInputsItem.name.toLowerCase() === Constants.CALL_INPUTS) {
+    callInputsItem.attributes.map.list = callInputsItem.attributes.map.list
+      .map(callInput => renameCallInput(callInput, prefix, initialCalls));
+  }
+  return callInputsItem;
+}
+
+function renameWfOutput(output, prefix = '', initialCalls = []) {
+  switch (output.name.toLowerCase()) {
+    case Constants.WF_OUTPUT_DECLARATION:
+      if (output.attributes.expression && output.attributes.expression.name
+        && output.attributes.expression.name.toLowerCase() === Constants.IO_MEMBER_ACCESS) {
+        const calls = initialCalls.map(call => call.split(Constants.NS_SPLITTER).pop());
+        const index = calls.indexOf(output.attributes.expression.attributes.lhs.source_string);
+        if (index > -1) {
+          output.attributes.expression.attributes.lhs.source_string = `${prefix}${replaceDot(initialCalls[index])}`;
+        } else {
+          output.attributes.expression.attributes.lhs.source_string = `${prefix}${output.attributes.expression.attributes.lhs.source_string}`;
+        }
+      }
+      break;
+    default:
+      break;
   }
 
   return output;
 }
 
-function getNamespacesAndCallNames(calls) {
-  const namespaces = [];
-  const callNames = [];
+function renameCallAst(call, prefix = '', initialCalls = []) {
+  if (!initialCalls.includes(call.attributes.task.source_string)) {
+    initialCalls.push(call.attributes.task.source_string);
+  }
+  if (call.attributes.body && call.attributes.body.attributes && call.attributes.body.attributes.io) {
+    call.attributes.body.attributes.io.list = call.attributes.body.attributes.io.list
+      .map(callInput => renameCallInputs(callInput, prefix, initialCalls));
+  }
 
-  calls.forEach((c) => {
-    const arr = c.split(Constants.NS_SPLITTER);
-    namespaces.push(arr.shift());
-    callNames.push((arr).join(Constants.NS_SPLITTER));
+  call.attributes.task.source_string = `${prefix}${replaceDot(call.attributes.task.source_string)}`;
+
+  return call;
+}
+
+function renameWfDefinition(definition, prefix = '', initialCalls = []) {
+  switch (definition.name.toLowerCase()) {
+    case Constants.DECLARATION:
+      break;
+    case Constants.CALL:
+      definition = renameCallAst(definition, prefix, initialCalls);
+      break;
+    case Constants.WF_OUTPUTS:
+      definition.attributes.outputs.list = definition.attributes.outputs.list
+        .map(output => renameWfOutput(output, prefix, initialCalls));
+      break;
+    default:
+      definition.attributes.body.list = definition.attributes.body.list
+        .map(def => renameWfDefinition(def, prefix, initialCalls));
+      break;
+  }
+
+  return definition;
+}
+
+function renameWfAstNames(node, prefix = '') {
+  node.attributes.name.source_string = `${prefix}${replaceDot(node.attributes.name.source_string)}`;
+  const initialCalls = [];
+  // declarations, calls, outputs
+  node.attributes.body.list = node.attributes.body.list.map((definition) => {
+    if (definition.name.toLowerCase() === Constants.CALL) {
+      initialCalls.push(definition.attributes.task.source_string);
+    }
+    return renameWfDefinition(definition, prefix, initialCalls);
   });
 
-  return [namespaces, callNames];
+  return node;
+}
+
+function renameTaskAstNames(node, prefix = '') {
+  const resNode = node;
+  resNode.attributes.name.source_string = `${prefix}${replaceDot(node.attributes.name.source_string)}`;
+
+  return resNode;
+}
+
+function renameAstNodeNames(node, prefix = '') {
+  switch (node.name.toLowerCase()) {
+    case Constants.WORKFLOW:
+      return renameWfAstNames(node, prefix);
+    case Constants.TASK:
+      return renameTaskAstNames(node, prefix);
+    default:
+      return node;
+  }
 }
 
 /** Returns ast with renamed calls, calls inputs and workflow outputs (xxx.xxx -> xxx_xxx) */
-function updateFirstAst(firstAst, calls = [], notRootAst = false) {
-  const resAst = firstAst;
-  const [namespaces, callNames] = getNamespacesAndCallNames(calls);
-  notRootAst = !!notRootAst;
+function updateAstNames(ast, prefix = '') {
+  ast.attributes.body.list = ast.attributes.body.list
+    .map(item => renameAstNodeNames(item, prefix));
 
-  resAst.attributes.body.list = resAst.attributes.body.list
-    .map((item) => {
-      if (item.name.toLowerCase() !== Constants.WORKFLOW) {
-        return item;
-      }
-
-      const change = list => list.map((i) => {
-        if (i.name.toLowerCase() !== Constants.DECLARATION) {
-          if (i.name.toLowerCase() === Constants.CALL) {
-            if (i.attributes.body && i.attributes.body.attributes && i.attributes.body.attributes.io) {
-              i.attributes.body.attributes.io.list = i.attributes.body.attributes.io.list
-                .map(io => proceedCallInputs(io, callNames, namespaces));
-            }
-
-            if (notRootAst) {
-              if (callNames.includes(i.attributes.task.source_string)) {
-                const index = callNames.indexOf(i.attributes.task.source_string);
-                const prefix = namespaces[index] && namespaces[index].split(Constants.NS_CONNECTOR).length > 1
-                  ? namespaces[index].split(Constants.NS_CONNECTOR).shift() : namespaces[index];
-
-                i.attributes.task.source_string = `${prefix}_${i.attributes.task.source_string
-                  .split(Constants.NS_SPLITTER).join(Constants.NS_CONNECTOR)}`;
-
-                return i;
-              }
-            } else if (calls.includes(i.attributes.task.source_string)) {
-              i.attributes.task.source_string = i.attributes.task.source_string
-                .split(Constants.NS_SPLITTER).join(Constants.NS_CONNECTOR);
-
-              return i;
-            }
-
-            return i;
-          } else if (i.name.toLowerCase() === Constants.WF_OUTPUTS) {
-            i.attributes.outputs.list = i.attributes.outputs.list
-              .map(output => proceedWfOutput(output, namespaces, callNames));
-
-            return i;
-          }
-
-          i.attributes.body.list = change(i.attributes.body.list);
-
-          return i;
-        }
-
-        return i;
-      });
-
-      item.attributes.body.list = change(item.attributes.body.list);
-      return item;
-    });
-
-  return resAst;
+  return ast;
 }
 
 function getPreparedSubWDLs(opts = {}) {
@@ -254,35 +233,35 @@ function getPreparedSubWDLs(opts = {}) {
   }
 
   const promises = [];
-  /* eslint-disable */
   _.forEach(imports.map(imp => imp.uri), (importUri) => {
     if (!res[importUri]) {
       if (importUri.indexOf('file://') === 0) {
-        message = '"file://" protocol for imports is not supported';
+        message = 'Error resolving imports: "file://" protocol for imports is not supported';
         status = false;
 
-        // exit forEach
         return false;
       }
 
       if (importUri.indexOf('http://') === 0 || importUri.indexOf('https://') === 0) {
-        promises.push($http('GET', `${importUri}`).then(data => ({ importUri, data })));
+        promises.push($http('GET', `${importUri}`)
+          .then(data => ({ importUri, data })));
 
-        return;
+        return true;
       }
 
       if (!baseURI) {
         status = false;
+        message = 'Error resolving imports: No baseURI presented';
 
-        // exit forEach
         return false;
       }
 
       promises.push($http('GET', baseURI.endsWith('/') ? `${baseURI}${importUri}` : `${baseURI}/${importUri}`)
         .then(data => ({ importUri, data })));
     }
+
+    return true;
   });
-  /* eslint-enable */
 
   return new Promise((resolve) => {
     Promise.all(promises).then((response) => {
@@ -297,184 +276,149 @@ function getPreparedSubWDLs(opts = {}) {
   });
 }
 
-function clearWorkflowCallsAndOutputs(workflows) {
-  return workflows.map((wf) => {
-    const clearWf = list => list.map((item) => {
-      if (item.name.toLowerCase() !== Constants.DECLARATION && item.name.toLowerCase() !== Constants.WF_OUTPUTS) {
-        if (item.name.toLowerCase() === Constants.CALL) {
-          return false;
-        }
-        return clearWf(item.attributes.body.list);
-      } else if (item.name.toLowerCase() === Constants.WF_OUTPUTS) {
-        item.attributes.outputs.list = item.attributes.outputs.list.map((output) => {
+function clearWfDefinition(definition) {
+  switch (definition.name.toLowerCase()) {
+    case Constants.DECLARATION:
+      break;
+    case Constants.CALL:
+      definition = false;
+      break;
+    case Constants.WF_OUTPUTS:
+      definition.attributes.outputs.list = definition.attributes.outputs.list
+        .map((output) => {
           if (output.name.toLowerCase() === Constants.WF_OUTPUT_DECLARATION) {
-            const newOut = output;
-            newOut.attributes.expression = null;
-            return newOut;
+            output.attributes.expression = null;
           }
           return output;
         });
-      }
-      return item;
-    }).filter(i => !!i && !_.isArray(i));
+      break;
+    default:
+      definition.attributes.body.list = definition.attributes.body.list.map(def => clearWfDefinition(def))
+        .filter(i => !!i && !_.isArray(i));
+  }
 
-    wf.attributes.body.list = clearWf(wf.attributes.body.list);
-    return wf;
-  });
+  return definition;
 }
 
-function getNounCalls(calls, imports) {
-  const nounCalls = {};
-  const importNames = imports.map(imp => imp.name);
+function clearWorkflow(node) {
+  node.attributes.body.list = node.attributes.body.list
+    .map(wfDefinition => clearWfDefinition(wfDefinition)).filter(i => !!i && !_.isArray(i));
 
-  calls.filter(call => importNames.includes(call.split(Constants.NS_SPLITTER)[0]))
-    .forEach((call) => {
-      const [nsName, ...callNameRest] = call.split(Constants.NS_SPLITTER);
-      const chosenImport = imports.filter(imp => imp.name === nsName).shift();
+  return node;
+}
 
-      if (chosenImport) {
-        const callName = callNameRest.join(Constants.NS_CONNECTOR);
-        if (!nounCalls[nsName]) {
-          nounCalls[nsName] = {};
-        }
-        nounCalls[nsName].importObject = chosenImport;
-
-        if (nounCalls[nsName].callNames && _.isArray(nounCalls[nsName].callNames)) {
-          nounCalls[nsName].callNames.push(callName);
-        } else {
-          nounCalls[nsName].callNames = [callName];
-        }
+function clearImportedAst(importedAst, recursionDepth = 0, subWfDetailing = []) {
+  if (recursionDepth > 0) {
+    if (subWfDetailing.includes('*')) {
+      return importedAst;
+    }
+    importedAst.attributes.body.list = importedAst.attributes.body.list.map((item) => {
+      switch (item.name.toLowerCase()) {
+        case Constants.WORKFLOW:
+          if (!subWfDetailing.includes(item.attributes.name.source_string)) {
+            item = clearWorkflow(item);
+          }
+          break;
+        default:
+          break;
       }
+
+      return item;
     });
 
-  return nounCalls;
-}
-
-/** Return array of ast tasks/workflows */
-async function resolveCalls(calls, imports, preparedSubWdl, opts = {}) {
-  const nounCalls = getNounCalls(calls, imports);
-  const subWfDetailing = (opts.subWfDetailing && _.isArray(opts.subWfDetailing)) ? opts.subWfDetailing : [];
-  const deepResolving = opts.deepResolving || 0;
-  const wdlArray = opts.wdlArray ? opts.wdlArray : null;
-  const baseURI = opts.baseURI ? opts.baseURI : null;
-
-
-  const foundAsts = [];
-  await Promise.all(Object.entries(nounCalls).map(async (entry) => {
-    const [nsName, v] = entry;
-    const hermesRes = hermesStage(preparedSubWdl[v.importObject.uri]);
-    let importAst = hermesRes.status ? hermesRes.ast : null;
-    let subAst;
-
-    if (!importAst) { return; }
-
-    const workflows = getWorkflows(importAst);
-
-    let includesWf = false;
-    const wfNames = workflows.map(wf => wf.attributes.name.source_string);
-
-    if (subWfDetailing.includes('*')) {
-      includesWf = true;
-    } else {
-      _.forEach(wfNames, (name) => {
-        if (subWfDetailing.includes(name)) {
-          includesWf = true;
-          return false;
-        }
-        return true;
-      });
+    return importedAst;
+  }
+  importedAst.attributes.body.list = importedAst.attributes.body.list.map((item) => {
+    switch (item.name.toLowerCase()) {
+      case Constants.WORKFLOW:
+        return clearWorkflow(item);
+      default:
+        return item;
     }
+  });
 
-    if (deepResolving > 0 && workflows.length > 0 && (subWfDetailing.includes('*') || includesWf)) {
-      // eslint-disable-next-line no-use-before-define
-      subAst = await importParsingStage(importAst,
-        { deepResolving: deepResolving - 1, subWfDetailing, wdlArray, baseURI });
-      if (subAst.status) {
-        subAst.modifiedUnfilteredCalls = subAst.modifiedUnfilteredCalls.map(call => `${nsName}${call.split(Constants.NS_SPLITTER).length > 1 ? '_' : '.'}${call}`);
-        importAst = updateFirstAst(subAst.ast, subAst.modifiedUnfilteredCalls, true);
-      }
-    }
-
-    // find tasks and workFlows
-    importAst.attributes.body.list
-    // if deep resolving this wf - need all tasks, otherwise - only those used in root wf
-      .filter(item => includesWf || v.callNames.includes(item.attributes.name.source_string))
-      .forEach((astItem) => {
-        astItem.attributes.name.source_string = `${nsName}_${astItem.attributes.name.source_string}`;
-        if (astItem.name.toLowerCase() === Constants.WORKFLOW) {
-          if (!subWfDetailing.includes('*') && !subWfDetailing.includes(astItem.attributes.name.source_string)) {
-            // clear sub wf calls and outputs expressions
-            astItem = clearWorkflowCallsAndOutputs([astItem])[0];
-          }
-        }
-        foundAsts.push(astItem);
-      });
-  }));
-
-  return foundAsts;
+  return importedAst;
 }
 
-function addSubWorkflows(ast, importedAst) {
-  const resAst = ast;
-  importedAst.forEach(item => resAst.attributes.body.list.push(item));
+/** Returns import's ast */
+function resolveImport(importObject, preparedSubWdl) {
+  const hermesRes = hermesStage(preparedSubWdl[importObject.uri]);
 
-  return resAst;
+  return hermesRes.status ? hermesRes.ast : null;
 }
 
-function modifyUnfilteredCalls(unfilteredCalls) {
-  return unfilteredCalls.map(call => call.split(Constants.NS_SPLITTER).join(Constants.NS_CONNECTOR));
+function mergeAst(ast, importedAstArray) {
+  importedAstArray.forEach((importedAst) => {
+    importedAst.attributes.body.list.forEach((item) => { ast.attributes.body.list.push(item); });
+  });
+
+  return ast;
 }
 
-/** Parse function with WDL imports support */
-async function importParsingStage(firstAst, opts = {}) {
+/** Resolving WDL imports for ast */
+async function importParsingStage(ast, opts = {}) {
   const result = {
     status: true,
     message: '',
-    ast: firstAst,
-    unfilteredCalls: [],
-    filteredCalls: [],
-    modifiedUnfilteredCalls: [],
+    ast,
   };
-  const subWfDetailing = opts.subWfDetailing || null;
-  const deepResolving = opts.deepResolving || null;
-  const wdlArray = opts.wdlArray ? opts.wdlArray : null;
-  const baseURI = opts.baseURI ? opts.baseURI : null;
+  const subWfDetailing = opts.subWfDetailing || [];
+  const recursionDepth = opts.recursionDepth || 0;
+  const wdlArray = opts.wdlArray || null;
+  const baseURI = opts.baseURI || null;
+  const parentNamespace = opts.parentNamespace || '';
 
   // list parsed import statements in ast
-  const imports = getImports(firstAst);
-
-  // find calls in firstAst
-  result.unfilteredCalls = getCallsNames(getWorkflows(firstAst));
-  result.modifiedUnfilteredCalls = result.unfilteredCalls;
+  const imports = getImports(ast);
 
   if (!imports.length) {
     return result;
   }
 
-  const tasks = getTaskNames(firstAst);
-
-  // check if calls're already in existing tasks
-  result.filteredCalls = result.unfilteredCalls.filter(call => !tasks.includes(call));
-  if (!result.filteredCalls.length) return result;
-
   const preparedSubWDLs = await getPreparedSubWDLs({ imports, wdlArray, baseURI });
 
   if (!preparedSubWDLs.status) {
     result.status = false;
-    result.message = preparedSubWDLs.message ? preparedSubWDLs.message : 'Can\'t resolve imports';
+    result.message = preparedSubWDLs.message ? preparedSubWDLs.message : 'Error resolving imports';
 
     return result;
   }
-  result.modifiedUnfilteredCalls = modifyUnfilteredCalls(result.unfilteredCalls);
 
-  // change calls in firstAst, call's inputs & workflow outputs (xxx.xxx -> xxx_xxx)
-  firstAst = updateFirstAst(firstAst, result.filteredCalls);
-  // returns calls with ast
-  const importedTasksAst = await resolveCalls(result.filteredCalls, imports, preparedSubWDLs.res,
-    { subWfDetailing, deepResolving, wdlArray, baseURI });
+  if (!parentNamespace) {
+    ast = updateAstNames(ast);
+  }
 
-  // merge first hermes parsing ast with imports ast
-  result.ast = addSubWorkflows(firstAst, importedTasksAst);
+  const resolvedImportsAsts = [];
+  await Promise.all(imports.map(async (importObject) => {
+    const newParentNamespace = `${parentNamespace}${importObject.name}_`;
+    let importedAst = resolveImport(importObject, preparedSubWDLs.res);
+
+    if (!importedAst) {
+      result.status = false;
+      result.message = 'Error resolving imports';
+    }
+    importedAst = updateAstNames(importedAst, newParentNamespace);
+
+    if (recursionDepth > 0) {
+      const importRes = await importParsingStage(importedAst,
+        { wdlArray, baseURI, subWfDetailing, parentNamespace: newParentNamespace, recursionDepth: recursionDepth - 1 });
+      if (importRes.status) {
+        importedAst = importRes.ast;
+      } else {
+        result.status = false;
+        result.message = importRes.message;
+      }
+    }
+    importedAst = clearImportedAst(importedAst, recursionDepth, subWfDetailing);
+
+    resolvedImportsAsts.push(importedAst);
+  }));
+
+  if (!result.status) {
+    return result;
+  }
+
+  result.ast = mergeAst(ast, resolvedImportsAsts);
 
   return result;
 }
@@ -498,7 +442,7 @@ export default async function parse(data, opts = {}) {
       wdlArray: opts.wdlArray || null,
       baseURI: opts.baseURI || null,
       subWfDetailing: opts.subWfDetailing || null,
-      deepResolving: opts.deepResolving || null,
+      recursionDepth: opts.recursionDepth || null,
     };
 
     const importRes = await importParsingStage(ast, importOpts);

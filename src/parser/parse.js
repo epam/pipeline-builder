@@ -22,9 +22,9 @@ import parseWDL from './WDL/parse';
 function parse(text, opts = {}) {
   const format = opts.format || 'wdl';
   // const subWfDetailing = (opts.subWfDetailing && _.isArray(opts.subWfDetailing)) ? opts.subWfDetailing : null;// todo uncomment
-  const subWfDetailing = ['*'];// TumorCopyRatioWorkflow
-  // const deepResolving = opts.deepResolving || null;// todo uncomment
-  const deepResolving = 1;
+  const subWfDetailing = ['*'];// CopyRatio_CNVSomaticCopyRatioBAMWorkflow
+  // const recursionDepth = opts.recursionDepth || 0  ;// todo uncomment
+  const recursionDepth = 10;
   const baseURI = opts.baseURI || null;
   if (format === 'wdl') {
     if (opts.zipFile) {
@@ -41,7 +41,7 @@ function parse(text, opts = {}) {
           name: zipWdlFile.name.split('/').pop(),
           wdl: str,
         }))))
-          .then(wdlArray => parseWDL(text, { wdlArray, baseURI, subWfDetailing, deepResolving }));
+          .then(wdlArray => parseWDL(text, { wdlArray, baseURI, subWfDetailing, recursionDepth }));
       }, (e) => {
         throw new Error(`Parse zip file: ${e}`);
       });
