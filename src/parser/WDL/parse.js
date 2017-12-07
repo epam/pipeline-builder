@@ -108,8 +108,6 @@ function renameCallInput(callInput, prefix, initialCalls) {
       const index = calls.indexOf(callInput.attributes.value.attributes.lhs.source_string);
       if (index > -1) {
         callInput.attributes.value.attributes.lhs.source_string = `${prefix}${replaceDot(initialCalls[index])}`;
-      } else {
-        callInput.attributes.value.attributes.lhs.source_string = `${prefix}${callInput.attributes.value.attributes.lhs.source_string}`;
       }
     }
   }
@@ -134,8 +132,6 @@ function renameWfOutput(output, prefix, initialCalls) {
         const index = calls.indexOf(output.attributes.expression.attributes.lhs.source_string);
         if (index > -1) {
           output.attributes.expression.attributes.lhs.source_string = `${prefix}${replaceDot(initialCalls[index])}`;
-        } else {
-          output.attributes.expression.attributes.lhs.source_string = `${prefix}${output.attributes.expression.attributes.lhs.source_string}`;
         }
       }
       break;
@@ -195,21 +191,24 @@ function renameWfAstNames(node, prefix) {
 }
 
 function renameTaskAstNames(node, prefix) {
-  const resNode = node;
-  resNode.attributes.name.source_string = `${prefix}${replaceDot(node.attributes.name.source_string)}`;
+  node.attributes.name.source_string = `${prefix}${replaceDot(node.attributes.name.source_string)}`;
 
-  return resNode;
+  return node;
 }
 
 function renameAstNodeNames(node, prefix) {
   switch (node.name.toLowerCase()) {
     case Constants.WORKFLOW:
-      return renameWfAstNames(node, prefix);
+      node = renameWfAstNames(node, prefix);
+      break;
     case Constants.TASK:
-      return renameTaskAstNames(node, prefix);
+      node = renameTaskAstNames(node, prefix);
+      break;
     default:
-      return node;
+      break;
   }
+
+  return node;
 }
 
 /** Returns ast with renamed calls, calls inputs and workflow outputs (xxx.xxx -> xxx_xxx) */
@@ -294,6 +293,10 @@ function clearWfDefinition(definition) {
     default:
       definition.attributes.body.list = definition.attributes.body.list.map(def => clearWfDefinition(def))
         .filter(i => !!i && !_.isArray(i));
+      if (!definition.attributes.body.list.length) {
+        definition = false;
+      }
+      break;
   }
 
   return definition;
@@ -312,14 +315,9 @@ function clearImportedAst(importedAst, recursionDepth = 0, subWfDetailing = []) 
       return importedAst;
     }
     importedAst.attributes.body.list = importedAst.attributes.body.list.map((item) => {
-      switch (item.name.toLowerCase()) {
-        case Constants.WORKFLOW:
-          if (!subWfDetailing.includes(item.attributes.name.source_string)) {
-            item = clearWorkflow(item);
-          }
-          break;
-        default:
-          break;
+      if (item.name.toLowerCase() === Constants.WORKFLOW
+        && !subWfDetailing.includes(item.attributes.name.source_string)) {
+        item = clearWorkflow(item);
       }
 
       return item;
@@ -328,12 +326,11 @@ function clearImportedAst(importedAst, recursionDepth = 0, subWfDetailing = []) 
     return importedAst;
   }
   importedAst.attributes.body.list = importedAst.attributes.body.list.map((item) => {
-    switch (item.name.toLowerCase()) {
-      case Constants.WORKFLOW:
-        return clearWorkflow(item);
-      default:
-        return item;
+    if (item.name.toLowerCase() === Constants.WORKFLOW) {
+      item = clearWorkflow(item);
     }
+
+    return item;
   });
 
   return importedAst;
@@ -395,22 +392,31 @@ async function importParsingStage(ast, opts) {
     if (!importedAst) {
       result.status = false;
       result.message = 'Error resolving imports';
+      return Promise.reject(result);
     }
+
     importedAst = updateAstNames(importedAst, newParentNamespace);
 
     if (recursionDepth > 0) {
-      const importRes = await importParsingStage(importedAst,
-        { wdlArray, baseURI, subWfDetailing, parentNamespace: newParentNamespace, recursionDepth: recursionDepth - 1 });
-      if (importRes.status) {
+      try {
+        const importRes = await importParsingStage(importedAst, {
+          wdlArray,
+          baseURI,
+          subWfDetailing,
+          parentNamespace: newParentNamespace,
+          recursionDepth: recursionDepth - 1,
+        });
         importedAst = importRes.ast;
-      } else {
+      } catch (e) {
         result.status = false;
-        result.message = importRes.message;
+        result.message = e.message;
       }
     }
     importedAst = clearImportedAst(importedAst, recursionDepth, subWfDetailing);
 
     resolvedImportsAsts.push(importedAst);
+
+    return Promise.resolve(result);
   }));
 
   if (!result.status) {
@@ -444,14 +450,18 @@ export default async function parse(data, opts = {}) {
       recursionDepth: opts.recursionDepth || null,
     };
 
-    const importRes = await importParsingStage(ast, importOpts);
-
-    result.status = importRes.status;
-    result.message = importRes.message;
-    ast = importRes.ast;
+    try {
+      const importRes = await importParsingStage(ast, importOpts);
+      result.status = importRes.status;
+      result.message = importRes.message;
+      ast = importRes.ast;
+    } catch (e) {
+      result.status = e.status;
+      result.message = e.message;
+    }
   }
 
-  if (result.status && (ast === undefined || ast === null)) {
+  if (result.status && (ast === undefined || ast === null) && !result.message) {
     result.status = false;
     result.message = 'No data to parse';
   }

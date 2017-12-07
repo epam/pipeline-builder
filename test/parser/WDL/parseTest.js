@@ -293,10 +293,9 @@ task task2 {
     return expect(parse(src, { wdlArray })).to.be.fulfilled;
   });
 
-/*
-  it('requires to parse valid wdl script with unused imports and no import\'s wdl presented', () => {
+  describe('recursive imports', () => {
     // language=wdl
-    const src = `
+    const validSrc = `
 import "tasks.wdl"
 import "sub_workflow.wdl" as SubWorkflow
 
@@ -305,9 +304,44 @@ workflow RootWorkflow {
     File? wfInputTwo
     File? wfInputThree
 
-    call task2
+    if (wfInput) {
+      call tasks.TaskOne {
+          input:
+              taskInput = wfInput
+      }
+    }
+
+    if (wfInput) {
+      call tasks.TaskOne as Two {
+          input:
+              taskInput = wfInput
+      }
+    }
+
+    call task2 
+    
+    call SubWorkflow.Workflow {
+        input:
+            wf_input = TaskOne.task_output,
+            wf_input_two = wfInput
+    }
+
+    call SubWorkflow.Workflow as WorkflowAliasOne {
+        input:
+            wf_input = Two.task_output,
+            wf_input_two = wfInputTwo
+    }
+
+    call SubWorkflow.Workflow as WorkflowAliasTwo {
+        input:
+            wf_input = Two.task_output,
+            wf_input_two = wfInputThree
+    }
 
     output {
+        String output_1 = WorkflowAliasTwo.output_string
+        String? output_2 = Workflow.output_string
+        String? output_3 = WorkflowAliasOne.output_string
     }
 }
 
@@ -317,10 +351,332 @@ task task2 {
   output {
     String outStr = str
   }
-}`;
-    return expect(parse(src)).to.be.fulfilled;
+}
+`;
+    const validWdlArray = [{
+      name: 'tasks.wdl',
+      // language=wdl
+      wdl: `
+task TaskOne {
+  File taskInput
+
+  command <<<
+      echo "test"; \\
+  >>>
+
+  runtime {
+      test: "test"
+  }
+
+  output {
+      String task_output = "outputString"
+  }
+}
+`,
+    }, {
+      name: 'sub_workflow.wdl',
+      // language=wdl
+      wdl: `
+import "tasks.wdl"
+import "subSubWorkflow.wdl" as SubWorkflow
+
+workflow Workflow {
+  String wf_input
+  String wf_input_two
+
+  if (wf_input) {
+    call task2
+  }
+  
+  if (wf_input) {
+    call task2 as task3
+  }
+  
+  call tasks.TaskOne {
+      input:
+          taskInput = wf_input
+  }
+
+  if (wf_input_two) {
+    call tasks.TaskOne as Two {
+        input:
+            taskInput = wf_input_two
+    }
+  }
+
+  call SubWorkflow.Workflow {
+      input:
+          wf_input = TaskOne.task_output,
+          wf_input_two = wf_input
+  }
+
+  call SubWorkflow.Workflow as SubWorkflowAliasOne 
+ {
+      input:
+          wf_input = TaskOne.task_output,
+          wf_input_two = wf_input_two
+  }
+  
+  output {
+      String output_string = "outputString"
+      String? output_string_2 = Workflow.output_string
+      String? output_string_3 = SubWorkflowAliasOne.output_string
+ }
+}
+
+task task2 {
+  String str
+
+  output {
+    String outStr = str
+  }
+}
+`,
+    }, {
+      name: 'subSubWorkflow.wdl',
+      // language=wdl
+      wdl: `
+import "tasks.wdl" as SubSubTasks
+import "subSubSubWorkflow.wdl"
+
+workflow Workflow {
+  String wf_input
+  String wf_input_two
+
+  call SubSubTasks.TaskOne {
+      input:
+          taskInput = wf_input
+  }
+
+  if (wf_input_two) {
+    call SubSubTasks.TaskOne as Two {
+        input:
+            taskInput = wf_input_two
+    }
+  }
+
+  call subSubSubWorkflow.Workflow {
+      input:
+          wf_input = TaskOne.task_output,
+          wf_input_two = wf_input
+  }
+
+  call subSubSubWorkflow.Workflow as SubSubWorkflowAliasOne {
+      input:
+          wf_input = TaskOne.task_output,
+          wf_input_two = wf_input_two
+  }
+
+  
+  output {
+      String output_string = "outputString"
+      String? output_string_2 = Workflow.output_string
+      String? output_string_3 = SubSubWorkflowAliasOne.output_string
+  }
+}
+
+`,
+    }, {
+      name: 'subSubSubWorkflow.wdl',
+      // language=wdl
+      wdl: `
+workflow Workflow {
+  String wf_input
+  String wf_input_two
+
+  call task3 {
+      input:
+          taskInput = wf_input
+  }
+
+  if (wf_input_two) {
+    call task3 as Two {
+        input:
+            taskInput = wf_input_two
+    }
+  }
+
+  output {
+      String output_string = "outputString"
+      String? output_string_2 = task3.outStr
+      String? output_string_3 = Two.outStr
+  }
+}
+
+task task3 {
+  String taskInput
+
+  output {
+    String outStr = taskInput
+  }
+}
+`,
+    }];
+
+    const invalidWdlArray = [{
+      name: 'tasks.wdl',
+      // language=wdl
+      wdl: `
+task TaskOne {
+  File taskInput
+
+  command <<<
+      echo "test"; \\
+  >>>
+
+  runtime {
+      test: "test"
+  }
+
+  output {
+      String task_output = "outputString"
+  }
+}
+`,
+    }, {
+      name: 'sub_workflow.wdl',
+      // language=wdl
+      wdl: `
+import "tasks.wdl"
+import "subSubWorkflow.wdl" as SubWorkflow
+
+workflow Workflow {
+  String wf_input
+  String wf_input_two
+
+  call task2
+  
+  if (wf_input) {
+    call task2 as task3
+  }
+  
+  call tasks.TaskOne {
+      input:
+          taskInput = wf_input
+  }
+
+  if (wf_input_two) {
+    call tasks.TaskOne as Two {
+        input:
+            taskInput = wf_input_two
+    }
+  }
+
+  call SubWorkflow.Workflow {
+      input:
+          wf_input = TaskOne.task_output,
+          wf_input_two = wf_input
+  }
+
+  call SubWorkflow.Workflow as SubWorkflowAliasOne 
+ {
+      input:
+          wf_input = TaskOne.task_output,
+          wf_input_two = wf_input_two
+  }
+  
+  output {
+      String output_string = "outputString"
+      String? output_string_2 = Workflow.output_string
+      String? output_string_3 = SubWorkflowAliasOne.output_string
+ }
+}
+
+task task2 {
+  String str
+
+  output {
+    String outStr = str
+  }
+}
+`,
+    }, {
+      name: 'subSubWorkflow.wdl',
+      // language=wdl
+      wdl: `
+import "tasks.wdl" as SubSubTasks
+import "subSubSubWorkflow.wdl"
+
+workflow Workflow {
+  String wf_input
+  String wf_input_two
+
+  call SubSubTasks.TaskOne {
+      input:
+          taskInput = wf_input
+  }
+
+  if (wf_input_two) {
+    call SubSubTasks.TaskOne as Two {
+        input:
+            taskInput = wf_input_two
+    }
+  }
+
+  call subSubSubWorkflow.Workflow {
+      input:
+          wf_input = TaskOne.task_output,
+          wf_input_two = wf_input
+  }
+
+  call subSubSubWorkflow.Workflow as SubSubWorkflowAliasOne {
+      input:
+          wf_input = TaskOne.task_output,
+          wf_input_two = wf_input_two
+  }
+
+  
+  output {
+      String output_string = "outputString"
+      String? output_string_2 = Workflow.output_string
+      String? output_string_3 = SubSubWorkflowAliasOne.output_string
+  }
+}
+
+`,
+    }, {
+      name: 'subSubSubWorkflow.wdl',
+      // language=wdl
+      wdl: `
+workflowasdsd Workflow {
+  String wf_input
+  String wf_input_two
+
+  call task3 {
+      input:
+          taskInput = wf_input
+  }
+
+  if (wf_input_two) {
+    call task3 as Two {
+        input:
+            taskInput = wf_input_two
+    }
+  }
+
+  output {
+      String output_string = "outputString"
+      String? output_string_2 = task3.outStr
+      String? output_string_3 = Two.outStr
+  }
+}
+
+task task3 {
+  String taskInput
+
+  output {
+    String outStr = taskInput
+  }
+}
+`,
+    }];
+
+    it('requires to parse valid and all sub workflows should be expanded till recursion depth level = 2', () => expect(parse(validSrc, { wdlArray: validWdlArray, subWfDetailing: ['*'], recursionDepth: 2 })).to.be.fulfilled);
+
+    it('requires to parse valid and only specified sub workflow should be expanded', () => expect(parse(validSrc, { wdlArray: validWdlArray, subWfDetailing: ['SubWorkflow_Workflow'], recursionDepth: 2 })).to.be.fulfilled);
+
+    it('returns with error when parsing valid wdl script with imports with incorrect sub imports', () => expect(parse(validSrc, { wdlArray: invalidWdlArray, subWfDetailing: ['*'], recursionDepth: 4 })).to.be.rejected);
   });
-*/
 
   it('returns with error when parsing valid wdl script with import statements and no import\'s wdl presented', () => {
     // language=wdl
