@@ -53,10 +53,10 @@ describe('model/Workflow', () => {
       expect(flow.actions).to.have.property('b', b);
     });
 
-    it('forbids equal action names', () => {
+    it('forbids equal action names and different content', () => {
       const flow = new Workflow('flow');
-      const action = flow.addAction(new Action('action'));
-      expect(() => flow.addAction(new Action('action'))).to.throw(Error);
+      const action = flow.addAction(new Action('action', { data: 'data1' }));
+      expect(() => flow.addAction(new Action('action', { data: 'data2' }))).to.throw(Error);
       expect(flow.actions).to.have.all.keys(['flow', 'action']);
       expect(flow.actions).to.have.property('action', action);
     });

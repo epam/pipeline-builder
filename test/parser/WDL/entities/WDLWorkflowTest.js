@@ -675,7 +675,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
       const workflow = new WDLWorkflow(ast, context);
-      expect(workflow.workflowStep.children.scatter_0.type).to.equal('scatter');
+      expect(workflow.workflowStep.children.foo_scatter_0.type).to.equal('scatter');
     });
 
     it('supports group level name resolving', () => {
@@ -799,7 +799,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
       const workflow = new WDLWorkflow(ast, context);
-      expect(workflow.workflowStep.children.scatter_0.type).to.equal('scatter');
+      expect(workflow.workflowStep.children.foo_scatter_0.type).to.equal('scatter');
     });
 
     it('supports loop', () => {
@@ -854,7 +854,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
       const workflow = new WDLWorkflow(ast, context);
-      expect(workflow.workflowStep.children.whileloop_0.type).to.equal('whileloop');
+      expect(workflow.workflowStep.children.foo_whileloop_0.type).to.equal('whileloop');
     });
 
     it('supports if', () => {
@@ -909,7 +909,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
       const workflow = new WDLWorkflow(ast, context);
-      expect(workflow.workflowStep.children.if_0.type).to.equal('if');
+      expect(workflow.workflowStep.children.foo_if_0.type).to.equal('if');
     });
 
     it('throws error if prohibited keys in some block are appeared', () => {

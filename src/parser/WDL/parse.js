@@ -100,7 +100,7 @@ function replaceDot(name) {
   return res;
 }
 
-function renameCallInput(callInput, prefix = '', initialCalls = []) {
+function renameCallInput(callInput, prefix, initialCalls) {
   if (callInput.name.toLowerCase() === Constants.CALL_IO_MAPPING) {
     const valueType = callInput.attributes.value.name ? callInput.attributes.value.name.toLowerCase() : null;
     if (valueType === Constants.IO_MEMBER_ACCESS) {
@@ -117,7 +117,7 @@ function renameCallInput(callInput, prefix = '', initialCalls = []) {
   return callInput;
 }
 
-function renameCallInputs(callInputsItem, prefix = '', initialCalls = []) {
+function renameCallInputs(callInputsItem, prefix, initialCalls) {
   if (callInputsItem.name.toLowerCase() === Constants.CALL_INPUTS) {
     callInputsItem.attributes.map.list = callInputsItem.attributes.map.list
       .map(callInput => renameCallInput(callInput, prefix, initialCalls));
@@ -125,7 +125,7 @@ function renameCallInputs(callInputsItem, prefix = '', initialCalls = []) {
   return callInputsItem;
 }
 
-function renameWfOutput(output, prefix = '', initialCalls = []) {
+function renameWfOutput(output, prefix, initialCalls) {
   switch (output.name.toLowerCase()) {
     case Constants.WF_OUTPUT_DECLARATION:
       if (output.attributes.expression && output.attributes.expression.name
@@ -146,7 +146,7 @@ function renameWfOutput(output, prefix = '', initialCalls = []) {
   return output;
 }
 
-function renameCallAst(call, prefix = '', initialCalls = []) {
+function renameCallAst(call, prefix, initialCalls) {
   if (!initialCalls.includes(call.attributes.task.source_string)) {
     initialCalls.push(call.attributes.task.source_string);
   }
@@ -160,7 +160,7 @@ function renameCallAst(call, prefix = '', initialCalls = []) {
   return call;
 }
 
-function renameWfDefinition(definition, prefix = '', initialCalls = []) {
+function renameWfDefinition(definition, prefix, initialCalls) {
   switch (definition.name.toLowerCase()) {
     case Constants.DECLARATION:
       break;
@@ -180,7 +180,7 @@ function renameWfDefinition(definition, prefix = '', initialCalls = []) {
   return definition;
 }
 
-function renameWfAstNames(node, prefix = '') {
+function renameWfAstNames(node, prefix) {
   node.attributes.name.source_string = `${prefix}${replaceDot(node.attributes.name.source_string)}`;
   const initialCalls = [];
   // declarations, calls, outputs
@@ -194,14 +194,14 @@ function renameWfAstNames(node, prefix = '') {
   return node;
 }
 
-function renameTaskAstNames(node, prefix = '') {
+function renameTaskAstNames(node, prefix) {
   const resNode = node;
   resNode.attributes.name.source_string = `${prefix}${replaceDot(node.attributes.name.source_string)}`;
 
   return resNode;
 }
 
-function renameAstNodeNames(node, prefix = '') {
+function renameAstNodeNames(node, prefix) {
   switch (node.name.toLowerCase()) {
     case Constants.WORKFLOW:
       return renameWfAstNames(node, prefix);
@@ -220,7 +220,7 @@ function updateAstNames(ast, prefix = '') {
   return ast;
 }
 
-function getPreparedSubWDLs(opts = {}) {
+function getPreparedSubWDLs(opts) {
   const { wdlArray, baseURI, imports } = opts;
   const res = {};
   let status = true;
@@ -355,7 +355,7 @@ function mergeAst(ast, importedAstArray) {
 }
 
 /** Resolving WDL imports for ast */
-async function importParsingStage(ast, opts = {}) {
+async function importParsingStage(ast, opts) {
   const result = {
     status: true,
     message: '',

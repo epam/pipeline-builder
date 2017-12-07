@@ -293,6 +293,7 @@ task task2 {
     return expect(parse(src, { wdlArray })).to.be.fulfilled;
   });
 
+/*
   it('requires to parse valid wdl script with unused imports and no import\'s wdl presented', () => {
     // language=wdl
     const src = `
@@ -319,6 +320,7 @@ task task2 {
 }`;
     return expect(parse(src)).to.be.fulfilled;
   });
+*/
 
   it('returns with error when parsing valid wdl script with import statements and no import\'s wdl presented', () => {
     // language=wdl
