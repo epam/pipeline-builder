@@ -14,7 +14,7 @@ export default class WDLWorkflow {
    * @param {Context} [context={}] - Parsing context
    * @param {String?} [initialName=null] - initial Name
    */
-  constructor(wfNode, context = {}, initialName = null) {
+  constructor(wfNode, context = {}, initialName = null, isSubWorkflow = false) {
     this.parsingProcessors = {
       declaration: this.parseDeclaration,
       workflowoutputs: this.parseWfOutputs,
@@ -32,7 +32,7 @@ export default class WDLWorkflow {
 
     this.context = context;
     this.name = wfNode.name.source_string;
-    this.workflowStep = new Workflow(this.name, { initialName: initialName || null });
+    this.workflowStep = new Workflow(this.name, { initialName: initialName || null, isSubWorkflow });
     if (Object.prototype.hasOwnProperty.call(context, 'hasImports')) {
       this.workflowStep.hasImports = !!context.hasImports;
     }
@@ -163,7 +163,7 @@ export default class WDLWorkflow {
     if (action.type === Constants.WORKFLOW) {
       const cloneAst = _.clone(action.ast);
       cloneAst.attributes.name.source_string = alias;
-      childStep = new WDLWorkflow(cloneAst.attributes, this.context, initialName).workflowStep;
+      childStep = new WDLWorkflow(cloneAst.attributes, this.context, initialName, true).workflowStep;
     } else {
       childStep = new Step(alias, action);
     }

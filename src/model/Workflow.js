@@ -41,6 +41,8 @@ class Workflow extends Group {
     if (config.initialName) {
       this.initialName = config.initialName;
     }
+
+    this.isSubWorkflow = config.isSubWorkflow || false;
     this.addAction(this.action);
   }
 
@@ -55,6 +57,10 @@ class Workflow extends Group {
    * const action = flow.addAction(new Action('action', ...));
    */
   addAction(action) {
+    if (this.isSubWorkflow) {
+      return action;
+    }
+
     const existing = this.actions[action.name];
     if (existing && existing !== action) {
       throw new Error('Cannot add another action with the same name');

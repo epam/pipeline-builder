@@ -134,9 +134,9 @@ export default class Context {
 
     const workflows = definitions.list.filter(item => item.name.toLowerCase() === Constants.WORKFLOW)
       .map((wfNode) => {
-        const workflow = new Workflow(wfNode.attributes.name.source_string, { ast: wfNode });
-        workflow.i = Context.getInputsWorkflow(wfNode.attributes.body);
-        workflow.o = Context.getOutputsWorkflow(wfNode.attributes);
+        const workflow = new Workflow(wfNode.attributes.name.source_string, { ast: _.cloneDeep(wfNode) });
+        workflow.i = Context.getInputsWorkflow(_.cloneDeep(wfNode.attributes.body));
+        workflow.o = Context.getOutputsWorkflow(_.cloneDeep(wfNode.attributes));
         return workflow;
       });
 
