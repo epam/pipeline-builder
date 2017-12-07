@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import * as JSZip from 'jszip';
 import parseWDL from './WDL/parse';
 
@@ -21,11 +22,10 @@ import parseWDL from './WDL/parse';
  */
 function parse(text, opts = {}) {
   const format = opts.format || 'wdl';
-  // const subWfDetailing = (opts.subWfDetailing && _.isArray(opts.subWfDetailing)) ? opts.subWfDetailing : null;// todo uncomment
-  const subWfDetailing = ['*'];// CopyRatio_CNVSomaticCopyRatioBAMWorkflow
-  // const recursionDepth = opts.recursionDepth || 0  ;// todo uncomment
-  const recursionDepth = 10;
+  const subWfDetailing = (opts.subWfDetailing && _.isArray(opts.subWfDetailing)) ? opts.subWfDetailing : null;
+  const recursionDepth = opts.recursionDepth || 0;
   const baseURI = opts.baseURI || null;
+
   if (format === 'wdl') {
     if (opts.zipFile) {
       return JSZip.loadAsync(opts.zipFile).then((files) => {

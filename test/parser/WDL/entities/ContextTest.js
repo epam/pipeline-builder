@@ -64,7 +64,35 @@ describe('parser/WDL/entities/Context', () => {
               line: 3,
               col: 8,
             },
-            expression: null,
+            expression: {
+              attributes: {
+                lhs: {
+                  attributes: {
+                    name: {
+                      col: 22,
+                      id: 39,
+                      line: 28,
+                      resource: undefined,
+                      source_string: 'select_first',
+                      str: 'identifier',
+                    },
+                    params: {
+                      list: [],
+                    },
+                  },
+                  name: 'FunctionCall',
+                },
+                rhs: {
+                  col: 60,
+                  id: 27,
+                  line: 28,
+                  resource: undefined,
+                  source_string: '',
+                  str: 'string',
+                },
+              },
+              name: 'Equals',
+            },
           },
         },
       ],

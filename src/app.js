@@ -56,8 +56,11 @@ async function initialize() {
 processButton('btn-build', () => {
   const elem = document.getElementById('txt-script');
   const baseURI = document.getElementById('base-url').value || null;
+  const recursionDepth = document.getElementById('recursion-depth').value || null;
+  const subWfDetailing = (document.getElementById('sub-wf-detailing').value || '').split(',').map(wf => wf.trim());
+
   if (elem) {
-    pipeline.parse(elem.value, { baseURI }).then((res) => {
+    pipeline.parse(elem.value, { baseURI, recursionDepth, subWfDetailing }).then((res) => {
       flow1 = res.model[0];
       diagram.attachTo(flow1);
     }).catch((message) => {
@@ -129,11 +132,13 @@ document.getElementById('file').addEventListener('change', (evt) => {
   const file = evt.target.files[0];
   const elem = document.getElementById('txt-script');
   const baseUrl = document.getElementById('base-url').value || null;
+  const recursionDepth = parseInt(document.getElementById('recursion-depth').value, 10) || null;
+  const subWfDetailing = (document.getElementById('sub-wf-detailing').value || '').split(',').map(wf => wf.trim());
 
   document.getElementById('file').value = '';
 
   if (elem && elem.value && file && file.name.indexOf('.zip') === file.name.length - 4) {
-    pipeline.parse(elem.value, { zipFile: file, baseUrl }).then((res) => {
+    pipeline.parse(elem.value, { zipFile: file, baseUrl, recursionDepth, subWfDetailing }).then((res) => {
       flow1 = res.model[0];
       diagram.attachTo(flow1);
     }).catch((message) => {

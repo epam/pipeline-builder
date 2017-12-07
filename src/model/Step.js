@@ -147,21 +147,6 @@ export default class Step {
      */
     this.o = _.mapValues(action.o, (portDesc, portName) => new Port(portName, this, portDesc));
     bindPorts(config.o || {}, this.o);
-
-    const updateParentName = (parent, newName) => {
-      parent.name = newName;
-      if (parent.parent) {
-        updateParentName(parent.parent, parent.name);
-      }
-    };
-
-    _.forEach(config.children, (child, childName) => {
-      const copyChildParent = _.clone(child.parent);
-      updateParentName(copyChildParent, this.name);
-      const copyChild = _.clone(child);
-      copyChild.parent = copyChildParent;
-      this.children[childName] = copyChild;
-    });
   }
 
   /**
@@ -282,7 +267,13 @@ export default class Step {
     }
     const beforeResult = callback.before && callback.before(this);
     if (beforeResult !== false) {
-      _.forEach(this.children, child => child.walk(callback));
+      _.forEach(this.children, (child) => {
+        if (child === this || child.type !== 'workflow') {
+          child.walk(callback);
+        } else {
+          callback.before(child);
+        }
+      });
     }
     return callback.after && callback.after(this);
   }

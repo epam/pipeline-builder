@@ -56,13 +56,7 @@ class Workflow extends Group {
    */
   addAction(action) {
     const existing = this.actions[action.name];
-    function ignoreFunctions(value, other) {
-      if (_.isFunction(value) && _.isFunction(other)) {
-        return true;
-      }
-      return undefined;
-    }
-    if (existing && !_.isEqualWith(existing, action, ignoreFunctions)) {
+    if (existing && existing !== action) {
       throw new Error('Cannot add another action with the same name');
     }
     this.actions[action.name] = action;

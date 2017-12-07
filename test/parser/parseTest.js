@@ -65,7 +65,7 @@ workflow RootWorkflow {
         resolve(data);
       }
     });
-  }).then(data => parse(wdl, { zipFile: data }))).to.be.fulfilled);
+  }).then(data => parse(wdl, { zipFile: data, subWfDetailing: '*', recursionDepth: 10 }))).to.be.fulfilled);
 
   it('returns with error if source zip is incorrect', () =>
     expect(parse(wdl, { zipFile: 'test' })).to.be.rejectedWith('Error'));
