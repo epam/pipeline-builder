@@ -1,14 +1,14 @@
 import sinon from 'sinon';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import DataService from '../../src/dataServices/data-services';
+import DataService from '../../src/dataServices/data-service';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
 let requests = [];
 
-describe('data-services $http', () => {
+describe('data-service $http', () => {
   let xhr;
 
   beforeEach(() => {

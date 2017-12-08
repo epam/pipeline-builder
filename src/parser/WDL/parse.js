@@ -3,7 +3,7 @@ import _ from 'lodash';
 import Context from './entities/Context';
 import Parser from './hermes/wdl_parser';
 import * as Constants from './constants';
-import DataService from './../../dataServices/data-services';
+import DataService from './../../dataServices/data-service';
 
 function hermesStage(data) {
   let tokens;
@@ -17,12 +17,8 @@ function hermesStage(data) {
     parseResult = Parser.parse(tokens);
     ast = parseResult.to_ast();
   } catch (e) {
-    if (e.name && e.name === 'SyntaxError') {
-      status = false;
-      message = e.message;
-    } else {
-      throw e;
-    }
+    status = false;
+    message = e.message;
   }
 
   return {

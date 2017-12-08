@@ -153,8 +153,8 @@ export default class Context {
   }
 
   /**
-   * Get all inputs workflow
-   * @param {ast} ast - part ast tree node of parsing result
+   * Get all workflow inputs
+   * @param {ast} ast - ast tree node
    */
   static getInputsWorkflow(ast) {
     const inputs = {};
@@ -174,8 +174,8 @@ export default class Context {
   }
 
   /**
-   * Get all outputs workflow
-   * @param {ast} ast - part ast tree node of parsing result
+   * Get all workflow outputs
+   * @param {ast} ast - ast tree node
    */
   static getOutputsWorkflow(ast) {
     const outputs = {};
