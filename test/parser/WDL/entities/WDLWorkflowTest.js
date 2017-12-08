@@ -22,7 +22,9 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
 
-      const workflow = new WDLWorkflow(ast);
+      const workflow = new WDLWorkflow(ast, {
+        actionMap: {},
+      });
 
       expect(workflow.name).to.equal('foo');
       expect(workflow.workflowStep.action).to.contain.all.keys(['i', 'o', 'data']);
@@ -86,7 +88,9 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
 
-      const workflow = new WDLWorkflow(ast);
+      const workflow = new WDLWorkflow(ast, {
+        actionMap: {},
+      });
       expect(workflow.workflowStep.action.i).to.have.all.keys(['a', 'b']);
     });
 
@@ -1715,7 +1719,9 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
           ],
         },
       };
-      expect(new WDLWorkflow(ast).workflowStep.action.data.meta).to.have.all.keys(['author']);
+      expect(new WDLWorkflow(ast, {
+        actionMap: {},
+      }).workflowStep.action.data.meta).to.have.all.keys(['author']);
     });
   });
 });
