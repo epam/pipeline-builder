@@ -10,6 +10,10 @@ import VisualWorkflow from './VisualWorkflow';
 
 import Zoom from './Zoom';
 
+import Port from '../model/Port';
+import Connection from '../model/Connection';
+import VisualMergedLink from './VisualMergedLink';
+
 // Code below is an official fix for Chrome 57 from JointJS
 V.matrixToTransformString = (matrix) => {
   matrix = matrix || true;
@@ -174,6 +178,7 @@ export default class Visualizer {
     this._children = {};
     this._timer = null;
     this._step = null;
+    this._mergeConnections = false;
     this.clear();
 
     const validateMagnet = this.paper.options.validateMagnet;
@@ -257,6 +262,7 @@ export default class Visualizer {
     this._children = {};
     this._step = null;
     this.selection = [];
+    this._mergeConnections = false;
   }
 
   /**
@@ -278,9 +284,11 @@ export default class Visualizer {
    * Attaches visualizer component to specific step.
    * All step's children are rendered upon attachment.
    * @param step
+   * @param {boolean} [mergeConnections] - Merge multiple connections between steps
    */
-  attachTo(step) {
+  attachTo(step, mergeConnections = false) {
     this.clear();
+    this._mergeConnections = mergeConnections;
     // add all step children to the diagram
     this._step = step;
     this._update();
@@ -328,6 +336,19 @@ export default class Visualizer {
     });
   }
 
+  // todo toggle links method
+  toggleMergeConnections() {
+    if (!this._step) {
+      return;
+    }
+
+    this._mergeConnections = !this._mergeConnections;
+    this._update();
+    // this.layout();
+    // this._update();// call update once more to invoke fitEmbeds
+    // this.zoom.fitToPage({ padding: 10, maxScale: 1 });
+  }
+
   _loopPorts(ports, source, cellsToAdd, isEnabled) {
     const children = this._children;
     const links = this._graph.getConnectedLinks(source);
@@ -342,27 +363,205 @@ export default class Visualizer {
           children[targetName].isPortEnabled(conn.to.step.hasInputPort(conn.to), conn.to.name)) {
           const isReadOnly = this._readOnly || this._isChildSubWorkflow(source.step) ||
             this._isChildSubWorkflow(children[targetName].step);
-          const link = new VisualLink({
-            source: {
-              id: source.id,
-              port: port.name,
-            },
-            target: {
-              id: children[targetName].id,
-              port: conn.to.name,
-            },
-            conn,
-          }, isReadOnly);
+          let link;
+          if (this._mergeConnections) {
+            link = new VisualMergedLink({
+              source: {
+                id: source.id,
+                port: port.name,
+              },
+              target: {
+                id: children[targetName].id,
+                port: conn.to.name,
+              },
+              conn,
+            });
+          } else {
+            link = new VisualLink({
+              source: {
+                id: source.id,
+                port: port.name,
+              },
+              target: {
+                id: children[targetName].id,
+                port: conn.to.name,
+              },
+              conn,
+            }, isReadOnly);
+          }
           cellsToAdd[cellsToAdd.length] = link;
         }
       });
     });
   }
 
+  _mergeStepConnections() {
+    const step = this._step;
+    if (!step) {
+      return;
+    }
+    const inPortName = 'in';
+    const outPortName = 'out';
+
+    const updatePorts = (innerStep) => {
+      innerStep.initialIn = innerStep.i;
+      innerStep.initialOut = innerStep.o;
+
+      const multiPortDesc = { type: '', default: '', multi: true };
+      innerStep.i = {};
+      innerStep.i[inPortName] = new Port(inPortName, innerStep, multiPortDesc);
+      innerStep.o = {};
+      innerStep.o[outPortName] = new Port(outPortName, innerStep, multiPortDesc);
+
+      _.forEach(innerStep.children, childStep => updatePorts(childStep));
+    };
+
+    updatePorts(step);
+
+    const updateConnections = (innerStep) => {
+      _.forEach(innerStep.initialIn, (port) => {
+        _.forEach(port.inputs, (connection) => {
+          // if (connection.step === innerStep.parent) { // innerStep is connection.step's child
+            // i output
+          // } else { // siblings
+            // o output
+          // }
+          if (!(connection.from instanceof Port)) {
+            return;
+          }
+          const stepFrom = connection.from.step;
+          if (stepFrom === innerStep.parent || stepFrom.parent === innerStep) {
+            return;
+          }
+          const portFrom = stepFrom === innerStep.parent ? stepFrom.i[inPortName] : stepFrom.o[outPortName];
+          const newConnection = new Connection(portFrom, innerStep.i[inPortName]);
+
+          if (!_.some(innerStep.i[inPortName].inputs, newConnection)) {
+            innerStep.i[inPortName].inputs.push(newConnection);
+          }
+/*
+          if (!_.some(portFrom.outputs, newConnection)) {
+            portFrom.outputs.push(newConnection);
+          }
+*/
+        });
+        _.forEach(port.outputs, (connection) => {
+          if (!(connection.to instanceof Port)) {
+            return;
+          }
+          const stepTo = connection.to.step;
+          const portTo = stepTo.i[inPortName];
+          if (stepTo === innerStep.parent || stepTo.parent === innerStep) {
+            return;
+          }
+          const newConnection = new Connection(innerStep.i[inPortName], portTo);
+
+          if (!_.some(innerStep.i[inPortName].outputs, newConnection)) {
+            innerStep.i[inPortName].outputs.push(newConnection);
+          }
+/*
+          if (!_.some(portTo.inputs, newConnection)) {
+            portTo.inputs.push(newConnection);
+          }
+*/
+        });
+      });
+      _.forEach(innerStep.initialOut, (port) => {
+        _.forEach(port.inputs, (connection) => {
+          if (!(connection.from instanceof Port)) {
+            return;
+          }
+          const stepFrom = connection.from.step;
+          if (stepFrom === innerStep.parent || stepFrom.parent === innerStep) {
+            return;
+          }
+          const portFrom = stepFrom.o[outPortName];
+          // const portTo = innerStep.i[]
+          const newConnection = new Connection(portFrom, innerStep.o[outPortName]);
+
+          if (!_.some(innerStep.o[outPortName].inputs, newConnection)) {
+            innerStep.o[outPortName].inputs.push(newConnection);
+          }
+/*
+          if (!_.some(portFrom.outputs, newConnection)) {
+            portFrom.outputs.push(newConnection);
+          }
+*/
+        });
+        _.forEach(port.outputs, (connection) => {
+          if (!(connection.to instanceof Port)) {
+            return;
+          }
+          const stepTo = connection.to.step;
+          if (stepTo === innerStep.parent || stepTo.parent === innerStep) {
+            return;
+          }
+          const portTo = stepTo === innerStep.parent ? stepTo.o[outPortName] : stepTo.i[inPortName];
+          const newConnection = new Connection(innerStep.o[outPortName], portTo);
+
+          if (!_.some(innerStep.o[outPortName].outputs, newConnection)) {
+            innerStep.o[outPortName].outputs.push(newConnection);
+          }
+/*
+          if (!_.some(portTo.inputs, newConnection)) {
+            portTo.inputs.push(newConnection);
+          }
+*/
+        });
+      });
+
+      _.forEach(innerStep.children, childStep => updateConnections(childStep));
+    };
+
+    updateConnections(step);
+
+    // get step connections with other steps
+/*
+    const inConnections = { i: {}, o: {} };
+    const outConnections = { i: {}, o: {} };
+    _.forEach(step.i, (port) => {
+      _.forEach(port.inputs, (connection) => {
+        inConnections.i[connection.from.step.name] = connection.from.step;
+      });
+      _.forEach(port.outputs, (connection) => {
+        inConnections.o[connection.to.step.name] = connection.to.step;
+      });
+    });
+    _.forEach(step.o, (port) => {
+      _.forEach(port.inputs, (connection) => {
+        outConnections.i[connection.from.step.name] = connection.from.step;
+      });
+      _.forEach(port.outputs, (connection) => {
+        outConnections.o[connection.to.step.name] = connection.to.step;
+      });
+    });
+*/
+
+/*
+    console.log(inConnections);
+    console.log(outConnections);
+*/
+    // prepare new connections
+
+    // new ports
+
+/*
+    const newIns = { i: {}, o: {} };
+    _.forEach(inConnections.i, (inInputStep) => {
+    });
+*/
+    // add new connections to step's new input & output ports
+
+    // proceed step's children
+  }
+
   _update() {
     const step = this._step;
     if (!step) {
       return;
+    }
+    if (this._mergeConnections) {
+      this._mergeStepConnections();
     }
     // validate call <-> step correspondence
     const children = this._children;
