@@ -2,6 +2,8 @@ import _ from 'lodash';
 import joint, { V } from 'jointjs';
 
 import Workflow from '../model/Workflow';
+import Step from '../model/Step';
+import Group from '../model/Group';
 import Paper from './Paper';
 import VisualLink from './VisualLink';
 import VisualStep from './VisualStep';
@@ -179,6 +181,7 @@ export default class Visualizer {
     this._timer = null;
     this._step = null;
     this._mergeConnections = false;
+    this._connMergeInProgress = false;
     this.clear();
 
     const validateMagnet = this.paper.options.validateMagnet;
@@ -291,7 +294,9 @@ export default class Visualizer {
     this._mergeConnections = mergeConnections;
     // add all step children to the diagram
     this._step = step;
+    this._connMergeInProgress = true;
     this._update();
+    this._connMergeInProgress = false;
     this.layout();
     this._update();// call update once more to invoke fitEmbeds
     this.zoom.fitToPage({ padding: 10, maxScale: 1 });
@@ -336,17 +341,19 @@ export default class Visualizer {
     });
   }
 
-  // todo toggle links method
   toggleMergeConnections() {
     if (!this._step) {
       return;
     }
 
+    this._connMergeInProgress = true;
     this._mergeConnections = !this._mergeConnections;
     this._update();
-    // this.layout();
-    // this._update();// call update once more to invoke fitEmbeds
-    // this.zoom.fitToPage({ padding: 10, maxScale: 1 });
+    this._connMergeInProgress = false;
+    this.layout();
+    this._update();
+
+    this.zoom.fitToPage({ padding: 10, maxScale: 1 });
   }
 
   _loopPorts(ports, source, cellsToAdd, isEnabled) {
@@ -395,6 +402,28 @@ export default class Visualizer {
     });
   }
 
+  _unmergeStepConnections() {
+    const step = this._step;
+    if (!step) {
+      return;
+    }
+
+    const updatePorts = (innerStep) => {
+      if (innerStep.initialIn) {
+        innerStep.i = innerStep.initialIn;
+        delete innerStep.initialIn;
+      }
+      if (innerStep.initialOut) {
+        innerStep.o = innerStep.initialOut;
+        delete innerStep.initialOut;
+      }
+
+      _.forEach(innerStep.children, childStep => updatePorts(childStep));
+    };
+
+    updatePorts(step);
+  }
+
   _mergeStepConnections() {
     const step = this._step;
     if (!step) {
@@ -404,14 +433,16 @@ export default class Visualizer {
     const outPortName = 'out';
 
     const updatePorts = (innerStep) => {
-      innerStep.initialIn = innerStep.i;
-      innerStep.initialOut = innerStep.o;
+      if (innerStep instanceof Workflow || (innerStep instanceof Step && !(innerStep instanceof Group))) {
+        innerStep.initialIn = innerStep.i;
+        innerStep.initialOut = innerStep.o;
 
-      const multiPortDesc = { type: '', default: '', multi: true };
-      innerStep.i = {};
-      innerStep.i[inPortName] = new Port(inPortName, innerStep, multiPortDesc);
-      innerStep.o = {};
-      innerStep.o[outPortName] = new Port(outPortName, innerStep, multiPortDesc);
+        const multiPortDesc = { type: '', default: '', multi: true };
+        innerStep.i = {};
+        innerStep.i[inPortName] = new Port(inPortName, innerStep, multiPortDesc);
+        innerStep.o = {};
+        innerStep.o[outPortName] = new Port(outPortName, innerStep, multiPortDesc);
+      }
 
       _.forEach(innerStep.children, childStep => updatePorts(childStep));
     };
@@ -419,31 +450,30 @@ export default class Visualizer {
     updatePorts(step);
 
     const updateConnections = (innerStep) => {
+      const isChildOf = (child, parent) => {
+        if (parent === child.parent) {
+          return true;
+        } else if (child.parent) {
+          return isChildOf(child.parent, parent);
+        }
+        return false;
+      };
+
       _.forEach(innerStep.initialIn, (port) => {
         _.forEach(port.inputs, (connection) => {
-          // if (connection.step === innerStep.parent) { // innerStep is connection.step's child
-            // i output
-          // } else { // siblings
-            // o output
-          // }
           if (!(connection.from instanceof Port)) {
             return;
           }
           const stepFrom = connection.from.step;
-          if (stepFrom === innerStep.parent || stepFrom.parent === innerStep) {
+          if (isChildOf(innerStep, stepFrom)) {
             return;
           }
-          const portFrom = stepFrom === innerStep.parent ? stepFrom.i[inPortName] : stepFrom.o[outPortName];
+          const portFrom = stepFrom.o[outPortName];
           const newConnection = new Connection(portFrom, innerStep.i[inPortName]);
 
           if (!_.some(innerStep.i[inPortName].inputs, newConnection)) {
             innerStep.i[inPortName].inputs.push(newConnection);
           }
-/*
-          if (!_.some(portFrom.outputs, newConnection)) {
-            portFrom.outputs.push(newConnection);
-          }
-*/
         });
         _.forEach(port.outputs, (connection) => {
           if (!(connection.to instanceof Port)) {
@@ -451,7 +481,7 @@ export default class Visualizer {
           }
           const stepTo = connection.to.step;
           const portTo = stepTo.i[inPortName];
-          if (stepTo === innerStep.parent || stepTo.parent === innerStep) {
+          if (isChildOf(innerStep, stepTo) || isChildOf(stepTo, innerStep)) {
             return;
           }
           const newConnection = new Connection(innerStep.i[inPortName], portTo);
@@ -459,11 +489,6 @@ export default class Visualizer {
           if (!_.some(innerStep.i[inPortName].outputs, newConnection)) {
             innerStep.i[inPortName].outputs.push(newConnection);
           }
-/*
-          if (!_.some(portTo.inputs, newConnection)) {
-            portTo.inputs.push(newConnection);
-          }
-*/
         });
       });
       _.forEach(innerStep.initialOut, (port) => {
@@ -472,28 +497,22 @@ export default class Visualizer {
             return;
           }
           const stepFrom = connection.from.step;
-          if (stepFrom === innerStep.parent || stepFrom.parent === innerStep) {
+          if (isChildOf(innerStep, stepFrom) || isChildOf(stepFrom, innerStep)) {
             return;
           }
           const portFrom = stepFrom.o[outPortName];
-          // const portTo = innerStep.i[]
           const newConnection = new Connection(portFrom, innerStep.o[outPortName]);
 
           if (!_.some(innerStep.o[outPortName].inputs, newConnection)) {
             innerStep.o[outPortName].inputs.push(newConnection);
           }
-/*
-          if (!_.some(portFrom.outputs, newConnection)) {
-            portFrom.outputs.push(newConnection);
-          }
-*/
         });
         _.forEach(port.outputs, (connection) => {
           if (!(connection.to instanceof Port)) {
             return;
           }
           const stepTo = connection.to.step;
-          if (stepTo === innerStep.parent || stepTo.parent === innerStep) {
+          if (isChildOf(innerStep, stepTo) || isChildOf(stepTo, innerStep)) {
             return;
           }
           const portTo = stepTo === innerStep.parent ? stepTo.o[outPortName] : stepTo.i[inPortName];
@@ -502,11 +521,6 @@ export default class Visualizer {
           if (!_.some(innerStep.o[outPortName].outputs, newConnection)) {
             innerStep.o[outPortName].outputs.push(newConnection);
           }
-/*
-          if (!_.some(portTo.inputs, newConnection)) {
-            portTo.inputs.push(newConnection);
-          }
-*/
         });
       });
 
@@ -514,45 +528,6 @@ export default class Visualizer {
     };
 
     updateConnections(step);
-
-    // get step connections with other steps
-/*
-    const inConnections = { i: {}, o: {} };
-    const outConnections = { i: {}, o: {} };
-    _.forEach(step.i, (port) => {
-      _.forEach(port.inputs, (connection) => {
-        inConnections.i[connection.from.step.name] = connection.from.step;
-      });
-      _.forEach(port.outputs, (connection) => {
-        inConnections.o[connection.to.step.name] = connection.to.step;
-      });
-    });
-    _.forEach(step.o, (port) => {
-      _.forEach(port.inputs, (connection) => {
-        outConnections.i[connection.from.step.name] = connection.from.step;
-      });
-      _.forEach(port.outputs, (connection) => {
-        outConnections.o[connection.to.step.name] = connection.to.step;
-      });
-    });
-*/
-
-/*
-    console.log(inConnections);
-    console.log(outConnections);
-*/
-    // prepare new connections
-
-    // new ports
-
-/*
-    const newIns = { i: {}, o: {} };
-    _.forEach(inConnections.i, (inInputStep) => {
-    });
-*/
-    // add new connections to step's new input & output ports
-
-    // proceed step's children
   }
 
   _update() {
@@ -560,8 +535,10 @@ export default class Visualizer {
     if (!step) {
       return;
     }
-    if (this._mergeConnections) {
+    if (this._mergeConnections && this._connMergeInProgress) {
       this._mergeStepConnections();
+    } else if (this._connMergeInProgress) {
+      this._unmergeStepConnections();
     }
     // validate call <-> step correspondence
     const children = this._children;

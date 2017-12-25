@@ -70,11 +70,9 @@ processButton('btn-build', () => {
   }
 });
 
-/*
 processButton('btn-toggle-merge-conns', () => {
   diagram.toggleMergeConnections();
 });
-*/
 
 processButton('btn-generate', () => {
   const elem = document.getElementById('txt-script');
