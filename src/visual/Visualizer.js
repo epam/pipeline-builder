@@ -370,33 +370,20 @@ export default class Visualizer {
           children[targetName].isPortEnabled(conn.to.step.hasInputPort(conn.to), conn.to.name)) {
           const isReadOnly = this._readOnly || this._isChildSubWorkflow(source.step) ||
             this._isChildSubWorkflow(children[targetName].step);
-          let link;
-          if (this._mergeConnections) {
-            link = new VisualMergedLink({
-              source: {
-                id: source.id,
-                port: port.name,
-              },
-              target: {
-                id: children[targetName].id,
-                port: conn.to.name,
-              },
-              conn,
-            });
-          } else {
-            link = new VisualLink({
-              source: {
-                id: source.id,
-                port: port.name,
-              },
-              target: {
-                id: children[targetName].id,
-                port: conn.to.name,
-              },
-              conn,
-            }, isReadOnly);
-          }
-          cellsToAdd[cellsToAdd.length] = link;
+          const linkConfig = {
+            source: {
+              id: source.id,
+              port: port.name,
+            },
+            target: {
+              id: children[targetName].id,
+              port: conn.to.name,
+            },
+            conn,
+          };
+          cellsToAdd[cellsToAdd.length] = this._mergeConnections
+            ? new VisualMergedLink(linkConfig)
+            : new VisualLink(linkConfig, isReadOnly);
         }
       });
     });
@@ -409,13 +396,15 @@ export default class Visualizer {
     }
 
     const updatePorts = (innerStep) => {
-      if (innerStep.initialIn) {
-        innerStep.i = innerStep.initialIn;
-        delete innerStep.initialIn;
-      }
-      if (innerStep.initialOut) {
-        innerStep.o = innerStep.initialOut;
-        delete innerStep.initialOut;
+      if (innerStep instanceof Workflow || (innerStep instanceof Step && !(innerStep instanceof Group))) {
+        if (!_.isEmpty(innerStep.initialIn)) {
+          innerStep.i = innerStep.initialIn;
+          delete innerStep.initialIn;
+        }
+        if (!_.isEmpty(innerStep.initialOut)) {
+          innerStep.o = innerStep.initialOut;
+          delete innerStep.initialOut;
+        }
       }
 
       _.forEach(innerStep.children, childStep => updatePorts(childStep));
@@ -434,14 +423,18 @@ export default class Visualizer {
 
     const updatePorts = (innerStep) => {
       if (innerStep instanceof Workflow || (innerStep instanceof Step && !(innerStep instanceof Group))) {
-        innerStep.initialIn = innerStep.i;
-        innerStep.initialOut = innerStep.o;
-
         const multiPortDesc = { type: '', default: '', multi: true };
-        innerStep.i = {};
-        innerStep.i[inPortName] = new Port(inPortName, innerStep, multiPortDesc);
-        innerStep.o = {};
-        innerStep.o[outPortName] = new Port(outPortName, innerStep, multiPortDesc);
+
+        if (!_.isEmpty(innerStep.i)) {
+          innerStep.initialIn = innerStep.i;
+          innerStep.i = {};
+          innerStep.i[inPortName] = new Port(inPortName, innerStep, multiPortDesc);
+        }
+        if (!_.isEmpty(innerStep.o)) {
+          innerStep.initialOut = innerStep.o;
+          innerStep.o = {};
+          innerStep.o[outPortName] = new Port(outPortName, innerStep, multiPortDesc);
+        }
       }
 
       _.forEach(innerStep.children, childStep => updatePorts(childStep));
@@ -515,7 +508,7 @@ export default class Visualizer {
           if (isChildOf(innerStep, stepTo) || isChildOf(stepTo, innerStep)) {
             return;
           }
-          const portTo = stepTo === innerStep.parent ? stepTo.o[outPortName] : stepTo.i[inPortName];
+          const portTo = isChildOf(innerStep, stepTo) ? stepTo.o[outPortName] : stepTo.i[inPortName];
           const newConnection = new Connection(innerStep.o[outPortName], portTo);
 
           if (!_.some(innerStep.o[outPortName].outputs, newConnection)) {
@@ -537,8 +530,11 @@ export default class Visualizer {
     }
     if (this._mergeConnections && this._connMergeInProgress) {
       this._mergeStepConnections();
+      this._initialReadOnly = this._readOnly;
+      this._readOnly = true;
     } else if (this._connMergeInProgress) {
       this._unmergeStepConnections();
+      this._readOnly = this._initialReadOnly;
     }
     // validate call <-> step correspondence
     const children = this._children;

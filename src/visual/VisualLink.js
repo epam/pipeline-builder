@@ -8,7 +8,7 @@ import joint from 'jointjs';
 export default class VisualLink extends joint.shapes.devs.Link {
 
   constructor(opts, readOnly) {
-    const defaultLinkaAttr = readOnly ?
+    const defaultLinkAttr = readOnly ?
     {
       conn: null,
       attrs: {
@@ -25,13 +25,13 @@ export default class VisualLink extends joint.shapes.devs.Link {
       conn: null,
     };
 
-    super(_.defaultsDeep(opts, defaultLinkaAttr));
+    super(_.defaultsDeep(opts, defaultLinkAttr));
     this.attr({
       '.connection': {
         stroke: '#464547',
         'stroke-width': 2,
       },
-    })
+    });
     /** Connection from model. */
     this.conn = this.attributes.conn;
   }
