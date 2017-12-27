@@ -12,5 +12,8 @@
 
   "link-library": {
     "title": "Linking the Library"
+  },
+  "customize-graph": {
+    "title": "Customizing the graph appearance"
   }
 }
