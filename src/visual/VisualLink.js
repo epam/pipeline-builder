@@ -19,19 +19,15 @@ export default class VisualLink extends joint.shapes.devs.Link {
           display: 'none',
         },
       },
+      type: 'VisualLink',
     }
     :
     {
       conn: null,
+      type: 'VisualLink',
     };
 
     super(_.defaultsDeep(opts, defaultLinkAttr));
-    this.attr({
-      '.connection': {
-        stroke: '#464547',
-        'stroke-width': 2,
-      },
-    });
     /** Connection from model. */
     this.conn = this.attributes.conn;
   }

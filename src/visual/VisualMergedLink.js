@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import VisualLink from './VisualLink';
 
 /**
@@ -7,13 +8,7 @@ import VisualLink from './VisualLink';
 export default class VisualMergedLink extends VisualLink {
 
   constructor(opts) {
-    super(opts, true);
-    this.attr({
-      '.connection': {
-        stroke: '#457fd2',
-        'stroke-width': 4,
-      },
-    });
+    super(_.defaultsDeep(opts, { type: 'VisualMergedLink' }), true);
   }
 
 }

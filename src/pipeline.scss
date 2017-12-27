@@ -20,6 +20,7 @@ $step-color: $sharp-blue;
 $port-color: $graphite;
 $port-color-empty: $dark-blue;
 $port-color-available: $lime-green;
+$mergedLinkColor: #457fd2;
 
 .joint-type-visualstep.selected {
   .body {
@@ -92,6 +93,20 @@ $port-color-available: $lime-green;
 
 .joint-type-visualworkflow {
   @extend .joint-type-visualstep;
+}
+
+.joint-type-visuallink {
+  .connection {
+    stroke: $port-color;
+    stroke-width: 2px;
+  }
+}
+
+.joint-type-visualmergedlink {
+  .connection {
+    stroke: $mergedLinkColor;
+    stroke-width: 4px;
+  }
 }
 
 .joint-link {
