@@ -467,6 +467,9 @@ export default class Visualizer {
           if (!_.some(innerStep.i[inPortName].inputs, newConnection)) {
             innerStep.i[inPortName].inputs.push(newConnection);
           }
+          if (!_.some(portFrom.outputs, newConnection)) {
+            portFrom.outputs.push(newConnection);
+          }
         });
         _.forEach(port.outputs, (connection) => {
           if (!(connection.to instanceof Port)) {
@@ -481,6 +484,9 @@ export default class Visualizer {
 
           if (!_.some(innerStep.i[inPortName].outputs, newConnection)) {
             innerStep.i[inPortName].outputs.push(newConnection);
+          }
+          if (!_.some(portTo.inputs, newConnection)) {
+            portTo.inputs.push(newConnection);
           }
         });
       });
@@ -499,6 +505,9 @@ export default class Visualizer {
           if (!_.some(innerStep.o[outPortName].inputs, newConnection)) {
             innerStep.o[outPortName].inputs.push(newConnection);
           }
+          if (!_.some(portFrom.outputs, newConnection)) {
+            portFrom.outputs.push(newConnection);
+          }
         });
         _.forEach(port.outputs, (connection) => {
           if (!(connection.to instanceof Port)) {
@@ -513,6 +522,9 @@ export default class Visualizer {
 
           if (!_.some(innerStep.o[outPortName].outputs, newConnection)) {
             innerStep.o[outPortName].outputs.push(newConnection);
+          }
+          if (!_.some(portTo.inputs, newConnection)) {
+            portTo.inputs.push(newConnection);
           }
         });
       });
