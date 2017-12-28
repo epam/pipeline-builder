@@ -1,6 +1,6 @@
 # Customizing the graph appearance
 
-In order to customize graph styling you can [include your own](docs/tutorials/link-library.md) styles file instead of [included in the library](src/pipeline.scss) or override the specific styles you want to change.
+In order to customize graph styling you can [include your own](link-library.md) styles file instead of [included in the library](src/pipeline.scss) or override the specific styles you want to change.
 
 Following styles are responsible for task/workflow representation appearance:
 ```scss
