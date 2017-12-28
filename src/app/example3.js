@@ -63,8 +63,9 @@ task merge {
 }
 `;
 
-function createFlow() {
-  return pipeline.parse(wdl, { format: 'wdl' }).model[0];
+async function createFlow() {
+  const res = await pipeline.parse(wdl);
+  return res.model[0];
 }
 
 export default { createFlow, wdl };

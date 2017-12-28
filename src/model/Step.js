@@ -175,7 +175,7 @@ export default class Step {
         _.forEach(actions, action => root.addAction(action));
       }
     } else if (existing !== child) {
-      throw new Error('Cannot add a child step with the same name');
+      throw new Error(`Cannot add a child step with the same name ${child.name}`);
     }
     return child;
   }
@@ -267,7 +267,13 @@ export default class Step {
     }
     const beforeResult = callback.before && callback.before(this);
     if (beforeResult !== false) {
-      _.forEach(this.children, child => child.walk(callback));
+      _.forEach(this.children, (child) => {
+        if (child === this || child.type !== 'workflow') {
+          child.walk(callback);
+        } else {
+          callback.before(child);
+        }
+      });
     }
     return callback.after && callback.after(this);
   }

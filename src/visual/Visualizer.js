@@ -94,6 +94,14 @@ function createSubstituteCells(graph) {
   return gr;
 }
 
+function generateChildName(step) {
+  let parentName = null;
+  if (step.parent) {
+    parentName = generateChildName(step.parent);
+  }
+  return parentName ? `${parentName}_${step.name}` : step.name;
+}
+
 class VisualWorkflowView extends joint.dia.ElementView {
   pointerdown(evt, x, y) {
     if (evt.target.getAttribute('magnet') && evt.which === 1 && evt.shiftKey) {
@@ -183,6 +191,9 @@ export default class Visualizer {
       if (this._readOnly) {
         return false;
       }
+
+      if (this._isChildSubWorkflow(cellViewS.model.step)) return false;
+      if (this._isChildSubWorkflow(cellViewT.model.step)) return false;
 
       const args = [cellViewS, magnetS, cellViewT, magnetT, end, linkView];
 
@@ -310,7 +321,7 @@ export default class Visualizer {
    * @param {boolean}[value] - optional value to set
    */
   togglePorts(onlyTopLevel, value) {
-    const groupToEdit = onlyTopLevel ? [this._children[this._step.name]] : this._children;
+    const groupToEdit = onlyTopLevel ? [this._children[generateChildName(this._step)]] : this._children;
     _.forEach(groupToEdit, (child) => {
       _.forOwn(child.step.i, (port, name) => child.togglePort(true, name, value));
       _.forOwn(child.step.o, (port, name) => child.togglePort(false, name, value));
@@ -325,10 +336,12 @@ export default class Visualizer {
         return;
       }
       _.forEach(port.outputs, (conn) => {
-        const targetName = conn.to.step.name;
+        const targetName = generateChildName(conn.to.step);
         if (children[targetName] &&
           _.find(links, link => link.conn === conn) === undefined &&
           children[targetName].isPortEnabled(conn.to.step.hasInputPort(conn.to), conn.to.name)) {
+          const isReadOnly = this._readOnly || this._isChildSubWorkflow(source.step) ||
+            this._isChildSubWorkflow(children[targetName].step);
           const link = new VisualLink({
             source: {
               id: source.id,
@@ -339,7 +352,7 @@ export default class Visualizer {
               port: conn.to.name,
             },
             conn,
-          }, this._readOnly);
+          }, isReadOnly);
           cellsToAdd[cellsToAdd.length] = link;
         }
       });
@@ -356,15 +369,17 @@ export default class Visualizer {
 
     // handle the renames
     const pickBy = _.pickBy || _.pick; // be prepared for legacy lodash 3.10.1
-    const renamed = pickBy(children, (vStep, name) => name !== vStep.step.name);
+    const renamed = pickBy(children, (vStep, name) => name !== generateChildName(vStep.step));
+
     _.forEach(renamed, (vStep, oldName) => {
       delete children[oldName];
-      children[vStep.step.name] = vStep;
+      children[generateChildName(vStep.step)] = vStep;
     });
 
     const toRemove = [];
     const findChildInModel = (visChild, name, modelChild) => {
-      if (modelChild.name === name) {
+      const modelChildName = generateChildName(modelChild);
+      if (modelChildName === name) {
         return true;
       }
       const modelChildren = modelChild.children;
@@ -394,12 +409,12 @@ export default class Visualizer {
       if (idx !== -1) {
         this.selection.splice(idx, 1);
       }
-      delete children[child.step.name];
+      delete children[generateChildName(child.step)];
     });
 
     const cellsToAdd = [];
     const updateOrCreateVisualSteps = (innerStep, parent = null) => {
-      const name = innerStep.name;
+      const name = generateChildName(innerStep);
       let visChild = children[name];
       const opts = this.zoom.fromWidgetToLocal({
         x: this.paper.el.offsetWidth / 2,
@@ -555,5 +570,11 @@ export default class Visualizer {
       }
       paper.setDimensions(elem.offsetWidth, elem.offsetHeight);
     };
+  }
+
+  _isChildSubWorkflow(step) {
+    if (!step || !step.parent) return false;
+    if (step.parent instanceof Workflow && step.parent.name !== this._step.name) return true;
+    return this._isChildSubWorkflow(step.parent);
   }
 }

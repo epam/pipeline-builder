@@ -15,7 +15,6 @@ import Group from './Group';
  * const hello = test.add(new Step('hello', ...));
  */
 class Workflow extends Group {
-
   /**
    * Create a workflow.
    * A workflow is a compound {@link Step} which also keeps track of all {@link Action Actions} used
@@ -36,6 +35,14 @@ class Workflow extends Group {
      * @type {Object.<string, Action>}
      */
     this.actions = {};
+    if (config.ast) {
+      this.ast = config.ast;
+    }
+    if (config.initialName) {
+      this.initialName = config.initialName;
+    }
+
+    this.isSubWorkflow = config.isSubWorkflow || false;
     this.addAction(this.action);
   }
 
@@ -50,6 +57,10 @@ class Workflow extends Group {
    * const action = flow.addAction(new Action('action', ...));
    */
   addAction(action) {
+    if (this.isSubWorkflow) {
+      return action;
+    }
+
     const existing = this.actions[action.name];
     if (existing && existing !== action) {
       throw new Error('Cannot add another action with the same name');
@@ -81,7 +92,10 @@ class Workflow extends Group {
         });
       } else {
         let found = false;
-        this.walk(step => !found && !(found = (step.action === action)));
+        this.walk((step) => {
+          const result = !found && !(found = (step.action === action));
+          return result;
+        });
         if (found) {
           throw new Error('Cannot remove action in use');
         }

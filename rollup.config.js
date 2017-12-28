@@ -14,9 +14,10 @@ const copyright = `${packageJson.description} v${version.combined} Copyright (c)
 export default {
   entry: './src/pipeline.js',
   banner: `/*! ${copyright} */`,
-  external: ['lodash'],
+  external: ['lodash', 'jszip'],
   globals: {
     lodash: '_',
+    jszip: 'JSZip',
   },
   plugins: [
     rollupPluginNodeResolve(),
@@ -29,7 +30,7 @@ export default {
     rollupPluginBabel({
       babelrc: false,
       runtimeHelpers: true,
-      presets: [['es2015', { modules: false }]],
+      presets: [['env', { modules: false }]],
       plugins: ['external-helpers'],
     }),
     rollupPluginReplace({

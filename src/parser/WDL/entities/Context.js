@@ -2,7 +2,9 @@ import _ from 'lodash';
 
 import WDLWorkflow from './WDLWorkflow';
 import Task from './Task';
-import { WDLParserError } from '../utils/utils';
+import { WDLParserError, extractExpression, extractType } from '../utils/utils';
+import Workflow from '../../../model/Workflow';
+import * as Constants from '../constants';
 
 /** Class storing the parsing context during the building of destination Object Model */
 export default class Context {
@@ -15,6 +17,7 @@ export default class Context {
     this.genericTaskCommandMap = new Map();
     this.preprocessTheTaskOntoCommandMap(src);
     this.actionMap = this.buildActionMap(ast);
+
     try {
       this.workflowList = this.buildWorkflowList(ast);
     } catch (e) {
@@ -27,6 +30,9 @@ export default class Context {
    * @param {ast} ast - Root ast tree node of parsing result
    */
   buildWorkflowList(ast) {
+    if (ast.attributes.imports && ast.attributes.imports.list.length) {
+      this.hasImports = true;
+    }
     const definitions = ast.attributes.body;
     return definitions ? definitions.list
       .filter(item => item.name.toLowerCase() === 'workflow')
@@ -123,15 +129,67 @@ export default class Context {
   buildActionMap(ast) {
     const actionMap = {};
     const definitions = ast.attributes.body;
-    const tasks = definitions.list.filter(item => item.name.toLowerCase() === 'task')
+    const tasks = definitions.list.filter(item => item.name.toLowerCase() === Constants.TASK)
       .map(wfNode => new Task(wfNode.attributes));
+
+    const workflows = definitions.list.filter(item => item.name.toLowerCase() === Constants.WORKFLOW)
+      .map((wfNode) => {
+        const workflow = new Workflow(wfNode.attributes.name.source_string, { ast: _.cloneDeep(wfNode) });
+        workflow.i = Context.getInputsWorkflow(_.cloneDeep(wfNode.attributes.body));
+        workflow.o = Context.getOutputsWorkflow(_.cloneDeep(wfNode.attributes));
+        return workflow;
+      });
 
     tasks.forEach((task) => {
       const command = this.genericTaskCommandMap.get(task.name);
       actionMap[task.name] = task.constructAction(command);
     });
 
+    workflows.forEach((workflow) => {
+      actionMap[workflow.name] = workflow;
+    });
+
     return actionMap;
+  }
+
+  /**
+   * Get all workflow inputs
+   * @param {ast} ast - ast tree node
+   */
+  static getInputsWorkflow(ast) {
+    const inputs = {};
+    ast.list.filter(item => item.name.toLowerCase() === Constants.DECLARATION)
+      .forEach((v) => {
+        inputs[v.attributes.name.source_string] = {
+          type: extractType(v.attributes.type),
+        };
+
+        const str = extractExpression(v.attributes.expression).string;
+        if (str !== '') {
+          inputs[v.attributes.name.source_string].default = str;
+        }
+      });
+
+    return inputs;
+  }
+
+  /**
+   * Get all workflow outputs
+   * @param {ast} ast - ast tree node
+   */
+  static getOutputsWorkflow(ast) {
+    const outputs = {};
+    ast.body.list.filter(item => item.name.toLowerCase() === Constants.WF_OUTPUTS)
+      .forEach((workflowoutputs) => {
+        workflowoutputs.attributes.outputs.list.forEach((v) => {
+          const node = v.attributes;
+          outputs[node.name.source_string] = {
+            type: extractType(node.type),
+            default: extractExpression(node.expression).string,
+          };
+        });
+      });
+    return outputs;
   }
 }
 

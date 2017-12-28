@@ -22,7 +22,9 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
 
-      const workflow = new WDLWorkflow(ast);
+      const workflow = new WDLWorkflow(ast, {
+        actionMap: {},
+      });
 
       expect(workflow.name).to.equal('foo');
       expect(workflow.workflowStep.action).to.contain.all.keys(['i', 'o', 'data']);
@@ -86,7 +88,9 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
 
-      const workflow = new WDLWorkflow(ast);
+      const workflow = new WDLWorkflow(ast, {
+        actionMap: {},
+      });
       expect(workflow.workflowStep.action.i).to.have.all.keys(['a', 'b']);
     });
 
@@ -675,7 +679,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
       const workflow = new WDLWorkflow(ast, context);
-      expect(workflow.workflowStep.children.scatter_0.type).to.equal('scatter');
+      expect(workflow.workflowStep.children.foo_scatter_0.type).to.equal('scatter');
     });
 
     it('supports group level name resolving', () => {
@@ -799,7 +803,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
       const workflow = new WDLWorkflow(ast, context);
-      expect(workflow.workflowStep.children.scatter_0.type).to.equal('scatter');
+      expect(workflow.workflowStep.children.foo_scatter_0.type).to.equal('scatter');
     });
 
     it('supports loop', () => {
@@ -854,7 +858,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
       const workflow = new WDLWorkflow(ast, context);
-      expect(workflow.workflowStep.children.whileloop_0.type).to.equal('whileloop');
+      expect(workflow.workflowStep.children.foo_whileloop_0.type).to.equal('whileloop');
     });
 
     it('supports if', () => {
@@ -909,7 +913,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
         },
       };
       const workflow = new WDLWorkflow(ast, context);
-      expect(workflow.workflowStep.children.if_0.type).to.equal('if');
+      expect(workflow.workflowStep.children.foo_if_0.type).to.equal('if');
     });
 
     it('throws error if prohibited keys in some block are appeared', () => {
@@ -1715,7 +1719,9 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
           ],
         },
       };
-      expect(new WDLWorkflow(ast).workflowStep.action.data.meta).to.have.all.keys(['author']);
+      expect(new WDLWorkflow(ast, {
+        actionMap: {},
+      }).workflowStep.action.data.meta).to.have.all.keys(['author']);
     });
   });
 });

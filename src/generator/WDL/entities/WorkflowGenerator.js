@@ -13,6 +13,7 @@ export default class WorkflowGenerator {
       scatter: this.genScatter,
       whileloop: this.genWhile,
       if: this.genIf,
+      workflow: this.genWorkflow,
     };
     this.wfName = wfStep.name;
     this.wfStep = wfStep;
@@ -114,7 +115,9 @@ export default class WorkflowGenerator {
   }
 
   buildPortValue(value) {
-    if (value.inputs && _.size(value.inputs) > 0) {
+    if (value.desc && value.desc.default && !_.isUndefined(value.desc.default)) {
+      return `${value.desc.default}`;
+    } else if (value.inputs && _.size(value.inputs) > 0) {
       if (_.size(value.inputs) > 1) {
         throw new Error('Multiple links into one input are prohibited');
       }
@@ -236,6 +239,11 @@ export default class WorkflowGenerator {
 
     res += `${SCOPE_INDENT}${constants.SCOPE_CLOSE}${EOL}`;
     return res;
+  }
+
+  genWorkflow(child) {
+    // TODO: add generation workflow
+    this.genCall(child);
   }
 
   buildOutputMap(outputMappings) {

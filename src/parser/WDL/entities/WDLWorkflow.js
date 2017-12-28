@@ -4,6 +4,7 @@ import Workflow from '../../../model/Workflow';
 import Step from '../../../model/Step';
 import Group from '../../../model/Group';
 import { extractExpression, extractType, extractMetaBlock, WDLParserError } from '../utils/utils';
+import * as Constants from '../constants';
 
 /** Class representing a Workflow object of WDL script entity */
 export default class WDLWorkflow {
@@ -11,8 +12,10 @@ export default class WDLWorkflow {
    * Process through the hole entire ast tree and builds the desired Object Model
    * @param {ast} wfNode - Workflow ast tree node
    * @param {Context} context - Parsing context
+   * @param {String?} [initialName=null] - initial Name
+   * @param {Boolean?} [isSubWorkflow=false] - is Sub Workflow
    */
-  constructor(wfNode, context) {
+  constructor(wfNode, context, initialName = null, isSubWorkflow = false) {
     this.parsingProcessors = {
       declaration: this.parseDeclaration,
       workflowoutputs: this.parseWfOutputs,
@@ -30,7 +33,10 @@ export default class WDLWorkflow {
 
     this.context = context;
     this.name = wfNode.name.source_string;
-    this.workflowStep = new Workflow(this.name);
+    this.workflowStep = new Workflow(this.name, { initialName: initialName || null, isSubWorkflow });
+    if (Object.prototype.hasOwnProperty.call(context, 'hasImports')) {
+      this.workflowStep.hasImports = !!context.hasImports;
+    }
 
     this.parseBody(wfNode.body.list, 'workflow');
   }
@@ -88,7 +94,7 @@ export default class WDLWorkflow {
     opts.i[itemName] = {};
     opts.i[itemName].type = 'ScatterItem';
 
-    const scatter = new Group(`scatter_${this.scatterIndex}`, 'scatter', opts);
+    const scatter = new Group(`${this.name}_scatter_${this.scatterIndex}`, 'scatter', opts);
     scatter.i[itemName].bind(port);
 
     this.scatterIndex += 1;
@@ -109,7 +115,7 @@ export default class WDLWorkflow {
       },
     };
 
-    const ifStatement = new Group(`if_${this.ifIndex}`, 'if', opts);
+    const ifStatement = new Group(`${this.name}_if_${this.ifIndex}`, 'if', opts);
 
     this.ifIndex += 1;
     parent.add(ifStatement);
@@ -129,7 +135,7 @@ export default class WDLWorkflow {
       },
     };
 
-    const whileLoop = new Group(`whileloop_${this.loopIndex}`, 'whileloop', opts);
+    const whileLoop = new Group(`${this.name}_whileloop_${this.loopIndex}`, 'whileloop', opts);
 
     this.loopIndex += 1;
     parent.add(whileLoop);
@@ -146,12 +152,23 @@ export default class WDLWorkflow {
     const parentStep = parent;
     const task = item.attributes.task.source_string;
     const alias = item.attributes.alias ? item.attributes.alias.source_string : task;
+    const initialName = task;
 
     if (!_.has(this.context.actionMap, task)) {
       throw new WDLParserError(`Undeclared task call: '${task}'.`);
     }
 
-    const childStep = new Step(alias, _.get(this.context.actionMap, task));
+    const action = _.get(this.context.actionMap, task);
+
+    let childStep;
+    if (action.type === Constants.WORKFLOW) {
+      const cloneAst = _.clone(action.ast);
+      cloneAst.attributes.name.source_string = alias;
+      childStep = new WDLWorkflow(cloneAst.attributes, this.context, initialName, true).workflowStep;
+    } else {
+      childStep = new Step(alias, action);
+    }
+
     parentStep.add(childStep);
 
     this.findCallInputBinding(item.attributes, childStep, parentStep);
@@ -241,7 +258,7 @@ export default class WDLWorkflow {
       if (expression.type !== 'MemberAccess') {
         obj[name].default = expression.string;
       } else {
-        expression.accesses.forEach(v => (v.to = name));
+        expression.accesses.forEach((v) => { v.to = name; });
         wfOutLinksList = expression.accesses;
       }
 

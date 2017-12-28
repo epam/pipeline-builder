@@ -13,11 +13,19 @@ export default class VisualWorkflow extends VisualGroup {
     super(_.defaultsDeep(opts, {
       attrs: {
         '.label': {
-          text: opts.step.type,
+          text: opts.step.initialName && opts.step.initialName !== opts.step.name
+            ? `${opts.step.type} ${opts.step.initialName} as ${opts.step.name}`
+            : `${opts.step.type} ${opts.step.name}`,
         },
       },
       type: 'VisualWorkflow',
-      portsEnabled: false,
+      portsEnabled: !!(opts && opts.step && opts.step.parent),
     }));
+  }
+
+  _getLabel() {
+    return this.step.initialName && this.step.initialName !== this.step.name
+      ? `${this.step.type} ${this.step.initialName} as ${this.step.name}`
+      : `${this.step.type} ${this.step.name}`;
   }
 }

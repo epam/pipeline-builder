@@ -29,12 +29,12 @@ function ignoreFunctions(value, other) {
   return undefined;
 }
 
-function initialize() {
+async function initialize() {
   // create flow by API
   flow1 = example1.createFlow();
 
   // create flow by parsing a WDL file
-  const flow3 = example3.createFlow();
+  const flow3 = await example3.createFlow();
 
   // compare results
   const equal = _.isEqualWith(flow1, flow3, ignoreFunctions);
@@ -55,14 +55,17 @@ function initialize() {
 // build user WDL on demand
 processButton('btn-build', () => {
   const elem = document.getElementById('txt-script');
+  const baseURI = document.getElementById('base-url').value || null;
+  const recursionDepth = document.getElementById('recursion-depth').value || null;
+  const subWfDetailing = (document.getElementById('sub-wf-detailing').value || '').split(',').map(wf => wf.trim());
+
   if (elem) {
-    const res = pipeline.parse(elem.value);
-    if (res.status) {
+    pipeline.parse(elem.value, { baseURI, recursionDepth, subWfDetailing }).then((res) => {
       flow1 = res.model[0];
       diagram.attachTo(flow1);
-    } else {
-      throw new Error(res.message, 'wdl parsing error');
-    }
+    }).catch((message) => {
+      throw new Error(message);
+    });
   }
 });
 
@@ -119,6 +122,31 @@ processButton('btn-en-ports', () => {
 
 processButton('btn-dis-ports', () => {
   diagram.togglePorts(false);
+});
+
+processButton('btn-load-zip', () => {
+  document.getElementById('file').click();
+});
+
+document.getElementById('file').addEventListener('change', (evt) => {
+  const file = evt.target.files[0];
+  const elem = document.getElementById('txt-script');
+  const baseUrl = document.getElementById('base-url').value || null;
+  const recursionDepth = parseInt(document.getElementById('recursion-depth').value, 10) || null;
+  const subWfDetailing = (document.getElementById('sub-wf-detailing').value || '').split(',').map(wf => wf.trim());
+
+  document.getElementById('file').value = '';
+
+  if (elem && elem.value && file && file.name.indexOf('.zip') === file.name.length - 4) {
+    pipeline.parse(elem.value, { zipFile: file, baseUrl, recursionDepth, subWfDetailing }).then((res) => {
+      flow1 = res.model[0];
+      diagram.attachTo(flow1);
+    }).catch((message) => {
+      throw new Error(message);
+    });
+  } else {
+    throw new Error('No data to parse');
+  }
 });
 
 initialize();
