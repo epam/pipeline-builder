@@ -172,7 +172,7 @@ gulp.task('build:js', () =>
   }).then(() =>
     gulp.src(packageJson.main)
       .pipe(sourcemaps.init({ loadMaps: true }))
-      .pipe(uglify(uglifyConfig))
+      // .pipe(uglify(uglifyConfig))
       .pipe(rename({ suffix: '.min' }))
       .pipe(sourcemaps.write('.'))
       .pipe(gulp.dest('dist/')),

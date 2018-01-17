@@ -1,8 +1,12 @@
 {
-  "presets": ["env"],
-  "plugins": [
-    ["transform-runtime", {
-      "regenerator": true
-    }]
-  ]
+  "presets": [[
+    "env",
+    {
+      "targets": {
+        "browsers": [
+          "last 2 chrome versions"
+        ]
+      }
+    }
+  ]]
 }

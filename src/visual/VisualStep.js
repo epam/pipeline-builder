@@ -98,7 +98,8 @@ export default class VisualStep extends joint.shapes.devs.Model {
 
   _updatePortsState(portsOn, ports) {
     const defaultOnValue = this.attributes.portsEnabled;
-    portsOn = _.omitBy(portsOn, (val, name) => _.isUndefined(ports[name]));
+    const omitBy = _.omitBy || _.omit; // be prepared for legacy lodash 3.10.1
+    portsOn = omitBy(portsOn, (val, name) => _.isUndefined(ports[name]));
     _.forEach(ports, (port, name) => {
       if (_.isUndefined(portsOn[name])) {
         portsOn[name] = defaultOnValue;
