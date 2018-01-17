@@ -20,6 +20,7 @@ import sassModuleImporter from 'sass-module-importer'; // eslint-disable-line im
 import cleanCss from 'gulp-clean-css';
 import autoprefixer from 'gulp-autoprefixer';
 import stylelint from 'gulp-stylelint';
+import babel from 'gulp-babel';
 import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
 import open from 'open';
@@ -92,6 +93,9 @@ gulp.task('test:cover', ['clean:cover', 'test:cover-hook'], () =>
 
 gulp.task('test:coveralls', () =>
   gulp.src('coverage/**/lcov.info')
+    .pipe(babel({
+      presets: ['env'],
+    }))
     .pipe(coveralls()),
 );
 
@@ -172,6 +176,9 @@ gulp.task('build:js', () =>
   }).then(() =>
     gulp.src(packageJson.main)
       .pipe(sourcemaps.init({ loadMaps: true }))
+      .pipe(babel({
+        presets: ['env'],
+      }))
       .pipe(uglify(uglifyConfig))
       .pipe(rename({ suffix: '.min' }))
       .pipe(sourcemaps.write('.'))

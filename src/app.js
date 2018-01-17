@@ -37,7 +37,7 @@ async function initialize() {
   const flow3 = await example3.createFlow();
 
   // compare results
-  const equal = _.isEqualWith(flow1, flow3, ignoreFunctions);
+  const equal = _.isEqual(flow1, flow3, ignoreFunctions);
   const comparison = equal ? 'the same' : '<span style="color:red">different</span>';
   const infoDiv = document.getElementById('info');
   if (infoDiv) {
