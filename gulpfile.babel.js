@@ -93,9 +93,6 @@ gulp.task('test:cover', ['clean:cover', 'test:cover-hook'], () =>
 
 gulp.task('test:coveralls', () =>
   gulp.src('coverage/**/lcov.info')
-    .pipe(babel({
-      presets: ['env'],
-    }))
     .pipe(coveralls()),
 );
 
