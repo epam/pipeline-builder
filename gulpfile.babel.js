@@ -13,14 +13,12 @@ import istanbul from 'gulp-babel-istanbul';
 import coveralls from 'gulp-coveralls';
 import jsdoc from 'gulp-jsdoc3';
 import sourcemaps from 'gulp-sourcemaps';
-import uglify from 'gulp-uglify';
 import rename from 'gulp-rename';
 import sass from 'gulp-sass';
 import sassModuleImporter from 'sass-module-importer'; // eslint-disable-line import/no-unresolved, import/extensions
 import cleanCss from 'gulp-clean-css';
 import autoprefixer from 'gulp-autoprefixer';
 import stylelint from 'gulp-stylelint';
-import babel from 'gulp-babel';
 import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
 import open from 'open';
@@ -29,8 +27,13 @@ import yargs from 'yargs';
 import ftp from 'vinyl-ftp';
 import url from 'url';
 
+import uglifyes from 'uglify-es';
+import composer from 'gulp-uglify/composer';
+
 import webpackConfig from './webpack.config';
 import rollupConfig from './rollup.config';
+
+const uglify = composer(uglifyes, console);
 
 const packageJson = require('./package.json');
 
@@ -173,9 +176,6 @@ gulp.task('build:js', () =>
   }).then(() =>
     gulp.src(packageJson.main)
       .pipe(sourcemaps.init({ loadMaps: true }))
-      .pipe(babel({
-        presets: ['env'],
-      }))
       .pipe(uglify(uglifyConfig))
       .pipe(rename({ suffix: '.min' }))
       .pipe(sourcemaps.write('.'))

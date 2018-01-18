@@ -61,7 +61,6 @@
     "file-system": "^2.2.2",
     "gulp": "^3.9.1",
     "gulp-autoprefixer": "^3.1.1",
-    "gulp-babel": "^7.0.0",
     "gulp-babel-istanbul": "^1.6.0",
     "gulp-clean-css": "^3.0.3",
     "gulp-coveralls": "^0.1.4",
@@ -96,7 +95,8 @@
     "vinyl-ftp": "^0.6.0",
     "webpack": "^2.2.1",
     "webpack-dev-server": "^2.4.1",
-    "yargs": "^6.6.0"
+    "yargs": "^6.6.0",
+    "uglify-es": "^3.3.7"
   },
   "dependencies": {
     "jszip": "^3.1.4",
