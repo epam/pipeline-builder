@@ -29,7 +29,7 @@ export default {
     }),
     rollupPluginBabel({
       babelrc: false,
-      runtimeHelpers: true,
+      runtimeHelpers: false,
       presets: [['env', {
         modules: false,
         targets: {

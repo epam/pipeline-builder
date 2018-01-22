@@ -17,7 +17,11 @@ import parseWDL from './WDL/parse';
  * @memberOf module:pipeline
  * @param {string} text - Text file contents to parse.
  * @param {object} [opts={}] - Parser options.
- * @param {string} [opts.format='wdl'] - Workflow definition format ('wdl', 'cwl').
+ * @param {string} [opts.format='wdl'] - Workflow definition format ('wdl').
+ * @param {file} [opts.zipFile=null] - Zip with import WDL files
+ * @param {array} [opts.subWfDetailing=null] - Array of Sub Workflow names that should be detailed; if array includes '*' each Sub Workflow will be detailed.
+ * @param {number} [opts.recursionDepth=0] - Integer that describes Sub Workflow detailing depth
+ * @param {string} [opts.baseURI=null] - Base URI for WDL import statements
  * @returns {Promise} Parsing result object
  */
 function parse(text, opts = {}) {
@@ -25,10 +29,11 @@ function parse(text, opts = {}) {
   const subWfDetailing = (opts.subWfDetailing && _.isArray(opts.subWfDetailing)) ? opts.subWfDetailing : null;
   const recursionDepth = opts.recursionDepth || 0;
   const baseURI = opts.baseURI || null;
+  const zipFile = opts.zipFile || null;
 
   if (format === 'wdl') {
-    if (opts.zipFile) {
-      return JSZip.loadAsync(opts.zipFile).then((files) => {
+    if (zipFile) {
+      return JSZip.loadAsync(zipFile).then((files) => {
         const zipWdlFiles = [];
 
         files.forEach((relativePath, zipEntry) => {
