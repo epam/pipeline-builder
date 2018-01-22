@@ -25,12 +25,14 @@ import parseWDL from './WDL/parse';
  * @returns {Promise} Parsing result object
  */
 function parse(text, opts = {}) {
+  if (!text) {
+    return Promise.reject('No data to parse');
+  }
   const format = opts.format || 'wdl';
   const subWfDetailing = (opts.subWfDetailing && _.isArray(opts.subWfDetailing)) ? opts.subWfDetailing : null;
   const recursionDepth = opts.recursionDepth || 0;
   const baseURI = opts.baseURI || null;
   const zipFile = opts.zipFile || null;
-
   if (format === 'wdl') {
     if (zipFile) {
       return JSZip.loadAsync(zipFile).then((files) => {
