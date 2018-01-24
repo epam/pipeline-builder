@@ -240,7 +240,7 @@ export default class WDLWorkflow {
    * @param {list<ast>} outputList - Array of ast nodes representing each output
    */
   processExpressions(outputList) {
-    return outputList.forEach((item) => {
+    outputList.forEach((item) => {
       if (!item.name && !item.type && !item.expression) {
         return;
       }
@@ -292,12 +292,12 @@ export default class WDLWorkflow {
    */
   processWilds(outputList) {
     outputList.forEach((item) => {
-      if (!item.fqn && !item.wildcard) {
+      if (!item.fqn) {
         return;
       }
       const fqn = item.fqn;
       const wildcard = item.wildcard;
-      const res = ((fqn ? fqn.source_string : '') + (wildcard ? `.${wildcard.source_string}` : '')).trim();
+      const res = (fqn.source_string + (wildcard ? `.${wildcard.source_string}` : '')).trim();
 
       const obj = {};
       obj[res] = {
@@ -307,6 +307,49 @@ export default class WDLWorkflow {
       this.workflowStep.action.addPorts({
         o: obj,
       });
+      // WF output connections
+      if (!wildcard) { // syntax: call_name.output_name
+        const callOutput = fqn.source_string.split('.');
+        if (callOutput.length < 2) {
+          return;
+        }
+        const callName = callOutput[0];
+        const outputName = callOutput[1];
+        const startStep = WDLWorkflow.findStepInStructureRecursively(this.workflowStep, callName);
+
+        if (startStep) {
+          if (startStep.o[outputName]) {
+            this.workflowStep.o[fqn.source_string].bind(startStep.o[outputName]);
+          } else {
+            throw new WDLParserError(
+              `In '${this.workflowStep.name}' 
+              output block undeclared variable is referenced: '${callName}.${outputName}'`);
+          }
+        } else {
+          throw new WDLParserError(
+            `In '${this.workflowStep.name}' 
+            output block undeclared call is referenced: '${callName}'`);
+        }
+      } else { // syntax: call_name.* (all call's outputs)
+        const callName = fqn.source_string;
+        const startStep = WDLWorkflow.findStepInStructureRecursively(this.workflowStep, callName);
+
+        if (startStep) {
+          if (_.size(startStep.o)) {
+            _.forEach(startStep.o, (output, outputName) => {
+              this.workflowStep.o[`${fqn.source_string}.*`].bind(startStep.o[outputName]);
+            });
+          } else {
+            throw new WDLParserError(
+              `In '${this.workflowStep.name}' 
+              output block undeclared variable is referenced: '${callName}.* (${callName} doesn't have any outputs)`);
+          }
+        } else {
+          throw new WDLParserError(
+            `In '${this.workflowStep.name}' 
+            output block undeclared call is referenced: '${callName}'`);
+        }
+      }
     });
   }
 

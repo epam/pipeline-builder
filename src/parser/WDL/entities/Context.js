@@ -136,7 +136,7 @@ export default class Context {
       .map((wfNode) => {
         const workflow = new Workflow(wfNode.attributes.name.source_string, { ast: _.cloneDeep(wfNode) });
         workflow.i = Context.getInputsWorkflow(_.cloneDeep(wfNode.attributes.body));
-        workflow.o = Context.getOutputsWorkflow(_.cloneDeep(wfNode.attributes));
+        workflow.o = Context.getOutputsWorkflow(_.cloneDeep(wfNode.attributes.body));
         return workflow;
       });
 
@@ -154,11 +154,11 @@ export default class Context {
 
   /**
    * Get all workflow inputs
-   * @param {ast} ast - ast tree node
+   * @param {ast} wfNodeBody - ast tree node.attributes.body
    */
-  static getInputsWorkflow(ast) {
+  static getInputsWorkflow(wfNodeBody) {
     const inputs = {};
-    ast.list.filter(item => item.name.toLowerCase() === Constants.DECLARATION)
+    wfNodeBody.list.filter(item => item.name.toLowerCase() === Constants.DECLARATION)
       .forEach((v) => {
         inputs[v.attributes.name.source_string] = {
           type: extractType(v.attributes.type),
@@ -175,18 +175,20 @@ export default class Context {
 
   /**
    * Get all workflow outputs
-   * @param {ast} ast - ast tree node
+   * @param {ast} wfNodeBody - ast tree node.attributes.body
    */
-  static getOutputsWorkflow(ast) {
+  static getOutputsWorkflow(wfNodeBody) {
     const outputs = {};
-    ast.body.list.filter(item => item.name.toLowerCase() === Constants.WF_OUTPUTS)
+    wfNodeBody.list.filter(item => item.name.toLowerCase() === Constants.WF_OUTPUTS)
       .forEach((workflowoutputs) => {
-        workflowoutputs.attributes.outputs.list.forEach((v) => {
-          const node = v.attributes;
-          outputs[node.name.source_string] = {
-            type: extractType(node.type),
-            default: extractExpression(node.expression).string,
-          };
+        workflowoutputs.attributes.outputs.list.forEach((wfOutput) => {
+          const node = wfOutput.attributes;
+          if (node.name) {
+            outputs[node.name.source_string] = {
+              type: extractType(node.type),
+              default: extractExpression(node.expression).string,
+            };
+          }
         });
       });
     return outputs;
