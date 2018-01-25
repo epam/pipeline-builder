@@ -183,15 +183,39 @@ export default class Context {
       .forEach((workflowoutputs) => {
         workflowoutputs.attributes.outputs.list.forEach((wfOutput) => {
           const node = wfOutput.attributes;
-          if (node.name) {
-            outputs[node.name.source_string] = {
-              type: extractType(node.type),
-              default: extractExpression(node.expression).string,
-            };
-          }
+          Context.proceedExpression(node, outputs);
+          Context.proceedWildcard(node, outputs);
         });
       });
+
     return outputs;
+  }
+
+  static proceedWildcard(node, outputs) {
+    if (!node.fqn) {
+      return;
+    }
+
+    const outputString = node.wildcard
+      ? `${node.fqn.source_string}.${node.wildcard.source_string}`
+      : node.fqn.source_string;
+
+    outputs[outputString] = {
+      type: '',
+      multi: !!node.wildcard,
+      default: outputString,
+    };
+  }
+
+  static proceedExpression(node, outputs) {
+    if (!node.name && !node.type && !node.expression) {
+      return;
+    }
+
+    outputs[node.name.source_string] = {
+      type: extractType(node.type),
+      default: extractExpression(node.expression).string,
+    };
   }
 }
 

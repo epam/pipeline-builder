@@ -237,7 +237,7 @@ export default class WDLWorkflow {
 
   /**
    * Build the expressioned outputs
-   * @param {list<ast>} outputList - Array of ast nodes representing each output
+   * @param {[<ast>]} outputList - Array of ast nodes representing each output
    */
   processExpressions(outputList) {
     outputList.forEach((item) => {
@@ -288,7 +288,7 @@ export default class WDLWorkflow {
 
   /**
    * Build the wildcard outputs <deprecated syntax>
-   * @param {list<ast>} outputList - Array of ast nodes representing each output
+   * @param {[<ast>]} outputList - Array of ast nodes representing each output
    */
   processWilds(outputList) {
     outputList.forEach((item) => {
