@@ -1089,6 +1089,10 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       const workflow = new WDLWorkflow(ast, {
         actionMap: {
           bar: {
+            i: {},
+            o: {
+              out: new Port('out'),
+            },
           },
         },
       });
@@ -1220,6 +1224,10 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       const workflow = new WDLWorkflow(ast, {
         actionMap: {
           bar: {
+            i: {},
+            o: {
+              out: new Port('out'),
+            },
           },
         },
       });

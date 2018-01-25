@@ -113,64 +113,55 @@ describe('parser/WDL/entities/Context', () => {
       const outputValueLhs = 'task1';
       const outputValueRhs = 'rawVCF';
       const partAst = {
-        name: {
-          id: 39,
-          str: 'identifier',
-          source_string: 'workflow123',
-          line: 1,
-          col: 10,
-        },
-        body: {
-          list: [
-            {
-              name: 'WorkflowOutputs',
-              attributes: {
-                outputs: {
-                  list: [
-                    {
-                      name: 'WorkflowOutputDeclaration',
-                      attributes: {
-                        type: {
-                          id: 41,
-                          str: 'type',
-                          source_string: outputType,
-                          line: 12,
-                          col: 5,
-                        },
-                        name: {
-                          id: 39,
-                          str: 'identifier',
-                          source_string: outputName,
-                          line: 12,
-                          col: 10,
-                        },
-                        expression: {
-                          name: 'MemberAccess',
-                          attributes: {
-                            lhs: {
-                              id: 39,
-                              str: 'identifier',
-                              source_string: outputValueLhs,
-                              line: 12,
-                              col: 19,
-                            },
-                            rhs: {
-                              id: 39,
-                              str: 'identifier',
-                              source_string: outputValueRhs,
-                              line: 12,
-                              col: 25,
-                            },
+        list: [
+          {
+            name: 'WorkflowOutputs',
+            attributes: {
+              outputs: {
+                list: [
+                  {
+                    name: 'WorkflowOutputDeclaration',
+                    attributes: {
+                      type: {
+                        id: 41,
+                        str: 'type',
+                        source_string: outputType,
+                        line: 12,
+                        col: 5,
+                      },
+                      name: {
+                        id: 39,
+                        str: 'identifier',
+                        source_string: outputName,
+                        line: 12,
+                        col: 10,
+                      },
+                      expression: {
+                        name: 'MemberAccess',
+                        attributes: {
+                          lhs: {
+                            id: 39,
+                            str: 'identifier',
+                            source_string: outputValueLhs,
+                            line: 12,
+                            col: 19,
+                          },
+                          rhs: {
+                            id: 39,
+                            str: 'identifier',
+                            source_string: outputValueRhs,
+                            line: 12,
+                            col: 25,
                           },
                         },
                       },
                     },
-                  ],
-                },
+                  },
+                ],
               },
             },
-          ],
-        },
+          },
+        ],
       };
 
       const outputsWorkflow = Context.getOutputsWorkflow(partAst);
