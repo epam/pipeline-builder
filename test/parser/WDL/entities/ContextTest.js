@@ -170,5 +170,64 @@ describe('parser/WDL/entities/Context', () => {
       expect(outputsWorkflow[outputName].type).to.be.equal(outputType);
       expect(outputsWorkflow[outputName].default).to.be.equal(`${outputValueLhs}.${outputValueRhs}`);
     });
+
+    it('returns outputs for workflow with wildcards', () => {
+      const outputWildcardName = 'foo';
+      const outputNullWildcardName = 'bar.out';
+      const partAst = {
+        list: [
+          {
+            name: 'WorkflowOutputs',
+            attributes: {
+              outputs: {
+                list: [
+                  {
+                    name: 'WorkflowOutputWildcard',
+                    attributes: {
+                      fqn: {
+                        id: 11,
+                        str: 'fqn',
+                        source_string: outputWildcardName,
+                        line: 7,
+                        col: 6,
+                      },
+                      wildcard: {
+                        id: 15,
+                        str: 'asterisk',
+                        source_string: '*',
+                        line: 7,
+                        col: 10,
+                      },
+                    },
+                  },
+                  {
+                    name: 'WorkflowOutputWildcard',
+                    attributes: {
+                      fqn: {
+                        id: 11,
+                        str: 'fqn',
+                        source_string: outputNullWildcardName,
+                        line: 7,
+                        col: 5,
+                      },
+                      wildcard: null,
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      };
+
+      const outputsWorkflow = Context.getOutputsWorkflow(partAst);
+
+      expect(outputsWorkflow[`${outputWildcardName}.*`]).to.be.not.empty;
+      expect(outputsWorkflow[outputNullWildcardName]).to.be.not.empty;
+      expect(outputsWorkflow[`${outputWildcardName}.*`].type).to.be.empty;
+      expect(outputsWorkflow[outputNullWildcardName].type).to.be.empty;
+      expect(outputsWorkflow[`${outputWildcardName}.*`].default).to.be.equal(`${outputWildcardName}.*`);
+      expect(outputsWorkflow[outputNullWildcardName].default).to.be.equal(outputNullWildcardName);
+    });
   });
 });
