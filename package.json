@@ -41,9 +41,7 @@
     "graph"
   ],
   "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not ie <= 10"
+    "last 2 Chrome versions"
   ],
   "devDependencies": {
     "babel-core": "^6.23.1",
@@ -97,11 +95,12 @@
     "vinyl-ftp": "^0.6.0",
     "webpack": "^2.2.1",
     "webpack-dev-server": "^2.4.1",
-    "yargs": "^6.6.0"
+    "yargs": "^6.6.0",
+    "uglify-es": "^3.3.7"
   },
   "dependencies": {
     "jszip": "^3.1.4",
-    "lodash": "^4.17.4"
+    "lodash": "^3.10.1"
   },
   "directories": {
     "doc": "docs",

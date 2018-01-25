@@ -424,7 +424,7 @@ async function importParsingStage(ast, opts) {
   return result;
 }
 
-export default async function parse(data, opts = {}) {
+async function parse(data, opts = {}) {
   let result = {
     status: true,
     message: '',
@@ -468,3 +468,5 @@ export default async function parse(data, opts = {}) {
 
   return result.status ? Promise.resolve(result) : Promise.reject(result.message);
 }
+
+export default parse;

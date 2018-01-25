@@ -13,7 +13,6 @@ import istanbul from 'gulp-babel-istanbul';
 import coveralls from 'gulp-coveralls';
 import jsdoc from 'gulp-jsdoc3';
 import sourcemaps from 'gulp-sourcemaps';
-import uglify from 'gulp-uglify';
 import rename from 'gulp-rename';
 import sass from 'gulp-sass';
 import sassModuleImporter from 'sass-module-importer'; // eslint-disable-line import/no-unresolved, import/extensions
@@ -28,8 +27,13 @@ import yargs from 'yargs';
 import ftp from 'vinyl-ftp';
 import url from 'url';
 
+import uglifyes from 'uglify-es';
+import composer from 'gulp-uglify/composer';
+
 import webpackConfig from './webpack.config';
 import rollupConfig from './rollup.config';
+
+const uglify = composer(uglifyes, console);
 
 const packageJson = require('./package.json');
 

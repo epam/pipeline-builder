@@ -95,13 +95,13 @@ export default class Step {
    * Create a workflow step. You should {@link Workflow#add add} it to a workflow or a compound step.
    *
    * @param {string} name - Step name. Must be unique in a parent step (e.g. {@link Workflow}).
-   * @param {Action=} action - Action to execute during the step. If no action is specified it will
+   * @param {Action=} [action={}] action - Action to execute during the step. If no action is specified it will
    * automatically be created based on the configuration. Multiple steps may share a single action.
    * @param {object} [config={}] - Action configuration containing input bindings.
    * It should include action description in case the action is missing.
    *
    */
-  constructor(name, action, config = {}) {
+  constructor(name, action = {}, config = {}) {
     if (_.isUndefined(name)) {
       throw new Error('Step must have a name');
     }

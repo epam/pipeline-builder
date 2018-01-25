@@ -8,7 +8,7 @@ const version = require('./version');
 module.exports = {
   devtool: 'inline-source-map',
   entry: {
-    demo: './src/app.js',
+    demo: ['./src/app.js'],
   },
   output: {
     publicPath: '/',
@@ -22,7 +22,16 @@ module.exports = {
       use: [{
         loader: 'babel-loader',
         options: {
-          presets: [['env', { modules: false }]],
+          presets: [['env',
+            {
+              targets: {
+                browsers: [
+                  'last 2 chrome versions',
+                ],
+              },
+              modules: false,
+            },
+          ]],
         },
       }],
     },

@@ -29,8 +29,14 @@ export default {
     }),
     rollupPluginBabel({
       babelrc: false,
-      runtimeHelpers: true,
-      presets: [['env', { modules: false }]],
+      runtimeHelpers: false,
+      presets: [['env', {
+        modules: false,
+        targets: {
+          browsers: ['last 2 chrome versions'],
+        },
+      }]],
+      exclude: './node_modules/**',
       plugins: ['external-helpers'],
     }),
     rollupPluginReplace({
