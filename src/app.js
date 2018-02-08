@@ -128,10 +128,6 @@ processButton('btn-els-panning', () => {
   diagram.toggleElementsPanning();
 });
 
-processButton('btn-read-only-mode', () => {
-  diagram.toggleReadOnly();
-});
-
 processButton('btn-load-zip', () => {
   document.getElementById('file').click();
 });

@@ -335,9 +335,6 @@ export default class Visualizer {
   _loopPorts(ports, source, cellsToAdd, isEnabled) {
     const children = this._children;
     const links = this._graph.getConnectedLinks(source);
-    if (this._readOnlyTogglingInProgress) {
-      this._graph.removeCells(links);
-    }
     _.forEach(ports, (port) => {
       if (!isEnabled(port.name)) {
         return;
@@ -465,7 +462,7 @@ export default class Visualizer {
   _listenLinks() {
     const graph = this._graph;
     graph.on('remove', (cell, child, opts) => {
-      if (this._readOnly || this._readOnlyTogglingInProgress) {
+      if (this._readOnly) {
         return;
       }
 
@@ -475,7 +472,7 @@ export default class Visualizer {
     }, this);
 
     graph.on('change:source change:target', (link) => {
-      if (this._readOnly || this._readOnlyTogglingInProgress) {
+      if (this._readOnly) {
         return;
       }
 
@@ -553,22 +550,6 @@ export default class Visualizer {
   }
 
   /**
-   * Toggles read-only mode
-   * (Note that links are re-rendered, so if there is huge amount of links this could be not lightning fast)
-   * */
-  toggleReadOnly() {
-    this._readOnly = !this._readOnly;
-    if (this._timer) {
-      clearTimeout(this._timer);
-      this._timer = null;
-    }
-    this._readOnlyTogglingInProgress = true;
-    this._update();
-    this._readOnlyTogglingInProgress = false;
-    this._timer = setInterval(() => this._update(), 30);
-  }
-
-  /**
    * Toggles elements panning mode
    * (If it's turned on then you can pan whole Paper dragging on any element)
    * */
@@ -579,7 +560,7 @@ export default class Visualizer {
     }
     if (this._elementsPanning) {
       this._turnOffElementsPanning();
-      if (this._readOnlyDump.length) {
+      if (this._readOnlyDump && this._readOnlyDump.length) {
         this._readOnly = this._readOnlyDump[0];
       }
     } else {
