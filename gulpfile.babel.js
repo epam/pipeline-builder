@@ -160,6 +160,9 @@ const uglifyConfig = {
   output: {
     comments: /copyright/i,
   },
+  compress: {
+    inline: 1,
+  },
 };
 
 gulp.task('build:js', () =>

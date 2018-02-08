@@ -971,6 +971,478 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(() => new WDLWorkflow(ast, context)).to.throws(WDLParserError);
     });
 
+    it('throws error when undeclared variable is referenced in workflow outputs with wildcard1', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 3,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'a',
+                  line: 3,
+                  col: 7,
+                },
+                expression: {
+                  id: 2,
+                  str: 'integer',
+                  source_string: '5',
+                  line: 3,
+                  col: 11,
+                },
+              },
+            },
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 4,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'b',
+                  line: 4,
+                  col: 7,
+                },
+                expression: {
+                  name: 'Add',
+                  attributes: {
+                    lhs: {
+                      id: 2,
+                      str: 'integer',
+                      source_string: '5',
+                      line: 4,
+                      col: 11,
+                    },
+                    rhs: {
+                      id: 14,
+                      str: 'identifier',
+                      source_string: 'a',
+                      line: 4,
+                      col: 15,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              name: 'Call',
+              attributes: {
+                task: {
+                  id: 11,
+                  str: 'fqn',
+                  source_string: 'bar',
+                  line: 5,
+                  col: 8,
+                },
+                alias: null,
+                body: null,
+              },
+            },
+            {
+              name: 'WorkflowOutputs',
+              attributes: {
+                outputs: {
+                  list: [
+                    {
+                      name: 'WorkflowOutputWildcard',
+                      attributes: {
+                        fqn: {
+                          id: 11,
+                          str: 'fqn',
+                          source_string: 'bar.out',
+                          line: 7,
+                          col: 5,
+                        },
+                        wildcard: null,
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, {
+        actionMap: {
+          bar: {
+          },
+        },
+      })).to.throws(WDLParserError);
+    });
+
+    it('throws error when undeclared call is referenced in workflow outputs with wildcard1', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 3,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'a',
+                  line: 3,
+                  col: 7,
+                },
+                expression: {
+                  id: 2,
+                  str: 'integer',
+                  source_string: '5',
+                  line: 3,
+                  col: 11,
+                },
+              },
+            },
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 4,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'b',
+                  line: 4,
+                  col: 7,
+                },
+                expression: {
+                  name: 'Add',
+                  attributes: {
+                    lhs: {
+                      id: 2,
+                      str: 'integer',
+                      source_string: '5',
+                      line: 4,
+                      col: 11,
+                    },
+                    rhs: {
+                      id: 14,
+                      str: 'identifier',
+                      source_string: 'a',
+                      line: 4,
+                      col: 15,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              name: 'WorkflowOutputs',
+              attributes: {
+                outputs: {
+                  list: [
+                    {
+                      name: 'WorkflowOutputWildcard',
+                      attributes: {
+                        fqn: {
+                          id: 11,
+                          str: 'fqn',
+                          source_string: 'bar.out',
+                          line: 7,
+                          col: 5,
+                        },
+                        wildcard: null,
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, {
+        actionMap: {
+        },
+      })).to.throws(WDLParserError);
+    });
+
+    it('throws error when undeclared variable is referenced in workflow outputs with wildcard2', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 3,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'a',
+                  line: 3,
+                  col: 7,
+                },
+                expression: {
+                  id: 2,
+                  str: 'integer',
+                  source_string: '5',
+                  line: 3,
+                  col: 11,
+                },
+              },
+            },
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 4,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'b',
+                  line: 4,
+                  col: 7,
+                },
+                expression: {
+                  name: 'Add',
+                  attributes: {
+                    lhs: {
+                      id: 2,
+                      str: 'integer',
+                      source_string: '5',
+                      line: 4,
+                      col: 11,
+                    },
+                    rhs: {
+                      id: 14,
+                      str: 'identifier',
+                      source_string: 'a',
+                      line: 4,
+                      col: 15,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              name: 'Call',
+              attributes: {
+                task: {
+                  id: 11,
+                  str: 'fqn',
+                  source_string: 'bar',
+                  line: 5,
+                  col: 8,
+                },
+                alias: null,
+                body: null,
+              },
+            },
+            {
+              name: 'WorkflowOutputs',
+              attributes: {
+                outputs: {
+                  list: [
+                    {
+                      name: 'WorkflowOutputWildcard',
+                      attributes: {
+                        fqn: {
+                          id: 11,
+                          str: 'fqn',
+                          source_string: 'bar',
+                          line: 7,
+                          col: 6,
+                        },
+                        wildcard: {
+                          id: 15,
+                          str: 'asterisk',
+                          source_string: '*',
+                          line: 7,
+                          col: 10,
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, {
+        actionMap: {
+          bar: {
+          },
+        },
+      })).to.throws(WDLParserError);
+    });
+
+    it('throws error when undeclared call is referenced in workflow outputs with wildcard2', () => {
+      const ast = {
+        name: {
+          id: 14,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 2,
+          col: 10,
+        },
+        body: {
+          list: [
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 3,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'a',
+                  line: 3,
+                  col: 7,
+                },
+                expression: {
+                  id: 2,
+                  str: 'integer',
+                  source_string: '5',
+                  line: 3,
+                  col: 11,
+                },
+              },
+            },
+            {
+              name: 'Declaration',
+              attributes: {
+                type: {
+                  id: 43,
+                  str: 'type',
+                  source_string: 'Int',
+                  line: 4,
+                  col: 3,
+                },
+                name: {
+                  id: 14,
+                  str: 'identifier',
+                  source_string: 'b',
+                  line: 4,
+                  col: 7,
+                },
+                expression: {
+                  name: 'Add',
+                  attributes: {
+                    lhs: {
+                      id: 2,
+                      str: 'integer',
+                      source_string: '5',
+                      line: 4,
+                      col: 11,
+                    },
+                    rhs: {
+                      id: 14,
+                      str: 'identifier',
+                      source_string: 'a',
+                      line: 4,
+                      col: 15,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              name: 'WorkflowOutputs',
+              attributes: {
+                outputs: {
+                  list: [
+                    {
+                      name: 'WorkflowOutputWildcard',
+                      attributes: {
+                        fqn: {
+                          id: 11,
+                          str: 'fqn',
+                          source_string: 'bar',
+                          line: 7,
+                          col: 6,
+                        },
+                        wildcard: {
+                          id: 15,
+                          str: 'asterisk',
+                          source_string: '*',
+                          line: 7,
+                          col: 10,
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, {
+        actionMap: {
+        },
+      })).to.throws(WDLParserError);
+    });
+
     it('supports workflow outputs with wildcard1', () => {
       const ast = {
         name: {
@@ -1089,6 +1561,10 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       const workflow = new WDLWorkflow(ast, {
         actionMap: {
           bar: {
+            i: {},
+            o: {
+              out: new Port('out'),
+            },
           },
         },
       });
@@ -1220,6 +1696,10 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       const workflow = new WDLWorkflow(ast, {
         actionMap: {
           bar: {
+            i: {},
+            o: {
+              out: new Port('out'),
+            },
           },
         },
       });
