@@ -147,7 +147,7 @@ export default class Visualizer {
       model: graph,
       defaultLink: new VisualLink(),
       elementView: VisualWorkflowView,
-      interactive: val => !this._readOnly || !(val.model instanceof VisualLink),
+      interactive: val => !this._elementsPanning && (!this._readOnly || !(val.model instanceof VisualLink)),
       clickThreshold: 1,
     });
 
@@ -166,6 +166,10 @@ export default class Visualizer {
      * @type {Zoom}
      */
     this.zoom = new Zoom(paper);
+
+    this._dragStartPosition = null;
+    this._elementsPanning = false;
+
     this._handlePanning();
     this._handleSelection();
 
@@ -331,6 +335,9 @@ export default class Visualizer {
   _loopPorts(ports, source, cellsToAdd, isEnabled) {
     const children = this._children;
     const links = this._graph.getConnectedLinks(source);
+    if (this._readOnlyTogglingInProgress) {
+      this._graph.removeCells(links);
+    }
     _.forEach(ports, (port) => {
       if (!isEnabled(port.name)) {
         return;
@@ -458,7 +465,7 @@ export default class Visualizer {
   _listenLinks() {
     const graph = this._graph;
     graph.on('remove', (cell, child, opts) => {
-      if (this._readOnly) {
+      if (this._readOnly || this._readOnlyTogglingInProgress) {
         return;
       }
 
@@ -468,7 +475,7 @@ export default class Visualizer {
     }, this);
 
     graph.on('change:source change:target', (link) => {
-      if (this._readOnly) {
+      if (this._readOnly || this._readOnlyTogglingInProgress) {
         return;
       }
 
@@ -545,21 +552,96 @@ export default class Visualizer {
     });
   }
 
-  _handlePanning() {
-    let dragStartPosition;
+  /**
+   * Toggles read-only mode
+   * (Note that links are re-rendered, so if there is huge amount of links this could be not lightning fast)
+   * */
+  toggleReadOnly() {
+    this._readOnly = !this._readOnly;
+    if (this._timer) {
+      clearTimeout(this._timer);
+      this._timer = null;
+    }
+    this._readOnlyTogglingInProgress = true;
+    this._update();
+    this._readOnlyTogglingInProgress = false;
+    this._timer = setInterval(() => this._update(), 30);
+  }
+
+  /**
+   * Toggles elements panning mode
+   * (If it's turned on then you can pan whole Paper dragging on any element)
+   * */
+  toggleElementsPanning() {
+    if (this._timer) {
+      clearTimeout(this._timer);
+      this._timer = null;
+    }
+    if (this._elementsPanning) {
+      this._turnOffElementsPanning();
+      if (this._readOnlyDump.length) {
+        this._readOnly = this._readOnlyDump[0];
+      }
+    } else {
+      this._turnOnElementsPanning();
+      if (!this._readOnly) {
+        this._readOnlyDump = [this._readOnly];
+        this._readOnly = true;
+      }
+    }
+    this._timer = setInterval(() => this._update(), 30);
+  }
+
+  _turnOffElementsPanning() {
     const paper = this.paper;
-    paper.on('blank:pointerdown', (event, x, y) => {
-      dragStartPosition = { x, y };
+    paper.off('cell:pointerdown', this._setCellDragStartPosition);
+    paper.off('cell:pointerup', this._clearDragStartPosition);
+    _.forEach(this._graph.getCells(), (cell) => {
+      V(this.paper.findViewByModel(cell).el).toggleClass('pannable', false);
     });
+    this._elementsPanning = false;
+  }
+
+  _turnOnElementsPanning() {
+    const paper = this.paper;
+    paper.on('cell:pointerdown', this._setCellDragStartPosition, this);
+    paper.on('cell:pointerup', this._clearDragStartPosition, this);
+    _.forEach(this._graph.getCells(), (cell) => {
+      V(this.paper.findViewByModel(cell).el).toggleClass('pannable', true);
+    });
+    this._elementsPanning = true;
+  }
+
+  _setCellDragStartPosition(cellView, event, x, y) {
+    this.paper.$el.find('svg').toggleClass('is-panning', true);
+    this._dragStartPosition = { x, y };
+  }
+
+  _clearDragStartPosition() {
+    this.paper.$el.find('svg').toggleClass('is-panning', false);
+    this._dragStartPosition = null;
+  }
+
+  _handlePanning() {
+    const paper = this.paper;
+    paper.$el.find('svg').toggleClass('pannable', true);
+    paper.on('blank:pointerdown', (event, x, y) => {
+      this._dragStartPosition = { x, y };
+      paper.$el.find('svg').toggleClass('is-panning', true);
+    });
+    if (this._elementsPanning) {
+      paper.on('cell:pointerdown', this._setCellDragStartPosition, this);
+      paper.on('cell:pointerup', this._clearDragStartPosition, this);
+    }
     paper.on('blank:pointerup', () => {
-      dragStartPosition = null;
+      this._clearDragStartPosition();
     });
     paper.el.onmousemove = (event) => {
       const currScale = this.zoom.getCurrentScale();
-      if (dragStartPosition) {
+      if (this._dragStartPosition) {
         paper.setOrigin(
-          event.offsetX - (dragStartPosition.x * currScale),
-          event.offsetY - (dragStartPosition.y * currScale));
+          event.offsetX - (this._dragStartPosition.x * currScale),
+          event.offsetY - (this._dragStartPosition.y * currScale));
       }
     };
 
