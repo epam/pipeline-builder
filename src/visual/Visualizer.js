@@ -553,7 +553,7 @@ export default class Visualizer {
    * Toggles elements panning mode
    * (If it's turned on then you can pan whole Paper dragging on any element)
    * */
-  toggleElementsPanning() {
+  togglePanningMode() {
     if (this._timer) {
       clearTimeout(this._timer);
       this._timer = null;

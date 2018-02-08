@@ -125,7 +125,7 @@ processButton('btn-dis-ports', () => {
 });
 
 processButton('btn-els-panning', () => {
-  diagram.toggleElementsPanning();
+  diagram.togglePanningMode();
 });
 
 processButton('btn-load-zip', () => {
