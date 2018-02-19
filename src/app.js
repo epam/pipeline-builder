@@ -47,7 +47,7 @@ async function initialize() {
   }
 
   removeChildren(document.getElementById('diagram'));
-  diagram = new pipeline.Visualizer(document.getElementById('diagram'));
+  diagram = new pipeline.Visualizer(document.getElementById('diagram'), false);
   diagram.attachTo(flow1);
   window.flow = flow1;
 }
@@ -122,6 +122,10 @@ processButton('btn-en-ports', () => {
 
 processButton('btn-dis-ports', () => {
   diagram.togglePorts(false);
+});
+
+processButton('btn-els-panning', () => {
+  diagram.togglePanningMode();
 });
 
 processButton('btn-load-zip', () => {
