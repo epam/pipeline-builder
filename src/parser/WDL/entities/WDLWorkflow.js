@@ -46,19 +46,13 @@ export default class WDLWorkflow {
    * @param {list} bodyList - list of the current parsing wdl body node
    * @param {string} name - current body name
    * @param {Step} parent - parent step
-   * @param {list} opts - nodes that prohibited for current stage to parse (in lower case)
+   * @param {[list]} opts - nodes that prohibited for current stage to parse (in lower case)
    */
   parseBody(bodyList, name, parent, opts = []) {
     const parentStep = parent || this.workflowStep;
-    let declarationsPassed = false;
     bodyList.forEach((item) => {
       const lcName = item.name.toLowerCase();
       if (_.indexOf(opts, lcName) < 0) {
-        if (lcName !== 'declaration') {
-          declarationsPassed = true;
-        } else if (declarationsPassed) {
-          throw new WDLParserError('Declarations are allowed only before other things of current scope');
-        }
         this.parsingProcessors[lcName].call(this, item, parentStep);
       } else {
         throw new WDLParserError(`In ${name} body keys [${opts}] are not allowed`);
