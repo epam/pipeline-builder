@@ -139,7 +139,7 @@ function renameWfOutput(output, prefix, initialCalls) {
 }
 
 function renameCallAst(call, prefix, initialCalls) {
-  if (!initialCalls.includes(call.attributes.task.source_string)) {
+  if (!initialCalls.includes(call.attributes.task.source_string) && !call.attributes.alias) {
     initialCalls.push(call.attributes.task.source_string);
   }
   if (call.attributes.body && call.attributes.body.attributes && call.attributes.body.attributes.io) {
@@ -177,7 +177,7 @@ function renameWfAstNames(node, prefix) {
   const initialCalls = [];
   // declarations, calls, outputs
   node.attributes.body.list = node.attributes.body.list.map((definition) => {
-    if (definition.name.toLowerCase() === Constants.CALL) {
+    if (definition.name.toLowerCase() === Constants.CALL && !definition.attributes.alias) {
       initialCalls.push(definition.attributes.task.source_string);
     }
     return renameWfDefinition(definition, prefix, initialCalls);
