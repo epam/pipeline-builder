@@ -3,6 +3,7 @@ import _ from 'lodash';
 import Workflow from '../../../model/Workflow';
 import Step from '../../../model/Step';
 import Group from '../../../model/Group';
+import Declaration from '../../../model/Declaration';
 import { extractExpression, extractType, extractMetaBlock, WDLParserError } from '../utils/utils';
 import * as Constants from '../constants';
 
@@ -203,19 +204,17 @@ export default class WDLWorkflow {
     const name = decl.name.source_string;
     const type = extractType(decl.type);
 
-    const obj = {};
-    obj[name] = {
-      type,
-    };
-
-    const str = extractExpression(decl.expression).string;
-    if (str !== '') {
-      obj[name].default = str;
+    if (decl.expression === null) { // declaration is an input type
+      const obj = {};
+      obj[name] = {
+        type,
+      };
+      parentStep.action.addPorts({
+        i: obj,
+      });
+    } else if (parentStep instanceof Group) { // declaration is a "variable" type
+      parentStep.addDeclaration(new Declaration(name, decl, parentStep));
     }
-
-    parentStep.action.addPorts({
-      i: obj,
-    });
   }
 
   /**
@@ -303,12 +302,7 @@ export default class WDLWorkflow {
       });
       // WF output connections
       if (!wildcard) { // syntax: call_name.output_name
-        const callOutput = fqn.source_string.split('.');
-        if (callOutput.length < 2) {
-          return;
-        }
-        const callName = callOutput[0];
-        const outputName = callOutput[1];
+        const [callName, outputName] = fqn.source_string.split('.');
         const startStep = WDLWorkflow.findStepInStructureRecursively(this.workflowStep, callName);
 
         if (startStep) {
@@ -372,6 +366,10 @@ export default class WDLWorkflow {
       if (_.has(step.i, portName) || _.has(step.o, portName)) {
         return step;
       }
+      const root = step.workflow();
+      if (_.has(root.declarations, portName)) {
+        return root;
+      }
 
       return WDLWorkflow.groupNameResolver(step.parent, portName);
     }
@@ -398,7 +396,11 @@ export default class WDLWorkflow {
     } else if (expression.type === 'identifier') {
       const desiredStep = WDLWorkflow.groupNameResolver(parent, expression.string);
       if (desiredStep) {
-        binder = desiredStep.i[expression.string];
+        if (desiredStep.i[expression.string]) {
+          binder = desiredStep.i[expression.string];
+        } else {
+          binder = desiredStep.declarations[expression.string];
+        }
       } else {
         throw new WDLParserError(`Undeclared variable is referenced: '${expression.string}'`);
       }

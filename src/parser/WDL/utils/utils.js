@@ -242,7 +242,7 @@ export function extractExpression(ast) {
 
 /**
  * Build the string from entire ast type subtree
- * @param {ast} ast - Ast tree node to be expressed
+ * @param {ast} declarationNode - Ast tree node to be expressed
  */
 export function extractType(declarationNode) {
   if (declarationNode === undefined || declarationNode === null) {

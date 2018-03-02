@@ -35,6 +35,12 @@ class Workflow extends Group {
      * @type {Object.<string, Action>}
      */
     this.actions = {};
+    /**
+     * Dictionary of all declarations accessible within workflow.
+     * @type {Object.<string, Declaration>}
+     */
+    this.declarations = {};
+
     if (config.ast) {
       this.ast = config.ast;
     }
