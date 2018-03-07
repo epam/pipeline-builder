@@ -62,6 +62,21 @@ $port-color-available: $lime-green;
   @include grabbing;
 }
 
+.joint-type-visualdeclaration {
+  .root {
+    fill: $step-color;
+    stroke: $step-color;
+  }
+
+  .label {
+    font-weight: 500;
+    font-family: "Source Sans Pro", sans-serif;
+    font-size: 16px;
+    text-decoration: none;
+    text-transform: none;
+  }
+}
+
 .joint-type-visualstep.selected {
   .body {
     stroke: $raspberry;

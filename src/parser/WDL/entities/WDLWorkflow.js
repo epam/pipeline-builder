@@ -84,6 +84,7 @@ export default class WDLWorkflow {
 
     const collection = extractExpression(item.attributes.collection);
 
+    // in scatter the item is always an identifier, so it'll always be one port returned from .getPortForBinding() not an array
     const port = WDLWorkflow.getPortForBinding(this.workflowStep, parent, collection);
 
     opts.i[itemName] = {};
@@ -186,7 +187,12 @@ export default class WDLWorkflow {
     const expression = extractExpression(nodeValue);
 
     if (step.i[declaration]) {
-      step.i[declaration].bind(WDLWorkflow.getPortForBinding(this.workflowStep, parentStep, expression));
+      const bindings = WDLWorkflow.getPortForBinding(this.workflowStep, parentStep, expression);
+      if (bindings && !Array.isArray(bindings)) {
+        step.i[declaration].bind(bindings);
+      } else if (bindings) {
+        _.forEach(bindings, binding => step.i[declaration].bind(binding));
+      }
     } else {
       throw new WDLParserError(`Undeclared variable trying to be assigned: call '${step.name}' --> '${declaration}'`);
     }
@@ -213,7 +219,15 @@ export default class WDLWorkflow {
         i: obj,
       });
     } else if (parentStep instanceof Group) { // declaration is a "variable" type
-      parentStep.addDeclaration(new Declaration(name, decl, parentStep));
+      const declaration = new Declaration(name, decl, parentStep);
+      const bindings = WDLWorkflow.getPortForBinding(this.workflowStep, declaration.step, declaration.expression);
+      if (bindings && !Array.isArray(bindings)) {
+        declaration.bind(bindings);
+      } else if (bindings) {
+        _.forEach(bindings, binding => declaration.bind(binding));
+      }
+
+      parentStep.addDeclaration(declaration);
     }
   }
 
@@ -378,6 +392,33 @@ export default class WDLWorkflow {
   }
 
   static getPortForBinding(workflow, parent, expression) {
+    const accessesTypes = [
+      'ArrayOrMapLookup',
+      'FunctionCall',
+      'ArrayLiteral',
+      'ObjectLiteral',
+      'MapLiteral',
+      'TupleLiteral',
+      'LogicalNot',
+      'UnaryPlus',
+      'UnaryNegation',
+      'Add',
+      'Subtract',
+      'Multiply',
+      'Divide',
+      'Remainder',
+      'LogicalOr',
+      'LogicalAnd',
+      'Equals',
+      'NotEquals',
+      'LessThan',
+      'LessThanOrEqual',
+      'GreaterThan',
+      'GreaterThanOrEqual',
+      'TernaryIf',
+      'MapLiteralKv',
+      'ObjectKV',
+    ];
     let binder = expression.string;
     if (expression.type === 'MemberAccess') {
       const rhsPart = expression.accesses[0].rhs;
@@ -393,6 +434,33 @@ export default class WDLWorkflow {
       } else {
         throw new WDLParserError(`Undeclared call is referenced: '${lhsPart}'`);
       }
+    } else if (accessesTypes.includes(expression.type) && expression.accesses.length) {
+      binder = [];
+      _.forEach(expression.accesses, (accesses) => {
+        if (_.isObject(accesses)) {
+          const outputStep = WDLWorkflow.findStepInStructureRecursively(workflow, accesses.lhs);
+          if (outputStep) {
+            if (outputStep.o[accesses.rhs]) {
+              binder.push(outputStep.o[accesses.rhs]);
+            } else {
+              throw new WDLParserError(`Undeclared variable is referenced: '${accesses.lhs}.${accesses.rhs}'`);
+            }
+          } else {
+            throw new WDLParserError(`Undeclared call is referenced: '${accesses.lhs}'`);
+          }
+        } else if (_.isString(accesses)) {
+          const desiredStep = WDLWorkflow.groupNameResolver(parent, accesses);
+          if (desiredStep) {
+            if (desiredStep.i[accesses]) {
+              binder.push(desiredStep.i[accesses]);
+            } else {
+              binder.push(desiredStep.declarations[accesses]);
+            }
+          } else {
+            throw new WDLParserError(`Undeclared variable is referenced: '${expression.string}'`);
+          }
+        }
+      });
     } else if (expression.type === 'identifier') {
       const desiredStep = WDLWorkflow.groupNameResolver(parent, expression.string);
       if (desiredStep) {

@@ -57,7 +57,7 @@ const unaryUnScoped = [
 function putEnumeratedExpressions(list, localRes, callback) {
   list.map(item => callback(item))
     .forEach((item, idx) => {
-      localRes.accesses.concat(item.accesses);
+      localRes.accesses = localRes.accesses.concat(item.accesses);
       localRes.string += idx === 0 ? item.string : `, ${item.string}`;
     });
 }
@@ -162,6 +162,12 @@ const processors = {
 
     scope.res.string += ')';
   },
+  Identifier: (scope) => {
+    scope.res.string = scope.ast.source_string;
+    scope.res.type = scope.ast.str;
+
+    scope.res.accesses = scope.res.accesses.concat(scope.ast.source_string);
+  },
   default: (scope) => {
     if (scope.ast.str === 'string') {
       scope.res.string = `"${JSON.stringify(scope.ast.source_string).slice(1, -1)}"`;
@@ -181,9 +187,9 @@ const processorRemap = {
   ObjectLiteral: 'ObjectLiteral',
   MapLiteral: 'MapLiteral',
   TupleLiteral: 'TupleLiteral',
+  identifier: 'Identifier',
 
   string: 'default',
-  identifier: 'default',
   boolean: 'default',
   integer: 'default',
   float: 'default',

@@ -2,11 +2,14 @@ import _ from 'lodash';
 import joint, { V } from 'jointjs';
 
 import Workflow from '../model/Workflow';
+import Declaration from '../model/Declaration';
+import Port from '../model/Port';
 import Paper from './Paper';
 import VisualLink from './VisualLink';
 import VisualStep from './VisualStep';
 import VisualGroup from './VisualGroup';
 import VisualWorkflow from './VisualWorkflow';
+import VisualDeclaration from './VisualDeclaration';
 
 import Zoom from './Zoom';
 
@@ -176,6 +179,7 @@ export default class Visualizer {
     this._selectionEnabled = true;
     this._graph = graph;
     this._children = {};
+    this._declarations = {};
     this._timer = null;
     this._step = null;
     this.clear();
@@ -259,6 +263,7 @@ export default class Visualizer {
     this._graph.off('add', null, this);
     this._graph.clear();
     this._children = {};
+    this._declarations = {};
     this._step = null;
     this.selection = [];
   }
@@ -332,21 +337,76 @@ export default class Visualizer {
     });
   }
 
-  _loopPorts(ports, source, cellsToAdd, isEnabled) {
-    const children = this._children;
-    const links = this._graph.getConnectedLinks(source);
-    _.forEach(ports, (port) => {
-      if (!isEnabled(port.name)) {
-        return;
-      }
-      _.forEach(port.outputs, (conn) => {
+  get _connectionProcessors() {
+    return {
+      declarationToDeclaration: (conn, visDeclaration, links, cellsToAdd) => {
+        const declarations = this._declarations;
+        const targetName = conn.to.name;
+        if (declarations[targetName] &&
+          _.find(links, link => link.conn === conn) === undefined &&
+          declarations[targetName].isPortEnabled(conn.to.step.hasInputPort(conn.to), conn.to.name)) {
+          const isReadOnly = this._readOnly || this._isChildSubWorkflow(visDeclaration.declaration.step) ||
+            this._isChildSubWorkflow(declarations[targetName].step);
+          cellsToAdd[cellsToAdd.length] = new VisualLink({
+            source: {
+              id: visDeclaration.id,
+            },
+            target: {
+              id: declarations[targetName].id,
+            },
+            conn,
+          }, isReadOnly);
+        }
+      },
+      declarationToPort: (conn, visDeclaration, links, cellsToAdd) => {
+        const children = this._children;
+        const targetName = generateChildName(conn.to.step);
+        if (children[targetName] &&
+          _.find(links, link => link.conn === conn) === undefined &&
+          children[targetName].isPortEnabled(conn.to.step.hasInputPort(conn.to), conn.to.name)) {
+          const isReadOnly = this._readOnly || this._isChildSubWorkflow(visDeclaration.declaration.step) ||
+            this._isChildSubWorkflow(children[targetName].step);
+          cellsToAdd[cellsToAdd.length] = new VisualLink({
+            source: {
+              id: visDeclaration.id,
+            },
+            target: {
+              id: children[targetName].id,
+              port: conn.to.name,
+            },
+            conn,
+          }, isReadOnly);
+        }
+      },
+      portToDeclaration: (conn, port, source, links, cellsToAdd) => {
+        const declarations = this._declarations;
+        const targetDeclarationName = conn.to.name;
+        if (declarations[targetDeclarationName] &&
+          _.find(links, link => link.conn === conn) === undefined &&
+          declarations[targetDeclarationName].isPortEnabled()) {
+          const isReadOnly = this._readOnly || this._isChildSubWorkflow(source.step) ||
+            this._isChildSubWorkflow(declarations[targetDeclarationName].declaration.step);
+          cellsToAdd[cellsToAdd.length] = new VisualLink({
+            source: {
+              id: source.id,
+              port: port.name,
+            },
+            target: {
+              id: declarations[targetDeclarationName].id,
+            },
+            conn,
+          }, isReadOnly);
+        }
+      },
+      portToPort: (conn, port, source, links, cellsToAdd) => {
+        const children = this._children;
         const targetName = generateChildName(conn.to.step);
         if (children[targetName] &&
           _.find(links, link => link.conn === conn) === undefined &&
           children[targetName].isPortEnabled(conn.to.step.hasInputPort(conn.to), conn.to.name)) {
           const isReadOnly = this._readOnly || this._isChildSubWorkflow(source.step) ||
             this._isChildSubWorkflow(children[targetName].step);
-          const link = new VisualLink({
+          cellsToAdd[cellsToAdd.length] = new VisualLink({
             source: {
               id: source.id,
               port: port.name,
@@ -357,7 +417,39 @@ export default class Visualizer {
             },
             conn,
           }, isReadOnly);
-          cellsToAdd[cellsToAdd.length] = link;
+        }
+      },
+    };
+  }
+
+  _loopPorts(ports, source, visDeclarations, cellsToAdd, isEnabled) {
+    const links = this._graph.getConnectedLinks(source);
+    _.forEach(ports, (port) => {
+      if (!isEnabled(port.name)) {
+        return;
+      }
+      _.forEach(port.outputs, (conn) => {
+        if (conn.to instanceof Declaration) {
+          this._connectionProcessors
+            .portToDeclaration(conn, port, source, links, cellsToAdd);
+        } else if (conn.to instanceof Port) {
+          this._connectionProcessors
+            .portToPort(conn, port, source, links, cellsToAdd);
+        }
+      });
+    });
+  }
+
+  _loopDeclarations(visDeclarations, cellsToAdd) {
+    _.forEach(visDeclarations, (visDeclaration) => {
+      const links = this._graph.getConnectedLinks(visDeclaration);
+      _.forEach(visDeclaration.declaration.outputs, (conn) => {
+        if (conn.to instanceof Declaration) {
+          this._connectionProcessors
+            .declarationToDeclaration(conn, visDeclaration, links, cellsToAdd);
+        } else if (conn.to instanceof Port) {
+          this._connectionProcessors
+            .declarationToPort(conn, visDeclaration, links, cellsToAdd);
         }
       });
     });
@@ -370,6 +462,8 @@ export default class Visualizer {
     }
     // validate call <-> step correspondence
     const children = this._children;
+
+    const declarations = this._declarations;
 
     // handle the renames
     const pickBy = _.pickBy || _.pick; // be prepared for legacy lodash 3.10.1
@@ -429,6 +523,19 @@ export default class Visualizer {
         visChild = createVisual(opts);
         children[name] = visChild;
         cellsToAdd[cellsToAdd.length] = visChild;
+        if (_.size(opts.step.ownDeclarations)) {
+          _.forEach(opts.step.ownDeclarations, (declaration) => {
+            let visDeclaration = declarations[declaration.name];
+            if (!visDeclaration) {
+              visDeclaration = new VisualDeclaration({ declaration });
+              cellsToAdd[cellsToAdd.length] = visDeclaration;
+              declarations[declaration.name] = visDeclaration;
+              visChild.embed(visDeclaration);
+              visChild.fit();
+              visChild.update();
+            }
+          });
+        }
         if (parent) {
           parent.embed(visChild);
           parent.fit();
@@ -452,9 +559,11 @@ export default class Visualizer {
     updateOrCreateVisualSteps(step);
 
     _.forEach(children, (child) => {
-      this._loopPorts(child.step.o, child, cellsToAdd, portName => child.isPortEnabled(false, portName));
-      this._loopPorts(child.step.i, child, cellsToAdd, portName => child.isPortEnabled(true, portName));
+      this._loopPorts(child.step.o, child, declarations, cellsToAdd, portName => child.isPortEnabled(false, portName));
+      this._loopPorts(child.step.i, child, declarations, cellsToAdd, portName => child.isPortEnabled(true, portName));
     });
+
+    this._loopDeclarations(declarations, cellsToAdd);
 
     this._graph.addCells(cellsToAdd);
   }
