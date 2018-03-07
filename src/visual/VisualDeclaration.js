@@ -24,6 +24,7 @@ export default class VisualDeclaration extends joint.shapes.pn.Transition {
     this.declaration = opts.declaration;
   }
 
+  // eslint-disable-next-line class-methods-use-this
   isPortEnabled() {
     return true;
   }
