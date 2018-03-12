@@ -94,6 +94,1307 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(workflow.workflowStep.action.i).to.have.all.keys(['a', 'b']);
     });
 
+    it('resolves connections for call inputs with declaration with multiple inputs', () => {
+      const ast = {
+        name: {
+          id: 39,
+          str: 'identifier',
+          source_string: 'foo',
+          line: 1,
+          col: 10,
+        },
+        body: {
+          list: [{
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'String', line: 2, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'bar', line: 2, col: 10 },
+              expression: { id: 27, str: 'string', source_string: 'bar', line: 2, col: 16 },
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'String', line: 3, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'baz', line: 3, col: 10 },
+              expression: { id: 27, str: 'string', source_string: 'baz', line: 3, col: 16 },
+            },
+          }, {
+            name: 'Call',
+            attributes: {
+              task: { id: 40, str: 'fqn', source_string: 'task1', line: 5, col: 8 },
+              alias: null,
+              body: {
+                name: 'CallBody',
+                attributes: {
+                  declarations: { list: [] },
+                  io: {
+                    list: [{
+                      name: 'Inputs',
+                      attributes: {
+                        map: {
+                          list: [{
+                            name: 'IOMapping',
+                            attributes: {
+                              key: {
+                                id: 39,
+                                str: 'identifier',
+                                source_string: 'in',
+                                line: 7,
+                                col: 7,
+                              },
+                              value: {
+                                name: 'FunctionCall',
+                                attributes: {
+                                  name: {
+                                    id: 39,
+                                    str: 'identifier',
+                                    source_string: 'select_first',
+                                    line: 7,
+                                    col: 12,
+                                  },
+                                  params: {
+                                    list: [{
+                                      name: 'ArrayLiteral',
+                                      attributes: {
+                                        values: {
+                                          list: [{
+                                            id: 39,
+                                            str: 'identifier',
+                                            source_string: 'bar',
+                                            line: 7,
+                                            col: 26,
+                                          }, {
+                                            id: 39,
+                                            str: 'identifier',
+                                            source_string: 'baz',
+                                            line: 7,
+                                            col: 31,
+                                          }],
+                                        },
+                                      },
+                                    }],
+                                  },
+                                },
+                              },
+                            },
+                          }],
+                        },
+                      },
+                    }],
+                  },
+                },
+              },
+            },
+          }],
+        },
+      };
+      const context = {
+        genericTaskCommandMap: [],
+        actionMap: {
+          task1: {
+            _handlers: {},
+            name: 'task1',
+            canHavePorts: true,
+            i: { in: { type: 'String', multi: false } },
+            o: {},
+            data: {},
+          },
+          foo: {
+            name: 'foo',
+            action: {
+              _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+              name: 'foo',
+              canHavePorts: true,
+              i: {},
+              o: {},
+              data: {},
+            },
+            parent: null,
+            children: {},
+            i: { bar: { type: 'String', default: 'bar' }, baz: { type: 'String', default: 'baz' } },
+            o: {},
+            type: 'workflow',
+            ownDeclarations: {},
+            actions: {
+              foo: {
+                _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+                name: 'foo',
+                canHavePorts: true,
+                i: {},
+                o: {},
+                data: {},
+              },
+            },
+            declarations: {},
+            ast: {
+              name: 'Workflow',
+              attributes: {
+                name: { id: 39, str: 'identifier', source_string: 'foo', line: 1, col: 10 },
+                body: {
+                  list: [{
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'String', line: 2, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'bar', line: 2, col: 10 },
+                      expression: { id: 27, str: 'string', source_string: 'bar', line: 2, col: 16 },
+                    },
+                  }, {
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'String', line: 3, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'baz', line: 3, col: 10 },
+                      expression: { id: 27, str: 'string', source_string: 'baz', line: 3, col: 16 },
+                    },
+                  }, {
+                    name: 'Call',
+                    attributes: {
+                      task: { id: 40, str: 'fqn', source_string: 'task1', line: 5, col: 8 },
+                      alias: null,
+                      body: {
+                        name: 'CallBody',
+                        attributes: {
+                          declarations: { list: [] },
+                          io: {
+                            list: [{
+                              name: 'Inputs',
+                              attributes: {
+                                map: {
+                                  list: [{
+                                    name: 'IOMapping',
+                                    attributes: {
+                                      key: {
+                                        id: 39,
+                                        str: 'identifier',
+                                        source_string: 'in',
+                                        line: 7,
+                                        col: 7,
+                                      },
+                                      value: {
+                                        name: 'FunctionCall',
+                                        attributes: {
+                                          name: {
+                                            id: 39,
+                                            str: 'identifier',
+                                            source_string: 'select_first',
+                                            line: 7,
+                                            col: 12,
+                                          },
+                                          params: {
+                                            list: [{
+                                              name: 'ArrayLiteral',
+                                              attributes: {
+                                                values: {
+                                                  list: [{
+                                                    id: 39,
+                                                    str: 'identifier',
+                                                    source_string: 'bar',
+                                                    line: 7,
+                                                    col: 26,
+                                                  }, {
+                                                    id: 39,
+                                                    str: 'identifier',
+                                                    source_string: 'baz',
+                                                    line: 7,
+                                                    col: 31,
+                                                  }],
+                                                },
+                                              },
+                                            }],
+                                          },
+                                        },
+                                      },
+                                    },
+                                  }],
+                                },
+                              },
+                            }],
+                          },
+                        },
+                      },
+                    },
+                  }],
+                },
+              },
+            },
+            isSubWorkflow: false,
+          },
+        },
+      };
+      const workflow = new WDLWorkflow(ast, context);
+
+      expect(workflow.workflowStep.children.task1.i.in.inputs[0].from.name).to.equal('bar');
+      expect(workflow.workflowStep.children.task1.i.in.inputs[1].from.name).to.equal('baz');
+    });
+
+    it('expect root workflow to have all declarations', () => {
+      const ast = {
+        name: { id: 39, str: 'identifier', source_string: 'foo', line: 1, col: 10 },
+        body: {
+          list: [{
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'String', line: 2, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'bar', line: 2, col: 10 },
+              expression: { id: 27, str: 'string', source_string: 'bar', line: 2, col: 16 },
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'String', line: 3, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'baz', line: 3, col: 10 },
+              expression: { id: 27, str: 'string', source_string: 'baz', line: 3, col: 16 },
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'String', line: 4, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'newBar', line: 4, col: 10 },
+              expression: {
+                name: 'Add',
+                attributes: {
+                  lhs: {
+                    name: 'Add',
+                    attributes: {
+                      lhs: { id: 39, str: 'identifier', source_string: 'bar', line: 4, col: 19 },
+                      rhs: { id: 39, str: 'identifier', source_string: 'bar', line: 4, col: 25 },
+                    },
+                  },
+                  rhs: { id: 39, str: 'identifier', source_string: 'baz', line: 4, col: 31 },
+                },
+              },
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'String', line: 5, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'newBaz', line: 5, col: 10 },
+              expression: { id: 39, str: 'identifier', source_string: 'baz', line: 5, col: 19 },
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: {
+                name: 'Type',
+                attributes: {
+                  name: { id: 41, str: 'type', source_string: 'Array', line: 6, col: 3 },
+                  subtype: { list: [{ id: 41, str: 'type', source_string: 'String', line: 6, col: 9 }] },
+                },
+              },
+              name: { id: 39, str: 'identifier', source_string: 'coll', line: 6, col: 17 },
+              expression: {
+                name: 'ArrayLiteral',
+                attributes: {
+                  values: {
+                    list: [{
+                      id: 39,
+                      str: 'identifier',
+                      source_string: 'bar',
+                      line: 6,
+                      col: 25,
+                    }, {
+                      id: 39,
+                      str: 'identifier',
+                      source_string: 'baz',
+                      line: 6,
+                      col: 30,
+                    }, {
+                      id: 39,
+                      str: 'identifier',
+                      source_string: 'newBaz',
+                      line: 6,
+                      col: 35,
+                    }, {
+                      id: 39,
+                      str: 'identifier',
+                      source_string: 'newBar',
+                      line: 6,
+                      col: 43,
+                    }],
+                  },
+                },
+              },
+            },
+          }, {
+            name: 'Scatter',
+            attributes: {
+              item: { id: 39, str: 'identifier', source_string: 'item', line: 8, col: 12 },
+              collection: { id: 39, str: 'identifier', source_string: 'coll', line: 8, col: 20 },
+              body: {
+                list: [{
+                  name: 'Call',
+                  attributes: {
+                    task: { id: 40, str: 'fqn', source_string: 'task1', line: 9, col: 10 },
+                    alias: null,
+                    body: {
+                      name: 'CallBody',
+                      attributes: {
+                        declarations: { list: [] },
+                        io: {
+                          list: [{
+                            name: 'Inputs',
+                            attributes: {
+                              map: {
+                                list: [{
+                                  name: 'IOMapping',
+                                  attributes: {
+                                    key: {
+                                      id: 39,
+                                      str: 'identifier',
+                                      source_string: 'in',
+                                      line: 11,
+                                      col: 9,
+                                    },
+                                    value: {
+                                      name: 'TernaryIf',
+                                      attributes: {
+                                        cond: {
+                                          name: 'FunctionCall',
+                                          attributes: {
+                                            name: {
+                                              id: 39,
+                                              str: 'identifier',
+                                              source_string: 'defined',
+                                              line: 11,
+                                              col: 17,
+                                            },
+                                            params: {
+                                              list: [{
+                                                id: 39,
+                                                str: 'identifier',
+                                                source_string: 'item',
+                                                line: 11,
+                                                col: 25,
+                                              }],
+                                            },
+                                          },
+                                        },
+                                        iftrue: {
+                                          id: 27,
+                                          str: 'string',
+                                          source_string: '${item} 1',
+                                          line: 11,
+                                          col: 36,
+                                        },
+                                        iffalse: {
+                                          id: 27,
+                                          str: 'string',
+                                          source_string: 'string',
+                                          line: 11,
+                                          col: 53,
+                                        },
+                                      },
+                                    },
+                                  },
+                                }],
+                              },
+                            },
+                          }],
+                        },
+                      },
+                    },
+                  },
+                }, {
+                  name: 'Declaration',
+                  attributes: {
+                    type: { id: 41, str: 'type', source_string: 'String', line: 13, col: 5 },
+                    name: { id: 39, str: 'identifier', source_string: 'res', line: 13, col: 12 },
+                    expression: {
+                      name: 'FunctionCall',
+                      attributes: {
+                        name: {
+                          id: 39,
+                          str: 'identifier',
+                          source_string: 'select_first',
+                          line: 13,
+                          col: 18,
+                        },
+                        params: {
+                          list: [{
+                            name: 'ArrayLiteral',
+                            attributes: {
+                              values: {
+                                list: [{
+                                  name: 'MemberAccess',
+                                  attributes: {
+                                    lhs: {
+                                      id: 39,
+                                      str: 'identifier',
+                                      source_string: 'task1',
+                                      line: 13,
+                                      col: 32,
+                                    },
+                                    rhs: {
+                                      id: 39,
+                                      str: 'identifier',
+                                      source_string: 'out',
+                                      line: 13,
+                                      col: 38,
+                                    },
+                                  },
+                                }, { id: 27, str: 'string', source_string: 'test', line: 13, col: 43 }],
+                              },
+                            },
+                          }],
+                        },
+                      },
+                    },
+                  },
+                }],
+              },
+            },
+          }, {
+            name: 'Call',
+            attributes: {
+              task: { id: 40, str: 'fqn', source_string: 'task2', line: 16, col: 8 },
+              alias: null,
+              body: {
+                name: 'CallBody',
+                attributes: {
+                  declarations: { list: [] },
+                  io: {
+                    list: [{
+                      name: 'Inputs',
+                      attributes: {
+                        map: {
+                          list: [{
+                            name: 'IOMapping',
+                            attributes: {
+                              key: {
+                                id: 39,
+                                str: 'identifier',
+                                source_string: 'in',
+                                line: 18,
+                                col: 7,
+                              },
+                              value: { id: 39, str: 'identifier', source_string: 'res', line: 18, col: 12 },
+                            },
+                          }],
+                        },
+                      },
+                    }],
+                  },
+                },
+              },
+            },
+          }],
+        },
+      };
+      const context = {
+        genericTaskCommandMap: [],
+        actionMap: {
+          task1: {
+            _handlers: {},
+            name: 'task1',
+            canHavePorts: true,
+            i: { in: { type: 'String', multi: false } },
+            o: { out: { type: 'String', default: 'output', multi: false } },
+            data: {},
+          },
+          task2: {
+            _handlers: {},
+            name: 'task2',
+            canHavePorts: true,
+            i: { in: { type: 'Array[String]', multi: false } },
+            o: {},
+            data: {},
+          },
+          foo: {
+            name: 'foo',
+            action: {
+              _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+              name: 'foo',
+              canHavePorts: true,
+              i: {},
+              o: {},
+              data: {},
+            },
+            parent: null,
+            children: {},
+            i: {
+              bar: { type: 'String', default: 'bar' },
+              baz: { type: 'String', default: 'baz' },
+              newBar: { type: 'String', default: 'bar + bar + baz' },
+              newBaz: { type: 'String', default: 'baz' },
+              coll: { type: 'Array[String]', default: '[bar, baz, newBaz, newBar]' },
+            },
+            o: {},
+            type: 'workflow',
+            ownDeclarations: {},
+            actions: {
+              foo: {
+                _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+                name: 'foo',
+                canHavePorts: true,
+                i: {},
+                o: {},
+                data: {},
+              },
+            },
+            declarations: {},
+            ast: {
+              name: 'Workflow',
+              attributes: {
+                name: { id: 39, str: 'identifier', source_string: 'foo', line: 1, col: 10 },
+                body: {
+                  list: [{
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'String', line: 2, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'bar', line: 2, col: 10 },
+                      expression: { id: 27, str: 'string', source_string: 'bar', line: 2, col: 16 },
+                    },
+                  }, {
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'String', line: 3, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'baz', line: 3, col: 10 },
+                      expression: { id: 27, str: 'string', source_string: 'baz', line: 3, col: 16 },
+                    },
+                  }, {
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'String', line: 4, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'newBar', line: 4, col: 10 },
+                      expression: {
+                        name: 'Add',
+                        attributes: {
+                          lhs: {
+                            name: 'Add',
+                            attributes: {
+                              lhs: {
+                                id: 39,
+                                str: 'identifier',
+                                source_string: 'bar',
+                                line: 4,
+                                col: 19,
+                              },
+                              rhs: { id: 39, str: 'identifier', source_string: 'bar', line: 4, col: 25 },
+                            },
+                          },
+                          rhs: { id: 39, str: 'identifier', source_string: 'baz', line: 4, col: 31 },
+                        },
+                      },
+                    },
+                  }, {
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'String', line: 5, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'newBaz', line: 5, col: 10 },
+                      expression: { id: 39, str: 'identifier', source_string: 'baz', line: 5, col: 19 },
+                    },
+                  }, {
+                    name: 'Declaration',
+                    attributes: {
+                      type: {
+                        name: 'Type',
+                        attributes: {
+                          name: { id: 41, str: 'type', source_string: 'Array', line: 6, col: 3 },
+                          subtype: {
+                            list: [{
+                              id: 41,
+                              str: 'type',
+                              source_string: 'String',
+                              line: 6,
+                              col: 9,
+                            }],
+                          },
+                        },
+                      },
+                      name: { id: 39, str: 'identifier', source_string: 'coll', line: 6, col: 17 },
+                      expression: {
+                        name: 'ArrayLiteral',
+                        attributes: {
+                          values: {
+                            list: [
+                              { id: 39, str: 'identifier', source_string: 'bar', line: 6, col: 25 },
+                              { id: 39, str: 'identifier', source_string: 'baz', line: 6, col: 30 },
+                              { id: 39, str: 'identifier', source_string: 'newBaz', line: 6, col: 35 },
+                              { id: 39, str: 'identifier', source_string: 'newBar', line: 6, col: 43 },
+                            ],
+                          },
+                        },
+                      },
+                    },
+                  }, {
+                    name: 'Scatter',
+                    attributes: {
+                      item: {
+                        id: 39,
+                        str: 'identifier',
+                        source_string: 'item',
+                        line: 8,
+                        col: 12,
+                      },
+                      collection: { id: 39, str: 'identifier', source_string: 'coll', line: 8, col: 20 },
+                      body: {
+                        list: [{
+                          name: 'Call',
+                          attributes: {
+                            task: {
+                              id: 40,
+                              str: 'fqn',
+                              source_string: 'task1',
+                              line: 9,
+                              col: 10,
+                            },
+                            alias: null,
+                            body: {
+                              name: 'CallBody',
+                              attributes: {
+                                declarations: { list: [] },
+                                io: {
+                                  list: [{
+                                    name: 'Inputs',
+                                    attributes: {
+                                      map: {
+                                        list: [{
+                                          name: 'IOMapping',
+                                          attributes: {
+                                            key: {
+                                              id: 39,
+                                              str: 'identifier',
+                                              source_string: 'in',
+                                              line: 11,
+                                              col: 9,
+                                            },
+                                            value: {
+                                              name: 'TernaryIf',
+                                              attributes: {
+                                                cond: {
+                                                  name: 'FunctionCall',
+                                                  attributes: {
+                                                    name: {
+                                                      id: 39,
+                                                      str: 'identifier',
+                                                      source_string: 'defined',
+                                                      line: 11,
+                                                      col: 17,
+                                                    },
+                                                    params: {
+                                                      list: [{
+                                                        id: 39,
+                                                        str: 'identifier',
+                                                        source_string: 'item',
+                                                        line: 11,
+                                                        col: 25,
+                                                      }],
+                                                    },
+                                                  },
+                                                },
+                                                iftrue: {
+                                                  id: 27,
+                                                  str: 'string',
+                                                  source_string: '${item} 1',
+                                                  line: 11,
+                                                  col: 36,
+                                                },
+                                                iffalse: {
+                                                  id: 27,
+                                                  str: 'string',
+                                                  source_string: 'string',
+                                                  line: 11,
+                                                  col: 53,
+                                                },
+                                              },
+                                            },
+                                          },
+                                        }],
+                                      },
+                                    },
+                                  }],
+                                },
+                              },
+                            },
+                          },
+                        }, {
+                          name: 'Declaration',
+                          attributes: {
+                            type: {
+                              id: 41,
+                              str: 'type',
+                              source_string: 'String',
+                              line: 13,
+                              col: 5,
+                            },
+                            name: { id: 39, str: 'identifier', source_string: 'res', line: 13, col: 12 },
+                            expression: {
+                              name: 'FunctionCall',
+                              attributes: {
+                                name: {
+                                  id: 39,
+                                  str: 'identifier',
+                                  source_string: 'select_first',
+                                  line: 13,
+                                  col: 18,
+                                },
+                                params: {
+                                  list: [{
+                                    name: 'ArrayLiteral',
+                                    attributes: {
+                                      values: {
+                                        list: [{
+                                          name: 'MemberAccess',
+                                          attributes: {
+                                            lhs: {
+                                              id: 39,
+                                              str: 'identifier',
+                                              source_string: 'task1',
+                                              line: 13,
+                                              col: 32,
+                                            },
+                                            rhs: {
+                                              id: 39,
+                                              str: 'identifier',
+                                              source_string: 'out',
+                                              line: 13,
+                                              col: 38,
+                                            },
+                                          },
+                                        }, { id: 27, str: 'string', source_string: 'test', line: 13, col: 43 }],
+                                      },
+                                    },
+                                  }],
+                                },
+                              },
+                            },
+                          },
+                        }],
+                      },
+                    },
+                  }, {
+                    name: 'Call',
+                    attributes: {
+                      task: { id: 40, str: 'fqn', source_string: 'task2', line: 16, col: 8 },
+                      alias: null,
+                      body: {
+                        name: 'CallBody',
+                        attributes: {
+                          declarations: { list: [] },
+                          io: {
+                            list: [{
+                              name: 'Inputs',
+                              attributes: {
+                                map: {
+                                  list: [{
+                                    name: 'IOMapping',
+                                    attributes: {
+                                      key: {
+                                        id: 39,
+                                        str: 'identifier',
+                                        source_string: 'in',
+                                        line: 18,
+                                        col: 7,
+                                      },
+                                      value: {
+                                        id: 39,
+                                        str: 'identifier',
+                                        source_string: 'res',
+                                        line: 18,
+                                        col: 12,
+                                      },
+                                    },
+                                  }],
+                                },
+                              },
+                            }],
+                          },
+                        },
+                      },
+                    },
+                  }],
+                },
+              },
+            },
+            isSubWorkflow: false,
+          },
+        },
+      };
+      const workflow = new WDLWorkflow(ast, context);
+
+      expect(workflow.workflowStep.declarations).to.have.all.keys(['bar', 'baz', 'newBar', 'newBaz', 'coll', 'res']);
+    });
+
+    it('throws an error when some declaration refers to undeclared variable identifier in a function call', () => {
+      const ast = {
+        name: { id: 39, str: 'identifier', source_string: 'foo', line: 1, col: 10 },
+        body: {
+          list: [{
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'Float', line: 2, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'bar', line: 2, col: 9 },
+              expression: { id: 17, str: 'float', source_string: '9.54', line: 2, col: 15 },
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'Int', line: 3, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'baz', line: 3, col: 7 },
+              expression: {
+                name: 'FunctionCall',
+                attributes: {
+                  name: { id: 39, str: 'identifier', source_string: 'ceil', line: 3, col: 13 },
+                  params: {
+                    list: [{
+                      id: 39,
+                      str: 'identifier',
+                      source_string: 'undeclaredBar',
+                      line: 3,
+                      col: 18,
+                    }],
+                  },
+                },
+              },
+            },
+          }],
+        },
+      };
+      const context = {
+        genericTaskCommandMap: [],
+        actionMap: {
+          foo: {
+            name: 'foo',
+            action: {
+              _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+              name: 'foo',
+              canHavePorts: true,
+              i: {},
+              o: {},
+              data: {},
+            },
+            parent: null,
+            children: {},
+            i: {
+              bar: { type: 'Float', default: '9.54' },
+              baz: { type: 'Int', default: 'ceil(undeclaredBar)' },
+            },
+            o: {},
+            type: 'workflow',
+            ownDeclarations: {},
+            actions: {
+              foo: {
+                _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+                name: 'foo',
+                canHavePorts: true,
+                i: {},
+                o: {},
+                data: {},
+              },
+            },
+            declarations: {},
+            ast: {
+              name: 'Workflow',
+              attributes: {
+                name: { id: 39, str: 'identifier', source_string: 'foo', line: 1, col: 10 },
+                body: {
+                  list: [{
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'Float', line: 2, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'bar', line: 2, col: 9 },
+                      expression: { id: 17, str: 'float', source_string: '9.54', line: 2, col: 15 },
+                    },
+                  }, {
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'Int', line: 3, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'baz', line: 3, col: 7 },
+                      expression: {
+                        name: 'FunctionCall',
+                        attributes: {
+                          name: {
+                            id: 39,
+                            str: 'identifier',
+                            source_string: 'ceil',
+                            line: 3,
+                            col: 13,
+                          },
+                          params: {
+                            list: [{
+                              id: 39,
+                              str: 'identifier',
+                              source_string: 'undeclaredBar',
+                              line: 3,
+                              col: 18,
+                            }],
+                          },
+                        },
+                      },
+                    },
+                  }],
+                },
+              },
+            },
+            isSubWorkflow: false,
+          },
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, context)).to.throws(WDLParserError);
+    });
+
+    it('throws an error when some declaration refers to undeclared call in a function call', () => {
+      const ast = {
+        name: { id: 39, str: 'identifier', source_string: 'foo', line: 1, col: 10 },
+        body: {
+          list: [{
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'Float', line: 2, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'bar', line: 2, col: 9 },
+              expression: { id: 17, str: 'float', source_string: '9.54', line: 2, col: 15 },
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'Int', line: 3, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'baz', line: 3, col: 7 },
+              expression: {
+                name: 'FunctionCall',
+                attributes: {
+                  name: { id: 39, str: 'identifier', source_string: 'ceil', line: 3, col: 13 },
+                  params: {
+                    list: [{
+                      name: 'MemberAccess',
+                      attributes: {
+                        lhs: {
+                          id: 39,
+                          str: 'identifier',
+                          source_string: 'undeclaredCall',
+                          line: 3,
+                          col: 18,
+                        },
+                        rhs: { id: 39, str: 'identifier', source_string: 'undeclaredBar', line: 3, col: 33 },
+                      },
+                    }],
+                  },
+                },
+              },
+            },
+          }],
+        },
+      };
+      const context = {
+        genericTaskCommandMap: [],
+        actionMap: {
+          foo: {
+            name: 'foo',
+            action: {
+              _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+              name: 'foo',
+              canHavePorts: true,
+              i: {},
+              o: {},
+              data: {},
+            },
+            parent: null,
+            children: {},
+            i: {
+              bar: { type: 'Float', default: '9.54' },
+              baz: { type: 'Int', default: 'ceil(undeclaredCall.undeclaredBar)' },
+            },
+            o: {},
+            type: 'workflow',
+            ownDeclarations: {},
+            actions: {
+              foo: {
+                _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+                name: 'foo',
+                canHavePorts: true,
+                i: {},
+                o: {},
+                data: {},
+              },
+            },
+            declarations: {},
+            ast: {
+              name: 'Workflow',
+              attributes: {
+                name: { id: 39, str: 'identifier', source_string: 'foo', line: 1, col: 10 },
+                body: {
+                  list: [{
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'Float', line: 2, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'bar', line: 2, col: 9 },
+                      expression: { id: 17, str: 'float', source_string: '9.54', line: 2, col: 15 },
+                    },
+                  }, {
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'Int', line: 3, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'baz', line: 3, col: 7 },
+                      expression: {
+                        name: 'FunctionCall',
+                        attributes: {
+                          name: {
+                            id: 39,
+                            str: 'identifier',
+                            source_string: 'ceil',
+                            line: 3,
+                            col: 13,
+                          },
+                          params: {
+                            list: [{
+                              name: 'MemberAccess',
+                              attributes: {
+                                lhs: {
+                                  id: 39,
+                                  str: 'identifier',
+                                  source_string: 'undeclaredCall',
+                                  line: 3,
+                                  col: 18,
+                                },
+                                rhs: {
+                                  id: 39,
+                                  str: 'identifier',
+                                  source_string: 'undeclaredBar',
+                                  line: 3,
+                                  col: 33,
+                                },
+                              },
+                            }],
+                          },
+                        },
+                      },
+                    },
+                  }],
+                },
+              },
+            },
+            isSubWorkflow: false,
+          },
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, context)).to.throws(WDLParserError);
+    });
+
+    it('throws an error when some declaration refers to undeclared member access variable in a function call', () => {
+      const ast = {
+        name: { id: 39, str: 'identifier', source_string: 'foo', line: 1, col: 10 },
+        body: {
+          list: [{
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'Float', line: 2, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'bar', line: 2, col: 9 },
+              expression: { id: 17, str: 'float', source_string: '9.54', line: 2, col: 15 },
+            },
+          }, {
+            name: 'Call',
+            attributes: {
+              task: { id: 40, str: 'fqn', source_string: 'task1', line: 3, col: 8 },
+              alias: null,
+              body: {
+                name: 'CallBody',
+                attributes: {
+                  declarations: { list: [] },
+                  io: {
+                    list: [{
+                      name: 'Inputs',
+                      attributes: {
+                        map: {
+                          list: [{
+                            name: 'IOMapping',
+                            attributes: {
+                              key: {
+                                id: 39,
+                                str: 'identifier',
+                                source_string: 'in',
+                                line: 5,
+                                col: 7,
+                              },
+                              value: { id: 39, str: 'identifier', source_string: 'bar', line: 5, col: 12 },
+                            },
+                          }],
+                        },
+                      },
+                    }],
+                  },
+                },
+              },
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'Int', line: 7, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'baz', line: 7, col: 7 },
+              expression: {
+                name: 'FunctionCall',
+                attributes: {
+                  name: { id: 39, str: 'identifier', source_string: 'ceil', line: 7, col: 13 },
+                  params: {
+                    list: [{
+                      name: 'MemberAccess',
+                      attributes: {
+                        lhs: {
+                          id: 39,
+                          str: 'identifier',
+                          source_string: 'task1',
+                          line: 7,
+                          col: 18,
+                        },
+                        rhs: {
+                          id: 39,
+                          str: 'identifier',
+                          source_string: 'undeclaredOutput',
+                          line: 7,
+                          col: 24,
+                        },
+                      },
+                    }],
+                  },
+                },
+              },
+            },
+          }],
+        },
+      };
+      const context = {
+        genericTaskCommandMap: [],
+        actionMap: {
+          task1: {
+            _handlers: {},
+            name: 'task1',
+            canHavePorts: true,
+            i: { in: { type: 'Float', multi: false } },
+            o: {},
+            data: {},
+          },
+          foo: {
+            name: 'foo',
+            action: {
+              _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+              name: 'foo',
+              canHavePorts: true,
+              i: {},
+              o: {},
+              data: {},
+            },
+            parent: null,
+            children: {},
+            i: {
+              bar: { type: 'Float', default: '9.54' },
+              baz: { type: 'Int', default: 'ceil(task1.undeclaredOutput)' },
+            },
+            o: {},
+            type: 'workflow',
+            ownDeclarations: {},
+            actions: {
+              foo: {
+                _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+                name: 'foo',
+                canHavePorts: true,
+                i: {},
+                o: {},
+                data: {},
+              },
+            },
+            declarations: {},
+            ast: {
+              name: 'Workflow',
+              attributes: {
+                name: { id: 39, str: 'identifier', source_string: 'foo', line: 1, col: 10 },
+                body: {
+                  list: [{
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'Float', line: 2, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'bar', line: 2, col: 9 },
+                      expression: { id: 17, str: 'float', source_string: '9.54', line: 2, col: 15 },
+                    },
+                  }, {
+                    name: 'Call',
+                    attributes: {
+                      task: { id: 40, str: 'fqn', source_string: 'task1', line: 3, col: 8 },
+                      alias: null,
+                      body: {
+                        name: 'CallBody',
+                        attributes: {
+                          declarations: { list: [] },
+                          io: {
+                            list: [{
+                              name: 'Inputs',
+                              attributes: {
+                                map: {
+                                  list: [{
+                                    name: 'IOMapping',
+                                    attributes: {
+                                      key: {
+                                        id: 39,
+                                        str: 'identifier',
+                                        source_string: 'in',
+                                        line: 5,
+                                        col: 7,
+                                      },
+                                      value: {
+                                        id: 39,
+                                        str: 'identifier',
+                                        source_string: 'bar',
+                                        line: 5,
+                                        col: 12,
+                                      },
+                                    },
+                                  }],
+                                },
+                              },
+                            }],
+                          },
+                        },
+                      },
+                    },
+                  }, {
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'Int', line: 7, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'baz', line: 7, col: 7 },
+                      expression: {
+                        name: 'FunctionCall',
+                        attributes: {
+                          name: {
+                            id: 39,
+                            str: 'identifier',
+                            source_string: 'ceil',
+                            line: 7,
+                            col: 13,
+                          },
+                          params: {
+                            list: [{
+                              name: 'MemberAccess',
+                              attributes: {
+                                lhs: {
+                                  id: 39,
+                                  str: 'identifier',
+                                  source_string: 'task1',
+                                  line: 7,
+                                  col: 18,
+                                },
+                                rhs: {
+                                  id: 39,
+                                  str: 'identifier',
+                                  source_string: 'undeclaredOutput',
+                                  line: 7,
+                                  col: 24,
+                                },
+                              },
+                            }],
+                          },
+                        },
+                      },
+                    },
+                  }],
+                },
+              },
+            },
+            isSubWorkflow: false,
+          },
+        },
+      };
+
+      expect(() => new WDLWorkflow(ast, context)).to.throws(WDLParserError);
+    });
+
     it('throws error when workflow declarations are obtained not only at start', () => {
       const ast = {
         name: {
