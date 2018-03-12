@@ -1,5 +1,4 @@
 import Port from './Port';
-import Action from './Action';
 import { extractExpression, extractType } from '../parser/WDL/utils/utils';
 
 /**
@@ -14,8 +13,11 @@ export default class Declaration extends Port {
    * @param {Step} step - Parent step this Declaration belongs to.
    */
   constructor(name, declaration, step) {
-    if (declaration instanceof Action) {
-      throw new Error('Group could be created only using declaration object');
+    if (!name) {
+      throw new Error('Declaration must have a name');
+    }
+    if (!declaration.expression || !declaration.type) {
+      throw new Error('Declaration could be created only using declaration object');
     }
     super(name, step, {});
 
