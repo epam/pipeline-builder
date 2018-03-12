@@ -327,6 +327,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
     });
 
     it('expect root workflow to have all declarations', () => {
+      /* eslint-disable no-template-curly-in-string */
       const ast = {
         name: { id: 39, str: 'identifier', source_string: 'foo', line: 1, col: 10 },
         body: {
@@ -909,6 +910,7 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
           },
         },
       };
+      /* eslint-enable no-template-curly-in-string */
       const workflow = new WDLWorkflow(ast, context);
 
       expect(workflow.workflowStep.declarations).to.have.all.keys(['bar', 'baz', 'newBar', 'newBaz', 'coll', 'res']);

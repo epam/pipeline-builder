@@ -52,7 +52,7 @@ class Group extends Step {
    */
   addDeclaration(declaration) {
     const root = this.workflow();
-    const existingInRoot = root.declarations[declaration.name];
+    const existingInRoot = root && root.declarations[declaration.name];
     const ownExisting = this.ownDeclarations[declaration.name];
     if (!existingInRoot && !ownExisting) {
       if (declaration.step !== null) {
@@ -61,9 +61,11 @@ class Group extends Step {
 
       declaration.step = this;
 
-      root.declarations[declaration.name] = declaration;
+      if (root) {
+        root.declarations[declaration.name] = declaration;
+      }
       this.ownDeclarations[declaration.name] = declaration;
-    } else if (existingInRoot !== declaration) {
+    } else if ((existingInRoot && existingInRoot !== declaration) || ownExisting !== declaration) {
       throw new Error(`Cannot add a declaration with the same name ${declaration.name}.`);
     }
     return declaration;
@@ -79,14 +81,14 @@ class Group extends Step {
    */
   removeDeclaration(name, root = null) {
     const workflow = root || this.workflow();
-    const declarationInRoot = workflow.declarations[name];
+    const declarationInRoot = workflow && workflow.declarations[name];
     const declaration = this.ownDeclarations[name];
     if (declarationInRoot) {
-      declarationInRoot.parent = null;
+      declarationInRoot.step = null;
       delete workflow.declarations[name];
     }
     if (declaration) {
-      declaration.parent = null;
+      declaration.step = null;
       delete this.ownDeclarations[name];
     }
   }
