@@ -65,7 +65,7 @@ class Group extends Step {
         root.declarations[declaration.name] = declaration;
       }
       this.ownDeclarations[declaration.name] = declaration;
-    } else if ((existingInRoot && existingInRoot !== declaration) || ownExisting !== declaration) {
+    } else if (existingInRoot !== declaration && ownExisting !== declaration) {
       throw new Error(`Cannot add a declaration with the same name ${declaration.name}.`);
     }
     return declaration;
