@@ -91,6 +91,8 @@ class Group extends Step {
       declaration.step = null;
       delete this.ownDeclarations[name];
     }
+
+    return declaration;
   }
 }
 

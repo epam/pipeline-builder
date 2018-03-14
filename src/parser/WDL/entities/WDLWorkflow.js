@@ -4,6 +4,7 @@ import Workflow from '../../../model/Workflow';
 import Step from '../../../model/Step';
 import Group from '../../../model/Group';
 import Declaration from '../../../model/Declaration';
+import Port from '../../../model/Port';
 import { extractExpression, extractType, extractMetaBlock, WDLParserError } from '../utils/utils';
 import * as Constants from '../constants';
 
@@ -185,6 +186,14 @@ export default class WDLWorkflow {
     const nodeValue = node.attributes.value;
     const declaration = node.attributes.key.source_string;
     const expression = extractExpression(nodeValue);
+
+    if (!step.i[declaration] && step instanceof Workflow && step.ownDeclarations[declaration]) {
+      // remove declaration and add it as an input
+      const declarationObj = step.removeDeclaration(declaration);
+      const port = new Port(declaration, step, { type: declarationObj.type });
+      _.forEach(declarationObj.outputs, conn => conn.to.bind(port));
+      step.i[declaration] = port;
+    }
 
     if (step.i[declaration]) {
       const bindings = WDLWorkflow.getPortForBinding(this.workflowStep, parentStep, expression);
