@@ -85,8 +85,8 @@ export default class WDLWorkflow {
 
     const collection = extractExpression(item.attributes.collection);
 
-    // in scatter the item is always an identifier, so it'll always be one port returned from .getPortForBinding() not an array
-    const port = WDLWorkflow.getPortForBinding(this.workflowStep, parent, collection);
+    // in scatter the item is always an identifier, so it'll always be one port returned from .getPortsForBinding()
+    const port = WDLWorkflow.getPortsForBinding(this.workflowStep, parent, collection).shift();
 
     opts.i[itemName] = {};
     opts.i[itemName].type = 'ScatterItem';
@@ -196,12 +196,8 @@ export default class WDLWorkflow {
     }
 
     if (step.i[declaration]) {
-      const bindings = WDLWorkflow.getPortForBinding(this.workflowStep, parentStep, expression);
-      if (bindings && !Array.isArray(bindings)) {
-        step.i[declaration].bind(bindings);
-      } else if (bindings) {
-        _.forEach(bindings, binding => step.i[declaration].bind(binding));
-      }
+      const bindings = WDLWorkflow.getPortsForBinding(this.workflowStep, parentStep, expression);
+      _.forEach(bindings, binding => step.i[declaration].bind(binding));
     } else {
       throw new WDLParserError(`Undeclared variable trying to be assigned: call '${step.name}' --> '${declaration}'`);
     }
@@ -229,12 +225,8 @@ export default class WDLWorkflow {
       });
     } else if (parentStep instanceof Group) { // declaration is a "variable" type
       const declaration = new Declaration(name, decl, parentStep);
-      const bindings = WDLWorkflow.getPortForBinding(this.workflowStep, declaration.step, declaration.expression);
-      if (bindings && !Array.isArray(bindings)) {
-        declaration.bind(bindings);
-      } else if (bindings) {
-        _.forEach(bindings, binding => declaration.bind(binding));
-      }
+      const bindings = WDLWorkflow.getPortsForBinding(this.workflowStep, declaration.step, declaration.expression);
+      _.forEach(bindings, binding => declaration.bind(binding));
 
       parentStep.addDeclaration(declaration);
     }
@@ -400,7 +392,7 @@ export default class WDLWorkflow {
     return undefined;
   }
 
-  static getPortForBinding(workflow, parent, expression) {
+  static getPortsForBinding(workflow, parent, expression) {
     const accessesTypes = [
       'ArrayOrMapLookup',
       'FunctionCall',
@@ -428,7 +420,7 @@ export default class WDLWorkflow {
       'MapLiteralKv',
       'ObjectKV',
     ];
-    let binder = expression.string;
+    let binder = [expression.string];
     if (expression.type === 'MemberAccess') {
       const rhsPart = expression.accesses[0].rhs;
       const lhsPart = expression.accesses[0].lhs;
@@ -436,7 +428,7 @@ export default class WDLWorkflow {
       const outputStep = WDLWorkflow.findStepInStructureRecursively(workflow, lhsPart);
       if (outputStep) {
         if (outputStep.o[rhsPart]) {
-          binder = outputStep.o[rhsPart];
+          binder = [outputStep.o[rhsPart]];
         } else {
           throw new WDLParserError(`Undeclared variable is referenced: '${lhsPart}.${rhsPart}'`);
         }
@@ -474,9 +466,9 @@ export default class WDLWorkflow {
       const desiredStep = WDLWorkflow.groupNameResolver(parent, expression.string);
       if (desiredStep) {
         if (desiredStep.i[expression.string]) {
-          binder = desiredStep.i[expression.string];
+          binder = [desiredStep.i[expression.string]];
         } else {
-          binder = desiredStep.declarations[expression.string];
+          binder = [desiredStep.declarations[expression.string]];
         }
       } else {
         throw new WDLParserError(`Undeclared variable is referenced: '${expression.string}'`);

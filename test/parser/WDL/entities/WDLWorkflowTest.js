@@ -94,6 +94,196 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(workflow.workflowStep.action.i).to.have.all.keys(['a', 'b']);
     });
 
+    it('allows to override subWorkflow\'s declarations in call\'s inputs', () => {
+      const ast = {
+        name: { id: 39, str: 'identifier', source_string: 'wf1', line: 1, col: 10 },
+        body: {
+          list: [{
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'String', line: 2, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'test', line: 2, col: 10 },
+              expression: { id: 27, str: 'string', source_string: 'test', line: 2, col: 17 },
+            },
+          }, {
+            name: 'Call',
+            attributes: {
+              task: { id: 40, str: 'fqn', source_string: 'wf2', line: 4, col: 8 },
+              alias: null,
+              body: {
+                name: 'CallBody',
+                attributes: {
+                  declarations: { list: [] },
+                  io: {
+                    list: [{
+                      name: 'Inputs',
+                      attributes: {
+                        map: {
+                          list: [{
+                            name: 'IOMapping',
+                            attributes: {
+                              key: {
+                                id: 39,
+                                str: 'identifier',
+                                source_string: 'test',
+                                line: 6,
+                                col: 7,
+                              },
+                              value: { id: 39, str: 'identifier', source_string: 'test', line: 6, col: 14 },
+                            },
+                          }],
+                        },
+                      },
+                    }],
+                  },
+                },
+              },
+            },
+          }],
+        },
+      };
+      const context = {
+        genericTaskCommandMap: [],
+        actionMap: {
+          wf1: {
+            name: 'wf1',
+            action: {
+              _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+              name: 'wf1',
+              canHavePorts: true,
+              i: {},
+              o: {},
+              data: {},
+            },
+            parent: null,
+            children: {},
+            i: { test: { type: 'String', default: 'test' } },
+            o: {},
+            type: 'workflow',
+            ownDeclarations: {},
+            actions: {
+              wf1: {
+                _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+                name: 'wf1',
+                canHavePorts: true,
+                i: {},
+                o: {},
+                data: {},
+              },
+            },
+            declarations: {},
+            ast: {
+              name: 'Workflow',
+              attributes: {
+                name: { id: 39, str: 'identifier', source_string: 'wf1', line: 1, col: 10 },
+                body: {
+                  list: [{
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'String', line: 2, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'test', line: 2, col: 10 },
+                      expression: { id: 27, str: 'string', source_string: 'test', line: 2, col: 17 },
+                    },
+                  }, {
+                    name: 'Call',
+                    attributes: {
+                      task: { id: 40, str: 'fqn', source_string: 'wf2', line: 4, col: 8 },
+                      alias: null,
+                      body: {
+                        name: 'CallBody',
+                        attributes: {
+                          declarations: { list: [] },
+                          io: {
+                            list: [{
+                              name: 'Inputs',
+                              attributes: {
+                                map: {
+                                  list: [{
+                                    name: 'IOMapping',
+                                    attributes: {
+                                      key: {
+                                        id: 39,
+                                        str: 'identifier',
+                                        source_string: 'test',
+                                        line: 6,
+                                        col: 7,
+                                      },
+                                      value: {
+                                        id: 39,
+                                        str: 'identifier',
+                                        source_string: 'test',
+                                        line: 6,
+                                        col: 14,
+                                      },
+                                    },
+                                  }],
+                                },
+                              },
+                            }],
+                          },
+                        },
+                      },
+                    },
+                  }],
+                },
+              },
+            },
+            isSubWorkflow: false,
+          },
+          wf2: {
+            name: 'wf2',
+            action: {
+              _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+              name: 'wf2',
+              canHavePorts: true,
+              i: {},
+              o: {},
+              data: {},
+            },
+            parent: null,
+            children: {},
+            i: { test: { type: 'String', default: 'test2' } },
+            o: {},
+            type: 'workflow',
+            ownDeclarations: {},
+            actions: {
+              wf2: {
+                _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+                name: 'wf2',
+                canHavePorts: true,
+                i: {},
+                o: {},
+                data: {},
+              },
+            },
+            declarations: {},
+            ast: {
+              name: 'Workflow',
+              attributes: {
+                name: { id: 39, str: 'identifier', source_string: 'wf2', line: 10, col: 10 },
+                body: {
+                  list: [{
+                    name: 'Declaration',
+                    attributes: {
+                      type: { id: 41, str: 'type', source_string: 'String', line: 11, col: 3 },
+                      name: { id: 39, str: 'identifier', source_string: 'test', line: 11, col: 10 },
+                      expression: { id: 27, str: 'string', source_string: 'test2', line: 11, col: 17 },
+                    },
+                  }],
+                },
+              },
+            },
+            isSubWorkflow: false,
+          },
+        },
+      };
+
+      const workflow = new WDLWorkflow(ast, context);
+
+      expect(workflow.workflowStep.children.wf2.i).to.have.all.keys(['test']);
+      expect(workflow.workflowStep.children.wf2.ownDeclarations).to.be.empty;
+    });
+
     it('resolves connections for call inputs with declaration with multiple inputs', () => {
       const ast = {
         name: {
