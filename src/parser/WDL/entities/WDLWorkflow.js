@@ -86,7 +86,7 @@ export default class WDLWorkflow {
     const collection = extractExpression(item.attributes.collection);
 
     // in scatter the item is always an identifier, so it'll always be one port returned from .getPortsForBinding()
-    const port = WDLWorkflow.getPortsForBinding(this.workflowStep, parent, collection).shift();
+    const [port] = WDLWorkflow.getPortsForBinding(this.workflowStep, parent, collection);
 
     opts.i[itemName] = {};
     opts.i[itemName].type = 'ScatterItem';
@@ -262,33 +262,38 @@ export default class WDLWorkflow {
         type,
       };
 
-      let wfOutLinksList = [];
       if (expression.type !== 'MemberAccess') {
         obj[name].default = expression.string;
-      } else {
-        expression.accesses.forEach((v) => { v.to = name; });
-        wfOutLinksList = expression.accesses;
       }
+      const wfOutLinksList = expression.accesses;
 
       this.workflowStep.action.addPorts({
         o: obj,
       });
 
       wfOutLinksList.forEach((i) => {
-        const startStep = WDLWorkflow.findStepInStructureRecursively(this.workflowStep, i.lhs);
+        let nameFrom = i;
+        let portFrom;
+        if (_.isObject(i)) {
+          nameFrom = i.lhs;
+          portFrom = i.rhs;
+        }
+        const startStep = WDLWorkflow.findStepInStructureRecursively(this.workflowStep, nameFrom);
 
-        if (startStep) {
-          if (startStep.o[i.rhs]) {
-            this.workflowStep.o[i.to].bind(startStep.o[i.rhs]);
+        if (startStep && startStep instanceof Step) {
+          if (startStep.o[portFrom]) {
+            this.workflowStep.o[name].bind(startStep.o[portFrom]);
           } else {
             throw new WDLParserError(
               `In '${this.workflowStep.name}' 
-              output block undeclared variable is referenced: '${i.lhs}.${i.rhs}'`);
+              output block undeclared variable is referenced: '${nameFrom}.${portFrom}'`);
           }
+        } else if (startStep && startStep instanceof Port) {
+          this.workflowStep.o[name].bind(startStep);
         } else {
           throw new WDLParserError(
             `In '${this.workflowStep.name}' 
-            output block undeclared call is referenced: '${i.lhs}'`);
+            output block undeclared call is referenced: '${nameFrom}'`);
         }
       });
     });
@@ -320,7 +325,7 @@ export default class WDLWorkflow {
         const [callName, outputName] = fqn.source_string.split('.');
         const startStep = WDLWorkflow.findStepInStructureRecursively(this.workflowStep, callName);
 
-        if (startStep) {
+        if (startStep && startStep instanceof Step) {
           if (startStep.o[outputName]) {
             this.workflowStep.o[fqn.source_string].bind(startStep.o[outputName]);
           } else {
@@ -328,6 +333,8 @@ export default class WDLWorkflow {
               `In '${this.workflowStep.name}' 
               output block undeclared variable is referenced: '${callName}.${outputName}'`);
           }
+        } else if (startStep && startStep instanceof Port) {
+          this.workflowStep.o[fqn.source_string].bind(startStep);
         } else {
           throw new WDLParserError(
             `In '${this.workflowStep.name}' 
@@ -337,7 +344,7 @@ export default class WDLWorkflow {
         const callName = fqn.source_string;
         const startStep = WDLWorkflow.findStepInStructureRecursively(this.workflowStep, callName);
 
-        if (startStep) {
+        if (startStep && startStep instanceof Step) {
           if (_.size(startStep.o)) {
             _.forEach(startStep.o, (output, outputName) => {
               this.workflowStep.o[`${fqn.source_string}.*`].bind(startStep.o[outputName]);
@@ -347,6 +354,8 @@ export default class WDLWorkflow {
               `In '${this.workflowStep.name}' 
               output block undeclared variable is referenced: '${callName}.* (${callName} doesn't have any outputs)`);
           }
+        } else if (startStep && startStep instanceof Port) {
+          this.workflowStep.o[`${fqn.source_string}.*`].bind(startStep);
         } else {
           throw new WDLParserError(
             `In '${this.workflowStep.name}' 
@@ -373,6 +382,13 @@ export default class WDLWorkflow {
       return undefined;
     });
 
+    if (!result && step.declarations && Object.keys(step.declarations).includes(name)) {
+      result = step.declarations[name];
+    }
+    if (!result && step.i && Object.keys(step.i).includes(name)) {
+      result = step.i[name];
+    }
+
     return result;
   }
 
@@ -395,6 +411,7 @@ export default class WDLWorkflow {
   static getPortsForBinding(workflow, parent, expression) {
     const accessesTypes = [
       'ArrayOrMapLookup',
+      'MemberAccess',
       'FunctionCall',
       'ArrayLiteral',
       'ObjectLiteral',
@@ -421,31 +438,19 @@ export default class WDLWorkflow {
       'ObjectKV',
     ];
     let binder = [expression.string];
-    if (expression.type === 'MemberAccess') {
-      const rhsPart = expression.accesses[0].rhs;
-      const lhsPart = expression.accesses[0].lhs;
-
-      const outputStep = WDLWorkflow.findStepInStructureRecursively(workflow, lhsPart);
-      if (outputStep) {
-        if (outputStep.o[rhsPart]) {
-          binder = [outputStep.o[rhsPart]];
-        } else {
-          throw new WDLParserError(`Undeclared variable is referenced: '${lhsPart}.${rhsPart}'`);
-        }
-      } else {
-        throw new WDLParserError(`Undeclared call is referenced: '${lhsPart}'`);
-      }
-    } else if (accessesTypes.includes(expression.type) && expression.accesses.length) {
+    if (accessesTypes.includes(expression.type) && expression.accesses.length) {
       binder = [];
       _.forEach(expression.accesses, (accesses) => {
         if (_.isObject(accesses)) {
           const outputStep = WDLWorkflow.findStepInStructureRecursively(workflow, accesses.lhs);
-          if (outputStep) {
+          if (outputStep && outputStep instanceof Step) {
             if (outputStep.o[accesses.rhs]) {
               binder.push(outputStep.o[accesses.rhs]);
             } else {
               throw new WDLParserError(`Undeclared variable is referenced: '${accesses.lhs}.${accesses.rhs}'`);
             }
+          } else if (outputStep && outputStep instanceof Port) {
+            binder.push(outputStep);
           } else {
             throw new WDLParserError(`Undeclared call is referenced: '${accesses.lhs}'`);
           }
