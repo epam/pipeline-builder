@@ -94,6 +94,345 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
       expect(workflow.workflowStep.action.i).to.have.all.keys(['a', 'b']);
     });
 
+    it('allows MemberAccess to access not only the call statements', () => {
+      const ast = {
+        name: { id: 39, str: 'identifier', source_string: 'ContEstMuTect', line: 10, col: 10 },
+        body: {
+          list: [{
+            name: 'Declaration',
+            attributes: {
+              type: {
+                name: 'Type',
+                attributes: {
+                  name: { id: 41, str: 'type', source_string: 'Array', line: 11, col: 3 },
+                  subtype: { list: [{ id: 41, str: 'type', source_string: 'String', line: 11, col: 9 }] },
+                },
+              },
+              name: { id: 39, str: 'identifier', source_string: 'bams', line: 11, col: 17 },
+              expression: null,
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: {
+                name: 'Type',
+                attributes: {
+                  name: { id: 41, str: 'type', source_string: 'Array', line: 12, col: 3 },
+                  subtype: { list: [{ id: 41, str: 'type', source_string: 'String', line: 12, col: 9 }] },
+                },
+              },
+              name: { id: 39, str: 'identifier', source_string: 'bais', line: 12, col: 17 },
+              expression: null,
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: { id: 41, str: 'type', source_string: 'File', line: 14, col: 3 },
+              name: { id: 39, str: 'identifier', source_string: 'inputMAFLite', line: 14, col: 8 },
+              expression: { id: 27, str: 'string', source_string: 'test', line: 14, col: 23 },
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: {
+                name: 'Type',
+                attributes: {
+                  name: { id: 41, str: 'type', source_string: 'Pair', line: 15, col: 3 },
+                  subtype: {
+                    list: [{
+                      id: 41,
+                      str: 'type',
+                      source_string: 'Int',
+                      line: 15,
+                      col: 8,
+                    }, { id: 41, str: 'type', source_string: 'String', line: 15, col: 13 }],
+                  },
+                },
+              },
+              name: { id: 39, str: 'identifier', source_string: 'test', line: 15, col: 21 },
+              expression: {
+                name: 'TupleLiteral',
+                attributes: {
+                  values: {
+                    list: [{
+                      id: 34,
+                      str: 'integer',
+                      source_string: '1',
+                      line: 15,
+                      col: 29,
+                    }, { id: 27, str: 'string', source_string: 'one', line: 15, col: 32 }],
+                  },
+                },
+              },
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: {
+                name: 'Type',
+                attributes: {
+                  name: { id: 41, str: 'type', source_string: 'Pair', line: 16, col: 3 },
+                  subtype: {
+                    list: [{
+                      id: 41,
+                      str: 'type',
+                      source_string: 'Int',
+                      line: 16,
+                      col: 8,
+                    }, { id: 41, str: 'type', source_string: 'String', line: 16, col: 13 }],
+                  },
+                },
+              },
+              name: { id: 39, str: 'identifier', source_string: 'testTwo', line: 16, col: 21 },
+              expression: {
+                name: 'TupleLiteral',
+                attributes: {
+                  values: {
+                    list: [{
+                      id: 34,
+                      str: 'integer',
+                      source_string: '2',
+                      line: 16,
+                      col: 32,
+                    }, { id: 27, str: 'string', source_string: 'two', line: 16, col: 35 }],
+                  },
+                },
+              },
+            },
+          }, {
+            name: 'Declaration',
+            attributes: {
+              type: {
+                name: 'Type',
+                attributes: {
+                  name: { id: 41, str: 'type', source_string: 'Array', line: 17, col: 3 },
+                  subtype: {
+                    list: [{
+                      name: 'Type',
+                      attributes: {
+                        name: { id: 41, str: 'type', source_string: 'Pair', line: 17, col: 9 },
+                        subtype: {
+                          list: [{
+                            id: 41,
+                            str: 'type',
+                            source_string: 'String',
+                            line: 17,
+                            col: 14,
+                          }, { id: 41, str: 'type', source_string: 'String', line: 17, col: 22 }],
+                        },
+                      },
+                    }],
+                  },
+                },
+              },
+              name: { id: 39, str: 'identifier', source_string: 'bams_and_bais', line: 17, col: 31 },
+              expression: {
+                name: 'FunctionCall',
+                attributes: {
+                  name: { id: 39, str: 'identifier', source_string: 'zip', line: 17, col: 47 },
+                  params: {
+                    list: [{
+                      id: 39,
+                      str: 'identifier',
+                      source_string: 'bams',
+                      line: 17,
+                      col: 51,
+                    }, { id: 39, str: 'identifier', source_string: 'bais', line: 17, col: 57 }],
+                  },
+                },
+              },
+            },
+          }, {
+            name: 'Scatter',
+            attributes: {
+              item: {
+                id: 39,
+                str: 'identifier',
+                source_string: 'bam_and_bai',
+                line: 18,
+                col: 12,
+              },
+              collection: { id: 39, str: 'identifier', source_string: 'bams_and_bais', line: 18, col: 27 },
+              body: {
+                list: [{
+                  name: 'Call',
+                  attributes: {
+                    task: { id: 40, str: 'fqn', source_string: 'testTask', line: 19, col: 10 },
+                    alias: null,
+                    body: {
+                      name: 'CallBody',
+                      attributes: {
+                        declarations: { list: [] },
+                        io: {
+                          list: [{
+                            name: 'Inputs',
+                            attributes: {
+                              map: {
+                                list: [{
+                                  name: 'IOMapping',
+                                  attributes: {
+                                    key: {
+                                      id: 39,
+                                      str: 'identifier',
+                                      source_string: 'bam',
+                                      line: 21,
+                                      col: 9,
+                                    },
+                                    value: {
+                                      name: 'MemberAccess',
+                                      attributes: {
+                                        lhs: {
+                                          id: 39,
+                                          str: 'identifier',
+                                          source_string: 'bam_and_bai',
+                                          line: 21,
+                                          col: 15,
+                                        },
+                                        rhs: {
+                                          id: 39,
+                                          str: 'identifier',
+                                          source_string: 'left',
+                                          line: 21,
+                                          col: 27,
+                                        },
+                                      },
+                                    },
+                                  },
+                                }, {
+                                  name: 'IOMapping',
+                                  attributes: {
+                                    key: {
+                                      id: 39,
+                                      str: 'identifier',
+                                      source_string: 'bai',
+                                      line: 22,
+                                      col: 9,
+                                    },
+                                    value: {
+                                      name: 'MemberAccess',
+                                      attributes: {
+                                        lhs: {
+                                          id: 39,
+                                          str: 'identifier',
+                                          source_string: 'bam_and_bai',
+                                          line: 22,
+                                          col: 15,
+                                        },
+                                        rhs: {
+                                          id: 39,
+                                          str: 'identifier',
+                                          source_string: 'right',
+                                          line: 22,
+                                          col: 27,
+                                        },
+                                      },
+                                    },
+                                  },
+                                }],
+                              },
+                            },
+                          }],
+                        },
+                      },
+                    },
+                  },
+                }],
+              },
+            },
+          }, {
+            name: 'WorkflowOutputs',
+            attributes: {
+              outputs: {
+                list: [{
+                  name: 'WorkflowOutputWildcard',
+                  attributes: {
+                    fqn: { id: 40, str: 'fqn', source_string: 'inputMAFLite', line: 28, col: 5 },
+                    wildcard: null,
+                  },
+                }, {
+                  name: 'WorkflowOutputWildcard',
+                  attributes: {
+                    fqn: { id: 40, str: 'fqn', source_string: 'test', line: 29, col: 5 },
+                    wildcard: { id: 10, str: 'asterisk', source_string: '*', line: 29, col: 10 },
+                  },
+                }, {
+                  name: 'WorkflowOutputWildcard',
+                  attributes: {
+                    fqn: {
+                      id: 40,
+                      str: 'fqn',
+                      source_string: 'testTwo.right',
+                      line: 30,
+                      col: 5,
+                    },
+                    wildcard: null,
+                  },
+                }],
+              },
+            },
+          }],
+        },
+      };
+      const context = {
+        genericTaskCommandMap: [],
+        actionMap: {
+          testTask: {
+            _handlers: {},
+            name: 'testTask',
+            canHavePorts: true,
+            i: { bam: { type: 'File', multi: false }, bai: { type: 'File', multi: false } },
+            o: { out: { type: 'String', default: 'output', multi: false } },
+            data: {},
+          },
+          ContEstMuTect: {
+            name: 'ContEstMuTect',
+            action: {
+              _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+              name: 'ContEstMuTect',
+              canHavePorts: true,
+              i: {},
+              o: {},
+              data: {},
+            },
+            parent: null,
+            children: {},
+            i: {
+              bams: { type: 'Array[String]' },
+              bais: { type: 'Array[String]' },
+              inputMAFLite: { type: 'File', default: 'test' },
+              test: { type: 'Pair[Int, String]', default: '(1, "one")' },
+              testTwo: { type: 'Pair[Int, String]', default: '(2, "two")' },
+              bams_and_bais: { type: 'Array[Pair[String, String]]', default: 'zip(bams, bais)' },
+            },
+            o: {
+              inputMAFLite: { type: '', multi: false, default: 'inputMAFLite' },
+              'test.*': { type: '', multi: true, default: 'test.*' },
+              'testTwo.right': { type: '', multi: false, default: 'testTwo.right' },
+            },
+            type: 'workflow',
+            ownDeclarations: {},
+            actions: {
+              ContEstMuTect: {
+                _handlers: { changed: [[null, null]], 'port-rename': [[null, null]] },
+                name: 'ContEstMuTect',
+                canHavePorts: true,
+                i: {},
+                o: {},
+                data: {},
+              },
+            },
+            declarations: {},
+            isSubWorkflow: false,
+          },
+        },
+      };
+
+      const workflow = new WDLWorkflow(ast, context);
+
+      expect(workflow.workflowStep.o).to.have.all.keys(['inputMAFLite', 'test.*', 'testTwo.right']);
+    });
+
+
     it('allows to override subWorkflow\'s declarations in call\'s inputs', () => {
       const ast = {
         name: { id: 39, str: 'identifier', source_string: 'wf1', line: 1, col: 10 },
@@ -172,62 +511,6 @@ describe('parser/WDL/entities/WDLWorkflow', () => {
               },
             },
             declarations: {},
-            ast: {
-              name: 'Workflow',
-              attributes: {
-                name: { id: 39, str: 'identifier', source_string: 'wf1', line: 1, col: 10 },
-                body: {
-                  list: [{
-                    name: 'Declaration',
-                    attributes: {
-                      type: { id: 41, str: 'type', source_string: 'String', line: 2, col: 3 },
-                      name: { id: 39, str: 'identifier', source_string: 'test', line: 2, col: 10 },
-                      expression: { id: 27, str: 'string', source_string: 'test', line: 2, col: 17 },
-                    },
-                  }, {
-                    name: 'Call',
-                    attributes: {
-                      task: { id: 40, str: 'fqn', source_string: 'wf2', line: 4, col: 8 },
-                      alias: null,
-                      body: {
-                        name: 'CallBody',
-                        attributes: {
-                          declarations: { list: [] },
-                          io: {
-                            list: [{
-                              name: 'Inputs',
-                              attributes: {
-                                map: {
-                                  list: [{
-                                    name: 'IOMapping',
-                                    attributes: {
-                                      key: {
-                                        id: 39,
-                                        str: 'identifier',
-                                        source_string: 'test',
-                                        line: 6,
-                                        col: 7,
-                                      },
-                                      value: {
-                                        id: 39,
-                                        str: 'identifier',
-                                        source_string: 'test',
-                                        line: 6,
-                                        col: 14,
-                                      },
-                                    },
-                                  }],
-                                },
-                              },
-                            }],
-                          },
-                        },
-                      },
-                    },
-                  }],
-                },
-              },
-            },
             isSubWorkflow: false,
           },
           wf2: {
