@@ -43,7 +43,6 @@ Refer to the [API docs and tutorials](docs/tutorials) for more details
 The following WDL features, that require more specific parsing or visualization, are not supported at the moment:
 
 * [Order of steps (workflow, call, if, scatter, while) in generated WDL code](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#workflow-level-resolution)
-* [Declarations in a [call, if, scatter and while] blocks are not supported](https://github.com/broadinstitute/wdl/blob/develop/SPEC.md#conditionals)
 
 ## Contribution
 
