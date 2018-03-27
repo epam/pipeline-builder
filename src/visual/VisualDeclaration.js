@@ -1,8 +1,9 @@
 import _ from 'lodash';
-import * as joint from 'jointjs';
+import joint from 'jointjs';
 
-const cDefaultWidth = 100;
-const cMinHeight = 100;
+const cDefaultWidth = 12;
+const cMinHeight = 50;
+const cPixelPerSymbol = 10;
 
 export default class VisualDeclaration extends joint.shapes.pn.Transition {
 
@@ -31,5 +32,21 @@ export default class VisualDeclaration extends joint.shapes.pn.Transition {
 
   _getLabel() {
     return this.declaration.name;
+  }
+
+  /**
+   * Obtains bounding box os the element. Overrides Model method.
+   * @param opts options, see joint.shapes.devs.Model.getBBox
+   * @returns {*}
+   */
+  getBBox(opts) {
+    const bbox = super.getBBox(opts);
+    const declaration = this.declaration;
+    if (declaration) {
+      const boxWidth = Math.max((cPixelPerSymbol * declaration.name.length), cDefaultWidth);
+      bbox.x -= boxWidth / 2;
+      bbox.width = boxWidth;
+    }
+    return bbox;
   }
 }

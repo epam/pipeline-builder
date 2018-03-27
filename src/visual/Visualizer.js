@@ -514,12 +514,12 @@ export default class Visualizer {
     const updateOrCreateVisualSteps = (innerStep, parent = null) => {
       const name = generateChildName(innerStep);
       let visChild = children[name];
-      const opts = this.zoom.fromWidgetToLocal({
-        x: this.paper.el.offsetWidth / 2,
-        y: this.paper.el.offsetHeight / 2,
-      });
-      opts.step = innerStep;
       if (!visChild) {
+        const opts = this.zoom.fromWidgetToLocal({
+          x: this.paper.el.offsetWidth / 2,
+          y: this.paper.el.offsetHeight / 2,
+        });
+        opts.step = innerStep;
         visChild = createVisual(opts);
         children[name] = visChild;
         cellsToAdd[cellsToAdd.length] = visChild;
@@ -527,7 +527,7 @@ export default class Visualizer {
           _.forEach(opts.step.ownDeclarations, (declaration) => {
             let visDeclaration = declarations[declaration.name];
             if (!visDeclaration) {
-              visDeclaration = new VisualDeclaration({ declaration });
+              visDeclaration = new VisualDeclaration({ declaration, x: opts.x, y: opts.y });
               cellsToAdd[cellsToAdd.length] = visDeclaration;
               declarations[declaration.name] = visDeclaration;
               visChild.embed(visDeclaration);
