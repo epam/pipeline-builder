@@ -4,6 +4,7 @@ import Context from './entities/Context';
 import Parser from './hermes/wdl_parser';
 import * as Constants from './constants';
 import DataService from './../../dataServices/data-service';
+import { renameExpression, replaceSplitter } from './utils/renaming_utils';
 
 function hermesStage(data) {
   let tokens;
@@ -83,19 +84,6 @@ function getImports(ast) {
     }) : [];
 }
 
-function replaceDot(name) {
-  let res;
-  const splitted = name.split(Constants.NS_SPLITTER);
-  if (splitted.length > 2) {
-    const last = splitted.pop();
-    res = `${splitted.join(Constants.NS_CONNECTOR)}${Constants.NS_SPLITTER}${last}`;
-  } else {
-    res = splitted.join(Constants.NS_CONNECTOR);
-  }
-
-  return res;
-}
-
 function renameCallInput(callInput, prefix, initialCalls) {
   if (callInput.name.toLowerCase() === Constants.CALL_IO_MAPPING) {
     const valueType = callInput.attributes.value.name ? callInput.attributes.value.name.toLowerCase() : null;
@@ -103,7 +91,7 @@ function renameCallInput(callInput, prefix, initialCalls) {
       const calls = initialCalls.map(call => call.split(Constants.NS_SPLITTER).pop());
       const index = calls.indexOf(callInput.attributes.value.attributes.lhs.source_string);
       if (index > -1) {
-        callInput.attributes.value.attributes.lhs.source_string = `${prefix}${replaceDot(initialCalls[index])}`;
+        callInput.attributes.value.attributes.lhs.source_string = `${prefix}${replaceSplitter(initialCalls[index])}`;
       }
     }
   }
@@ -127,7 +115,7 @@ function renameWfOutput(output, prefix, initialCalls) {
         const calls = initialCalls.map(call => call.split(Constants.NS_SPLITTER).pop());
         const index = calls.indexOf(output.attributes.expression.attributes.lhs.source_string);
         if (index > -1) {
-          output.attributes.expression.attributes.lhs.source_string = `${prefix}${replaceDot(initialCalls[index])}`;
+          output.attributes.expression.attributes.lhs.source_string = `${prefix}${replaceSplitter(initialCalls[index])}`;
         }
       }
       break;
@@ -139,7 +127,7 @@ function renameWfOutput(output, prefix, initialCalls) {
 }
 
 function renameCallAst(call, prefix, initialCalls) {
-  if (!initialCalls.includes(call.attributes.task.source_string)) {
+  if (!initialCalls.includes(call.attributes.task.source_string) && !call.attributes.alias) {
     initialCalls.push(call.attributes.task.source_string);
   }
   if (call.attributes.body && call.attributes.body.attributes && call.attributes.body.attributes.io) {
@@ -147,7 +135,7 @@ function renameCallAst(call, prefix, initialCalls) {
       .map(callInput => renameCallInputs(callInput, prefix, initialCalls));
   }
 
-  call.attributes.task.source_string = `${prefix}${replaceDot(call.attributes.task.source_string)}`;
+  call.attributes.task.source_string = `${prefix}${replaceSplitter(call.attributes.task.source_string)}`;
 
   return call;
 }
@@ -155,6 +143,10 @@ function renameCallAst(call, prefix, initialCalls) {
 function renameWfDefinition(definition, prefix, initialCalls) {
   switch (definition.name.toLowerCase()) {
     case Constants.DECLARATION:
+      renameExpression(definition.attributes.name, prefix, initialCalls);
+      if (definition.attributes.expression) {
+        renameExpression(definition.attributes.expression, prefix, initialCalls);
+      }
       break;
     case Constants.CALL:
       definition = renameCallAst(definition, prefix, initialCalls);
@@ -173,11 +165,11 @@ function renameWfDefinition(definition, prefix, initialCalls) {
 }
 
 function renameWfAstNames(node, prefix) {
-  node.attributes.name.source_string = `${prefix}${replaceDot(node.attributes.name.source_string)}`;
+  node.attributes.name.source_string = `${prefix}${replaceSplitter(node.attributes.name.source_string)}`;
   const initialCalls = [];
   // declarations, calls, outputs
   node.attributes.body.list = node.attributes.body.list.map((definition) => {
-    if (definition.name.toLowerCase() === Constants.CALL) {
+    if (definition.name.toLowerCase() === Constants.CALL && !definition.attributes.alias) {
       initialCalls.push(definition.attributes.task.source_string);
     }
     return renameWfDefinition(definition, prefix, initialCalls);
@@ -187,7 +179,7 @@ function renameWfAstNames(node, prefix) {
 }
 
 function renameTaskAstNames(node, prefix) {
-  node.attributes.name.source_string = `${prefix}${replaceDot(node.attributes.name.source_string)}`;
+  node.attributes.name.source_string = `${prefix}${replaceSplitter(node.attributes.name.source_string)}`;
 
   return node;
 }
@@ -273,9 +265,9 @@ function getPreparedSubWDLs(opts) {
 function clearWfDefinition(definition) {
   switch (definition.name.toLowerCase()) {
     case Constants.DECLARATION:
-      break;
-    case Constants.CALL:
-      definition = false;
+      if (definition.attributes.expression) {
+        definition.attributes.expression = null;
+      }
       break;
     case Constants.WF_OUTPUTS:
       definition.attributes.outputs.list = definition.attributes.outputs.list
@@ -286,12 +278,9 @@ function clearWfDefinition(definition) {
           return output;
         });
       break;
+    case Constants.CALL:
     default:
-      definition.attributes.body.list = definition.attributes.body.list.map(def => clearWfDefinition(def))
-        .filter(i => !!i && !_.isArray(i));
-      if (!definition.attributes.body.list.length) {
-        definition = false;
-      }
+      definition = false;
       break;
   }
 

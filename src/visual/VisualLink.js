@@ -5,7 +5,7 @@ import joint from 'jointjs';
  * Class that represents graphical link
  * @private
  */
-export default class VisualLink extends joint.shapes.devs.Link {
+export default class VisualLink extends joint.shapes.pn.Link {
 
   constructor(opts, readOnly) {
     const defaultLinkaAttr = readOnly ?

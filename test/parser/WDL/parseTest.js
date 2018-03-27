@@ -26,21 +26,6 @@ workflow foo {
     return expect(parse(src)).to.be.fulfilled;
   });
 
-  it('returns with error flag if source syntax is incorrect', () => {
-    const src = `
-workflow foo {
-  File a
-  call b
-  File c
-}
-
-task b {
-  File a
-}`;
-
-    return expect(parse(src)).to.be.rejected;
-  });
-
   it('requires to parse valid wdl script', () => {
     const flow = new Workflow('example1', {
       i: {
