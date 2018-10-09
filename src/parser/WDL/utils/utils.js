@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 const binarySymbols = {
   Add: '+',
   Subtract: '-',
@@ -83,7 +85,7 @@ const processors = {
   },
   Unary: (scope) => {
     const expr = scope.extractExpression(scope.attr.expression);
-    if (unaryUnScoped.find(val => val === expr.type)) {
+    if (_.find(unaryUnScoped, val => val === expr.type)) {
       scope.res.string = `${unarySymbols[scope.ast.name]}${expr.string}`;
     } else {
       scope.res.string = `${unarySymbols[scope.ast.name]}(${expr.string})`;

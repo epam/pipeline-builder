@@ -22,16 +22,7 @@ module.exports = {
       use: [{
         loader: 'babel-loader',
         options: {
-          presets: [['env',
-            {
-              targets: {
-                browsers: [
-                  'last 2 chrome versions',
-                ],
-              },
-              modules: false,
-            },
-          ]],
+          presets: [['env', { modules: false }]],
         },
       }],
     },
