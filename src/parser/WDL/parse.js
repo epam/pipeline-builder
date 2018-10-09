@@ -127,7 +127,7 @@ function renameWfOutput(output, prefix, initialCalls) {
 }
 
 function renameCallAst(call, prefix, initialCalls) {
-  if (!initialCalls.includes(call.attributes.task.source_string) && !call.attributes.alias) {
+  if (initialCalls.indexOf(call.attributes.task.source_string) < 0 && !call.attributes.alias) {
     initialCalls.push(call.attributes.task.source_string);
   }
   if (call.attributes.body && call.attributes.body.attributes && call.attributes.body.attributes.io) {
@@ -296,12 +296,12 @@ function clearWorkflow(node) {
 
 function clearImportedAst(importedAst, recursionDepth = 0, subWfDetailing = []) {
   if (recursionDepth > 0) {
-    if (subWfDetailing.includes('*')) {
+    if (subWfDetailing.indexOf('*') >= 0) {
       return importedAst;
     }
     importedAst.attributes.body.list = importedAst.attributes.body.list.map((item) => {
       if (item.name.toLowerCase() === Constants.WORKFLOW
-        && !subWfDetailing.includes(item.attributes.name.source_string)) {
+        && subWfDetailing.indexOf(item.attributes.name.source_string) < 0) {
         item = clearWorkflow(item);
       }
 

@@ -345,10 +345,10 @@ export default class WDLWorkflow {
 
   static findStepInStructureRecursively(step, name) {
     let result = null;
-    if (step.declarations && Object.keys(step.declarations).includes(name)) {
+    if (step.declarations && Object.keys(step.declarations).indexOf(name) >= 0) {
       result = step.declarations[name];
     }
-    if (!result && step instanceof Group && step.i && Object.keys(step.i).includes(name)) {
+    if (!result && step instanceof Group && step.i && Object.keys(step.i).indexOf(name) >= 0) {
       result = step.i[name];
     }
 
@@ -419,7 +419,7 @@ export default class WDLWorkflow {
     ];
     const errorMessAdd = isWfOutput ? `in ${workflow.name} output block ` : '';
     let binder = [expression.string];
-    if (accessesTypes.includes(expression.type) && expression.accesses.length) {
+    if (accessesTypes.indexOf(expression.type) >= 0 && expression.accesses.length) {
       binder = [];
       _.forEach(expression.accesses, (accesses) => {
         if (_.isObject(accesses)) {
