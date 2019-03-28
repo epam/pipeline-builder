@@ -18,15 +18,22 @@ export default class WDLWorkflow {
    * @param {Boolean?} [isSubWorkflow=false] - is Sub Workflow
    */
   constructor(wfNode, context, initialName = null, isSubWorkflow = false) {
-    this.parsingProcessors = {
-      declaration: this.parseDeclaration,
-      workflowoutputs: this.parseWfOutputs,
-      meta: this.parseMeta,
-      parametermeta: this.parseMeta,
-      call: this.parseCall,
-      scatter: this.parseScatter,
-      if: this.parseIf,
-      whileloop: this.parseWhile,
+    this.elementsParsingProcessors = {
+      declaration: this.parseDeclarationElement,
+      meta: this.parseMetaElement,
+      parametermeta: this.parseMetaElement,
+      call: this.parseCallElement,
+      scatter: this.parseScatterElement,
+      if: this.parseIfElement,
+      whileloop: this.parseWhileElement,
+    };
+    this.bindingsParsingProcessors = {
+      declaration: this.parseDeclarationBindings,
+      workflowoutputs: this.parseWfOutputsBindings,
+      call: this.parseCallBindings,
+      scatter: this.parseScatterBindings,
+      if: this.parseIfBindings,
+      whileloop: this.parseWhileBindings,
     };
 
     this.scatterIndex = 0;
@@ -40,7 +47,8 @@ export default class WDLWorkflow {
       this.workflowStep.hasImports = !!context.hasImports;
     }
 
-    this.parseBody(wfNode.body.list, 'workflow');
+    this.parseBodyElements(wfNode.body.list, 'workflow');
+    this.parseBodyBindings(wfNode.body.list, 'workflow');
   }
 
   /**
@@ -50,102 +58,162 @@ export default class WDLWorkflow {
    * @param {Step} parent - parent step
    * @param {[list]} opts - nodes that prohibited for current stage to parse (in lower case)
    */
-  parseBody(bodyList, name, parent, opts = []) {
+  parseBodyElements(bodyList, name, parent = null, opts = []) {
     const parentStep = parent || this.workflowStep;
     bodyList.forEach((item) => {
       const lcName = item.name.toLowerCase();
       if (_.indexOf(opts, lcName) < 0) {
-        this.parsingProcessors[lcName].call(this, item, parentStep);
+        if (this.elementsParsingProcessors[lcName]) {
+          this.elementsParsingProcessors[lcName].call(this, item, parentStep);
+        }
       } else {
         throw new WDLParserError(`In ${name} body keys [${opts}] are not allowed`);
       }
     });
   }
 
+  /**
+   * Passes the bindings of each wf element
+   * @param {list} bodyList - list of the current parsing wdl body node
+   * @param {string} name - current body name
+   * @param {Step} parent - parent step
+   * @param {[list]} opts - nodes that prohibited for current stage to parse (in lower case)
+   */
+  parseBodyBindings(bodyList, name, parent = null, opts = []) {
+    const parentStep = parent || this.workflowStep;
+    bodyList.forEach((item) => {
+      const lcName = item.name.toLowerCase();
+      if (_.indexOf(opts, lcName) < 0) {
+        if (this.bindingsParsingProcessors[lcName]) {
+          this.bindingsParsingProcessors[lcName].call(this, item, parentStep);
+        }
+      } else {
+        throw new WDLParserError(`In ${name} body keys [${opts}] are not allowed`);
+      }
+    });
+  }
 
   /**
    * Parse the meta block
    * @param {ast} item - Root ast tree node of current meta block
    */
-  parseMeta(item) {
+  parseMetaElement(item) {
     extractMetaBlock(item.attributes.map.list, item.name.toLowerCase(), this.workflowStep.action);
   }
 
   /**
-   * Parse the scatter block
+   * Parse the scatter block elements
    * @param {ast} item - Root ast tree node of current scatter block
    * @param {Step} parent - parent step
    */
-  parseScatter(item, parent) {
+  parseScatterElement(item, parent) {
     const itemName = item.attributes.item.source_string;
     const opts = {
       i: {
       },
     };
 
+    opts.i[itemName] = {};
+    opts.i[itemName].type = 'ScatterItem';
+
+    item.scatterName = `${this.name}_scatter_${this.scatterIndex}`;
+    const scatter = new Group(item.scatterName, 'scatter', opts);
+
+    this.scatterIndex += 1;
+    parent.add(scatter);
+
+    this.parseBodyElements(item.attributes.body.list, 'scatter', scatter, ['workflowoutputs', 'meta', 'parametermeta']);
+  }
+
+  /**
+   * Parse the scatter block bindings
+   * @param {ast} item - Root ast tree node of current scatter block
+   * @param {Step} parent - parent step
+   */
+  parseScatterBindings(item, parent) {
+    const itemName = item.attributes.item.source_string;
+
     const collection = extractExpression(item.attributes.collection);
 
     // in scatter the item is always an identifier, so it'll always be one port returned from .getPortsForBinding()
     const [port] = WDLWorkflow.getPortsForBinding(this.workflowStep, parent, collection);
 
-    opts.i[itemName] = {};
-    opts.i[itemName].type = 'ScatterItem';
-
-    const scatter = new Group(`${this.name}_scatter_${this.scatterIndex}`, 'scatter', opts);
+    const scatter = WDLWorkflow.findStepInStructureRecursively(parent, item.scatterName);
     scatter.i[itemName].bind(port);
 
-    this.scatterIndex += 1;
-    parent.add(scatter);
-
-    this.parseBody(item.attributes.body.list, 'scatter', scatter, ['workflowoutputs', 'meta', 'parametermeta']);
+    this.parseBodyBindings(item.attributes.body.list, 'scatter', scatter, ['workflowoutputs', 'meta', 'parametermeta']);
   }
 
   /**
-   * Parse the if block
+   * Parse the if block elements
    * @param {ast} item - Root ast tree node of current if block
    * @param {Step} parent - parent step
    */
-  parseIf(item, parent) {
+  parseIfElement(item, parent) {
     const opts = {
       data: {
         expression: extractExpression(item.attributes.expression).string,
       },
     };
 
-    const ifStatement = new Group(`${this.name}_if_${this.ifIndex}`, 'if', opts);
+    item.ifStatementName = `${this.name}_if_${this.ifIndex}`;
+    const ifStatement = new Group(item.ifStatementName, 'if', opts);
 
     this.ifIndex += 1;
     parent.add(ifStatement);
 
-    this.parseBody(item.attributes.body.list, 'if', ifStatement, ['workflowoutputs', 'meta', 'parametermeta']);
+    this.parseBodyElements(item.attributes.body.list, 'if', ifStatement, ['workflowoutputs', 'meta', 'parametermeta']);
   }
 
   /**
-   * Parse the while block
+   * Parse the if block bindings
+   * @param {ast} item - Root ast tree node of current if block
+   * @param {Step} parent - parent step
+   */
+  parseIfBindings(item, parent) {
+    const ifStatement = WDLWorkflow.findStepInStructureRecursively(parent, item.ifStatementName);
+
+    this.parseBodyBindings(item.attributes.body.list, 'if', ifStatement, ['workflowoutputs', 'meta', 'parametermeta']);
+  }
+
+  /**
+   * Parse the while block elements
    * @param {ast} item - Root ast tree node of current while block
    * @param {Step} parent - parent step
    */
-  parseWhile(item, parent) {
+  parseWhileElement(item, parent) {
     const opts = {
       data: {
         expression: extractExpression(item.attributes.expression).string,
       },
     };
 
-    const whileLoop = new Group(`${this.name}_whileloop_${this.loopIndex}`, 'whileloop', opts);
+    item.whileLoopName = `${this.name}_whileloop_${this.loopIndex}`;
+    const whileLoop = new Group(item.whileLoopName, 'whileloop', opts);
 
     this.loopIndex += 1;
     parent.add(whileLoop);
 
-    this.parseBody(item.attributes.body.list, 'whileloop', whileLoop, ['workflowoutputs', 'meta', 'parametermeta']);
+    this.parseBodyElements(item.attributes.body.list, 'whileloop', whileLoop, ['workflowoutputs', 'meta', 'parametermeta']);
   }
 
   /**
-   * Parse the call instance
+   * Parse the while block bindings
+   * @param {ast} item - Root ast tree node of current while block
+   * @param {Step} parent - parent step
+   */
+  parseWhileBindings(item, parent) {
+    const whileLoop = WDLWorkflow.findStepInStructureRecursively(parent, item.whileLoopName);
+
+    this.parseBodyBindings(item.attributes.body.list, 'whileloop', whileLoop, ['workflowoutputs', 'meta', 'parametermeta']);
+  }
+
+  /**
+   * Parse the call instance element
    * @param {ast} item - Root ast tree node of the current call
    * @param {Step} parent - parent step
    */
-  parseCall(item, parent) {
+  parseCallElement(item, parent) {
     const parentStep = parent;
     const task = item.attributes.task.source_string;
     const alias = item.attributes.alias ? item.attributes.alias.source_string : task;
@@ -167,8 +235,20 @@ export default class WDLWorkflow {
     }
 
     parentStep.add(childStep);
+  }
 
-    this.findCallInputBinding(item.attributes, childStep, parentStep);
+  /**
+   * Parse the call instance bindings
+   * @param {ast} item - Root ast tree node of the current call
+   * @param {Step} parent - parent step
+   */
+  parseCallBindings(item, parent) {
+    const task = item.attributes.task.source_string;
+    const alias = item.attributes.alias ? item.attributes.alias.source_string : task;
+
+    const step = WDLWorkflow.findStepInStructureRecursively(parent, alias);
+
+    this.findCallInputBinding(item.attributes, step, parent);
   }
 
   findCallInputBinding(callNode, step, parentStep) {
@@ -204,12 +284,12 @@ export default class WDLWorkflow {
   }
 
   /**
-   * Bind the declaration
+   * Bind the declaration element
    * @param {ast} item - Root ast tree node of current declaration
    * @param {Step} parent - parent step
    */
   // eslint-disable-next-line class-methods-use-this
-  parseDeclaration(item, parent) {
+  parseDeclarationElement(item, parent) {
     const parentStep = parent;
     const decl = item.attributes;
     const name = decl.name.source_string;
@@ -225,10 +305,34 @@ export default class WDLWorkflow {
       });
     } else if (parentStep instanceof Group) { // declaration is a "variable" type
       const declaration = new Declaration(name, decl, parentStep);
-      const bindings = WDLWorkflow.getPortsForBinding(this.workflowStep, declaration.step, declaration.expression);
-      _.forEach(bindings, binding => declaration.bind(binding));
 
       parentStep.addDeclaration(declaration);
+    }
+  }
+
+  /**
+   * Bind the declaration bindings
+   * @param {ast} item - Root ast tree node of current declaration
+   * @param {Step} parent - parent step
+   */
+  parseDeclarationBindings(item, parent) {
+    const decl = item.attributes;
+    const name = decl.name.source_string;
+
+    if (decl.expression !== null && parent instanceof Group) { // declaration is a "variable" type
+      let declaration;
+      if (parent.ownDeclarations && Object.keys(parent.ownDeclarations).indexOf(name) >= 0) {
+        declaration = parent.ownDeclarations[name];
+      }
+
+      if (!declaration) {
+        declaration = WDLWorkflow.findStepInStructureRecursively(this.workflowStep, name);
+      }
+
+      if (declaration instanceof Declaration) {
+        const bindings = WDLWorkflow.getPortsForBinding(this.workflowStep, declaration.step, declaration.expression);
+        _.forEach(bindings, binding => declaration.bind(binding));
+      }
     }
   }
 
@@ -236,7 +340,7 @@ export default class WDLWorkflow {
    * Pass through the output section of workflow
    * @param {ast} item - Root ast tree node of current outputs declaration
    */
-  parseWfOutputs(item) {
+  parseWfOutputsBindings(item) {
     const outputList = item.attributes.outputs.list.map(i => i.attributes);
 
     this.processWilds(outputList);
