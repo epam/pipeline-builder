@@ -16,8 +16,6 @@ export default function generate(objectModel) {
       if (!val.type) {
         const action = val.action;
         actionsToBeRendered[action.name] = action;
-      } else if (val.type.toLowerCase() === 'workflow') {
-        actionsToBeRendered[val.action.name] = val;
       } else {
         actionSelector(val.children);
       }
@@ -27,11 +25,7 @@ export default function generate(objectModel) {
   actionSelector(objectModel.children);
 
   _.forEach(actionsToBeRendered, (action) => {
-    if (!!action.type && action.type.toLowerCase() === 'workflow') {
-      tasks += new WorkflowGenerator(action, {}).renderWorkflow();
-    } else {
-      tasks += new TaskGenerator(action).renderTask();
-    }
+    tasks += new TaskGenerator(action).renderTask();
   });
 
   return wf + tasks;

@@ -19,7 +19,7 @@ export default class WorkflowGenerator {
     this.wfStep = wfStep;
 
     const action = wfStep.action;
-    this.declarations = action.i;
+    this.declarations = this.getDeclarations(wfStep);
     this.outputMappings = wfStep.o;
 
     this.children = wfStep.children;
@@ -30,6 +30,20 @@ export default class WorkflowGenerator {
     this.wfBlockString = '';
 
     this.settings = new Settings(settings);
+  }
+
+  getDeclarations(step) {
+    const declarations = {};
+    _.forEach(step.action.i || {}, (input, name) => {
+      declarations[name] = input;
+    });
+    _.forEach(step.ownDeclarations || {}, (declaration, name) => {
+      declarations[name] = {
+        default: declaration.expression.string,
+        type: declaration.desc.type,
+      };
+    });
+    return declarations;
   }
 
   renderWorkflow() {
@@ -50,7 +64,7 @@ export default class WorkflowGenerator {
   }
 
   renderStepMainBody(step, prosessed) {
-    const declarations = step.action.i;
+    const declarations = this.getDeclarations(step);
     const children = step.children;
 
     let res = '';
@@ -70,16 +84,11 @@ export default class WorkflowGenerator {
 
   getNextOrderedChild(children, processed) {
     let res = '';
-    const isSubset = (source, target) => !_.difference(_.flatten(source), _.flatten(target)).length;
 
     _.forEach(children, (child) => {
       if (_.indexOf(processed, child.name) < 0) {
-        const refs = this.findCallReferences(child);
-
-        if (refs.length === 0 || isSubset(refs, processed)) {
-          res = child.name;
-          return false;
-        }
+        res = child.name;
+        return false;
       }
 
       return true;
@@ -91,32 +100,14 @@ export default class WorkflowGenerator {
     return res;
   }
 
-  findCallReferences(child) {
-    const res = [];
-
-    _.forEach(child.i, (value) => {
-      if (value.inputs && _.size(value.inputs) > 0) {
-        if (_.size(value.inputs) > 1) {
-          throw new Error('Multiple links into one input are prohibited');
-        }
-
-        const connection = value.inputs[0];
-        if (connection.from instanceof Port && connection.from.step.name !== this.wfStep.name) {
-          res.push(connection.from.step.name);
-        }
-      }
-    });
-
-    _.forEach(child.children, (item) => {
-      res.concat(this.findCallReferences(item));
-    });
-
-    return res;
-  }
-
   buildPortValue(value) {
     if (value.desc && value.desc.default && !_.isUndefined(value.desc.default)) {
       return `${value.desc.default}`;
+    } else if (value.desc && value.desc.expression && !_.isUndefined(value.desc.expression)) {
+      return `${value.desc.expression}`;
+    } else if (value.expression && value.expression.type.toLowerCase() !== 'identifier'
+      && value.expression.type.toLowerCase() !== 'memberaccess' && !_.isUndefined(value.expression.string)) {
+      return `${value.expression.string}`;
     } else if (value.inputs && _.size(value.inputs) > 0) {
       if (_.size(value.inputs) > 1) {
         throw new Error('Multiple links into one input are prohibited');
