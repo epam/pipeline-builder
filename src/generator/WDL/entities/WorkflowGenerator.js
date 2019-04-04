@@ -32,6 +32,7 @@ export default class WorkflowGenerator {
     this.settings = new Settings(settings);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   getDeclarations(step) {
     const declarations = {};
     _.forEach(step.action.i || {}, (input, name) => {
@@ -82,6 +83,7 @@ export default class WorkflowGenerator {
     return res;
   }
 
+  // eslint-disable-next-line class-methods-use-this
   getNextOrderedChild(children, processed) {
     let res = '';
 
