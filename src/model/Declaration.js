@@ -19,20 +19,24 @@ export default class Declaration extends Port {
     if (!declaration.expression || !declaration.type) {
       throw new Error('Declaration could be created only using declaration object');
     }
-    super(name, step, {});
-
-    delete this.desc;
+    const expression = extractExpression(declaration.expression);
+    const type = extractType(declaration.type);
+    const desc = {
+      default: expression.string || undefined,
+      type,
+    };
+    super(name, step, desc);
 
     /**
      * Declaration expression extracted object.
-     * @type {string}
+     * @type {Object}
      */
-    this.expression = extractExpression(declaration.expression);
+    this.expression = expression;
     /**
      * Declaration type.
      * @type {string}
      */
-    this.type = extractType(declaration.type);
+    this.type = type;
   }
 
 }

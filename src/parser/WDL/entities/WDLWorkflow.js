@@ -140,6 +140,10 @@ export default class WDLWorkflow {
 
     const scatter = WDLWorkflow.findStepInStructureRecursively(parent, item.scatterName);
     scatter.i[itemName].bind(port);
+    if (collection.type.toLowerCase() !== 'memberaccess' && collection.type.toLowerCase() !== 'identifier'
+      && !_.isUndefined(collection.string)) {
+      scatter.i[itemName].desc.expression = collection.string;
+    }
 
     this.parseBodyBindings(item.attributes.body.list, 'scatter', scatter, ['workflowoutputs', 'meta', 'parametermeta']);
   }
@@ -270,7 +274,14 @@ export default class WDLWorkflow {
     if (!step.i[declaration] && step instanceof Workflow && step.ownDeclarations[declaration]) {
       // remove declaration and add it as an input
       const declarationObj = step.removeDeclaration(declaration);
-      const port = new Port(declaration, step, { type: declarationObj.type });
+      const desc = {
+        type: declarationObj.type,
+      };
+      if (expression.string
+        && expression.type.toLowerCase() !== 'memberaccess' && expression.type.toLowerCase() !== 'identifier') {
+        desc.expression = expression.string;
+      }
+      const port = new Port(declaration, step, desc);
       _.forEach(declarationObj.outputs, conn => conn.to.bind(port));
       step.i[declaration] = port;
     }
@@ -278,6 +289,10 @@ export default class WDLWorkflow {
     if (step.i[declaration]) {
       const bindings = WDLWorkflow.getPortsForBinding(this.workflowStep, parentStep, expression);
       _.forEach(bindings, binding => step.i[declaration].bind(binding));
+      if (expression.string
+        && expression.type.toLowerCase() !== 'memberaccess' && expression.type.toLowerCase() !== 'identifier') {
+        step.i[declaration].expression = expression;
+      }
     } else {
       throw new WDLParserError(`Undeclared variable trying to be assigned: call '${step.name}' --> '${declaration}'`);
     }

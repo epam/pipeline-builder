@@ -31,10 +31,10 @@ export default class TaskGenerator {
 
       this.taskBlockString += buildDeclarations(this.declarations, this.settings);
       this.taskBlockString += this.buildCommand(this.command, this.commandStyle);
-      this.taskBlockString += this.buildSegment(constants.OUTPUT, this.outputMappings);
       this.taskBlockString += this.buildSegment(constants.META, this.meta);
       this.taskBlockString += this.buildSegment(constants.PARAMETER_META, this.parameterMeta);
       this.taskBlockString += this.buildSegment(constants.RUNTIME, this.runtime);
+      this.taskBlockString += this.buildSegment(constants.OUTPUT, this.outputMappings);
 
       this.taskBlockString += `${constants.SCOPE_CLOSE}${EOL}${EOL}`;
     }
@@ -82,7 +82,7 @@ export default class TaskGenerator {
 
       _.forEach(data, (val, key) => {
         res += `${DOUBLE_SCOPE_INDENT}${segmentName === constants.OUTPUT ? val.type : ''} `;
-        res += `${key} ${segmentName === constants.OUTPUT ? constants.EQ : constants.COLON} ${buildValue(val)}${EOL}`;
+        res += `${key}${segmentName === constants.OUTPUT ? ` ${constants.EQ}` : constants.COLON} ${buildValue(val)}${EOL}`;
       });
 
       res += `${SCOPE_INDENT}${constants.SCOPE_CLOSE}${EOL}`;
