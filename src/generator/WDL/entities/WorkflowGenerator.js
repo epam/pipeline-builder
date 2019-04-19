@@ -13,7 +13,7 @@ export default class WorkflowGenerator {
       scatter: this.genScatter,
       whileloop: this.genWhile,
       if: this.genIf,
-      workflow: this.genWorkflow,
+      workflow: this.genCall,
     };
     this.wfName = wfStep.name;
     this.wfStep = wfStep;
@@ -103,9 +103,7 @@ export default class WorkflowGenerator {
   }
 
   buildPortValue(value) {
-    if (value.desc && value.desc.default && !_.isUndefined(value.desc.default)) {
-      return `${value.desc.default}`;
-    } else if (value.desc && value.desc.expression && !_.isUndefined(value.desc.expression)) {
+    if (value.desc && value.desc.expression && !_.isUndefined(value.desc.expression)) {
       return `${value.desc.expression}`;
     } else if (value.expression && value.expression.type.toLowerCase() !== 'identifier'
       && value.expression.type.toLowerCase() !== 'memberaccess' && !_.isUndefined(value.expression.string)) {
@@ -121,7 +119,7 @@ export default class WorkflowGenerator {
         const outStepName = outStep.name;
         const outVarName = connection.from.name;
 
-        if (outStepName === this.wfName || outStep.type) {
+        if (outStepName === this.wfName || (outStep.type && outStep.type.toLowerCase() !== constants.WORKFLOW)) {
           return outVarName;
         }
         return `${outStepName}.${outVarName}`;
@@ -140,12 +138,17 @@ export default class WorkflowGenerator {
     let res = '';
 
     const val = child;
+    const namespace = val.namespace ? `${val.namespace}.` : '';
     let callString = `${SCOPE_INDENT}${constants.CALL} `;
 
-    if (val.action.name === val.name) {
-      callString += `${val.name}`;
+    if (val.name === val.initialName || val.initialName === `${namespace}${val.name}`) {
+      if (val.action.name === `${namespace}${val.name}`) {
+        callString += `${namespace}${val.name}`;
+      } else {
+        callString += `${val.action.name} ${constants.AS} ${val.name}`;
+      }
     } else {
-      callString += `${val.action.name} ${constants.AS} ${val.name}`;
+      callString += `${val.initialName} ${constants.AS} ${val.name}`;
     }
 
     res += `${callString}`;
@@ -232,11 +235,6 @@ export default class WorkflowGenerator {
 
     res += `${SCOPE_INDENT}${constants.SCOPE_CLOSE}${EOL}`;
     return res;
-  }
-
-  genWorkflow(child) {
-    // TODO: add generation workflow
-    this.genCall(child);
   }
 
   buildOutputMap(outputMappings) {

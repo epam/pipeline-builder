@@ -26,7 +26,7 @@ class Workflow extends Group {
   constructor(name, config = {}) {
     super(name, 'workflow', config);
     /**
-     * A dictionary of actions to be (probably) used in the workflow.
+     * A dictionary of actions to be used in the workflow.
      *
      * It is updated automatically when you {@link Workflow#add add} a child or a grandchild step.
      * You may also wish to {@link Workflow#addAction add actions} manually even if they do not correspond

@@ -10,9 +10,6 @@ import generateWDL from './WDL/generate';
  * @returns {string} Textual representation of the workflow.
  */
 function generate(flow, opts = {}) {
-  if (flow.hasImports) {
-    throw new Error('Generation for scripts containing imports is not supported');
-  }
   const format = opts.format || 'wdl';
   if (format === 'wdl') {
     return generateWDL(flow, opts);

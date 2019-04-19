@@ -31,7 +31,7 @@ export default class VisualStep extends joint.shapes.devs.Model {
       },
       attrs: {
         '.label': {
-          text: opts.step.name,
+          text: opts.step.namespace ? `${opts.step.namespace}.${opts.step.name}` : opts.step.name,
         },
       },
       type: 'VisualStep',
@@ -140,6 +140,6 @@ export default class VisualStep extends joint.shapes.devs.Model {
   }
 
   _getLabel() {
-    return this.step.name;
+    return this.step.namespace ? `${this.step.namespace}.${this.step.name}` : this.step.name;
   }
 }

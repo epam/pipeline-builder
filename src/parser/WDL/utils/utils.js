@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import * as Constants from '../constants';
 
 const binarySymbols = {
   Add: '+',
@@ -289,6 +290,58 @@ export function extractMetaBlock(list, filter, desc) {
 
     desc.data[filter][key] = extractExpression(attributes.value).string;
   });
+}
+
+function extractImportExpression(importNode) {
+  let expression = `import "${importNode.attributes.uri.source_string}"`;
+  if (importNode.attributes.namespace && importNode.attributes.namespace.source_string) {
+    expression = `${expression} as ${importNode.attributes.namespace.source_string}`;
+  }
+  return expression;
+}
+
+export function extractImportsArray(ast) {
+  const importsDefinitions = ast.attributes.imports;
+
+  return importsDefinitions ? importsDefinitions.list
+    .filter(item => item.name.toLowerCase() === Constants.IMPORT && item.attributes.uri)
+    .map((imp) => {
+      let name;
+      const expression = extractImportExpression(imp);
+      if (imp.attributes.namespace && imp.attributes.namespace.source_string) {
+        name = imp.attributes.namespace.source_string;
+      } else {
+        const uri = imp.attributes.uri.source_string.split('/').pop();
+        const index = uri.indexOf('.wdl');
+        const length = uri.length;
+
+        if (length - index === 4) {
+          name = uri.slice(0, index - length);
+        } else {
+          name = uri;
+        }
+      }
+
+      return {
+        name,
+        expression,
+        uri: imp.attributes.uri.source_string,
+      };
+    }) : [];
+}
+
+export function extractNamespace(name) {
+  if (name.indexOf('.') >= 0) {
+    return name.split('.').slice(0, -1).join('.');
+  }
+  return '';
+}
+
+export function extractName(name) {
+  if (name.indexOf('.') >= 0) {
+    return name.split('.').slice(-1).join();
+  }
+  return name;
 }
 
 export class WDLParserError extends Error {

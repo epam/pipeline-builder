@@ -2,7 +2,7 @@ import _ from 'lodash';
 
 import WDLWorkflow from './WDLWorkflow';
 import Task from './Task';
-import { WDLParserError, extractExpression, extractType } from '../utils/utils';
+import { WDLParserError, extractExpression, extractType, extractImportsArray } from '../utils/utils';
 import Workflow from '../../../model/Workflow';
 import * as Constants from '../constants';
 
@@ -12,10 +12,10 @@ export default class Context {
    * Process through the hole entire ast tree and builds the desired Object Model
    * @param {ast} ast - Root ast tree node of parsing result
    * @param {string} src - Source WDL string (needed to extract the task command strings)
+   * @param {Object} imports - Object of parsed imports
    */
-  constructor(ast, src) {
-    this.genericTaskCommandMap = new Map();
-    this.preprocessTheTaskOntoCommandMap(src);
+  constructor(ast, src, imports = {}) {
+    this.imports = Context.preprocessCommandMapsRecursively(imports, src);
     this.actionMap = this.buildActionMap(ast);
 
     try {
@@ -25,14 +25,24 @@ export default class Context {
     }
   }
 
+  static preprocessCommandMapsRecursively(importsDict, src) {
+    const imports = importsDict;
+    imports.genericTaskCommandMap = Context.preprocessTheTaskOntoCommandMap(src);
+    if (imports.children) {
+      Object.keys(imports.children).forEach((childName) => {
+        imports.children[childName] =
+          Context.preprocessCommandMapsRecursively(imports.children[childName], imports.children[childName].src);
+      });
+    }
+
+    return imports;
+  }
+
   /**
    * Process through the workflow entities
    * @param {ast} ast - Root ast tree node of parsing result
    */
   buildWorkflowList(ast) {
-    if (ast.attributes.imports && ast.attributes.imports.list.length) {
-      this.hasImports = true;
-    }
     const definitions = ast.attributes.body;
     return definitions ? definitions.list
       .filter(item => item.name.toLowerCase() === 'workflow')
@@ -44,8 +54,8 @@ export default class Context {
    *    (TBD: Not safe. Not all cases supported)
    * @param {string} src - Source WDL script string
    */
-  preprocessTheTaskOntoCommandMap(src) {
-    this.genericTaskCommandMap = new Map();
+  static preprocessTheTaskOntoCommandMap(src) {
+    const genericTaskCommandMap = new Map();
 
     const taskRegex = /\s*^task\s*.+\s*\{/gm;
     const tasks = [];
@@ -81,20 +91,22 @@ export default class Context {
 
       if (currCmd &&
           (!nextTask || (val.lastIndex < currCmd.lastIndex && currCmd.lastIndex < nextTask.lastIndex))) {
-        this.genericTaskCommandMap.set(val.message, currCmd);
+        genericTaskCommandMap.set(val.message, currCmd);
         cmdIdx += 1;
       }
     });
 
-    this.genericTaskCommandMap.forEach((val, key) => {
+    genericTaskCommandMap.forEach((val, key) => {
       const lastIndex = val.lastIndex;
       const closer = val.type === '{' ? '}' : '>>>';
 
-      this.genericTaskCommandMap.set(key, {
+      genericTaskCommandMap.set(key, {
         command: Context.traceTheCommand(src, lastIndex, closer),
         type: val.type,
       });
     });
+
+    return genericTaskCommandMap;
   }
 
   static traceTheCommand(str, start, closer) {
@@ -125,9 +137,13 @@ export default class Context {
   /**
    * Convert WDL tasks to Actions and store them in map for future using
    * @param {ast} ast - Root ast tree node of parsing result
+   * @param {Object} imports
    */
-  buildActionMap(ast) {
+  buildActionMap(ast, imports = this.imports) {
     const actionMap = {};
+    if (!ast) {
+      return actionMap;
+    }
     const definitions = ast.attributes.body;
     const tasks = definitions.list.filter(item => item.name.toLowerCase() === Constants.TASK)
       .map(wfNode => new Task(wfNode.attributes));
@@ -141,7 +157,7 @@ export default class Context {
       });
 
     tasks.forEach((task) => {
-      const command = this.genericTaskCommandMap.get(task.name);
+      const command = imports.genericTaskCommandMap.get(task.name);
       actionMap[task.name] = task.constructAction(command);
     });
 
@@ -149,7 +165,38 @@ export default class Context {
       actionMap[workflow.name] = workflow;
     });
 
+    const importsArray = extractImportsArray(ast);
+    if (importsArray.length) {
+      importsArray.forEach((imp) => {
+        const childImport = Context.findChildImport(imp.name, imports);
+        if (childImport) {
+          const childActionMap = this.buildActionMap(childImport.ast, childImport);
+          _.forEach(childActionMap, (action, name) => {
+            const actionName = `${imp.name}.${name}`;
+            action.name = actionName;
+            actionMap[actionName] = action;
+          });
+        }
+      });
+    }
+
     return actionMap;
+  }
+
+  static findChildImport(namespace, imports) {
+    if (imports && imports.imports.length) {
+      if (imports.children[namespace]) {
+        return imports.children[namespace];
+      }
+      let child = null;
+      for (let i = 0; i < imports.imports.length; i++) {
+        if (!child && imports.children[imports.imports[i].name]) {
+          child = Context.findChildImport(namespace, imports.children[imports.imports[i].name]);
+        }
+      }
+      return child;
+    }
+    return null;
   }
 
   /**
