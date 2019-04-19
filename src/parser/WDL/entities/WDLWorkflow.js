@@ -50,7 +50,7 @@ export default class WDLWorkflow {
     this.context = context;
     this.name = wfNode.name.source_string;
     this.workflowStep = new Workflow(this.name, { initialName: initialName || null, isSubWorkflow });
-    if (isRootWf && this.context.imports.imports && this.context.imports.imports.length) {
+    if (isRootWf && this.context.imports && this.context.imports.imports && this.context.imports.imports.length) {
       this.workflowStep.imports = this.context.imports.imports;
     }
 
