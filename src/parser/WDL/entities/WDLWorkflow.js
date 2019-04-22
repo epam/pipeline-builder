@@ -20,11 +20,11 @@ export default class WDLWorkflow {
    * Process through the hole entire ast tree and builds the desired Object Model
    * @param {ast} wfNode - Workflow ast tree node
    * @param {Context} context - Parsing context
-   * @param {Boolean} isRootWf - Weather current WDLWorkflow is root
    * @param {String?} [initialName=null] - initial Name
    * @param {Boolean?} [isSubWorkflow=false] - is Sub Workflow
+   * @param {String} parentNamespace
    */
-  constructor(wfNode, context, isRootWf = true, initialName = null, isSubWorkflow = false) {
+  constructor(wfNode, context, initialName = null, isSubWorkflow = false, parentNamespace = '') {
     this.elementsParsingProcessors = {
       declaration: this.parseDeclarationElement,
       meta: this.parseMetaElement,
@@ -50,7 +50,13 @@ export default class WDLWorkflow {
     this.context = context;
     this.name = wfNode.name.source_string;
     this.workflowStep = new Workflow(this.name, { initialName: initialName || null, isSubWorkflow });
-    if (isRootWf && this.context.imports && this.context.imports.imports && this.context.imports.imports.length) {
+    if (isSubWorkflow) {
+      this.isSubWorkflow = isSubWorkflow;
+    }
+    if (parentNamespace) {
+      this.parentNamespace = parentNamespace;
+    }
+    if (!isSubWorkflow && this.context.imports && this.context.imports.imports && this.context.imports.imports.length) {
       this.workflowStep.imports = this.context.imports.imports;
     }
 
@@ -229,17 +235,32 @@ export default class WDLWorkflow {
     const task = item.attributes.task.source_string;
     const alias = item.attributes.alias ? item.attributes.alias.source_string : task;
 
-    if (!_.has(this.context.actionMap, task)) {
-      throw new WDLParserError(`Undeclared task call: '${task}'.`);
+    let actionName = task;
+    if (this.isSubWorkflow) {
+      let namespace = this.parentNamespace ? `${this.parentNamespace}.` : '';
+      if (this.workflowStep.namespace) {
+        namespace = `${namespace}${this.workflowStep.namespace}.`;
+      }
+      actionName = `${namespace}${actionName}`;
     }
 
-    const action = _.get(this.context.actionMap, task);
+    if (!_.has(this.context.actionMap, actionName)) {
+      const errorMessage = this.isSubWorkflow
+        ? `Undeclared task call: '${task}' in imported workflow (${this.name}).`
+        : `Undeclared task call: '${task}'.`;
+      throw new WDLParserError(errorMessage);
+    }
+
+    const action = _.get(this.context.actionMap, actionName);
 
     let childStep;
     if (action.type === Constants.WORKFLOW) {
       const cloneAst = _.clone(action.ast);
       cloneAst.attributes.name.source_string = alias;
-      childStep = new WDLWorkflow(cloneAst.attributes, this.context, false, task, true).workflowStep;
+      const parentNameSpace = this.parentNamespace
+        ? `${this.parentNamespace}.${this.workflowStep.namespace}`
+        : this.workflowStep.namespace;
+      childStep = new WDLWorkflow(cloneAst.attributes, this.context, task, true, parentNameSpace).workflowStep;
       childStep.imported = true;
     } else {
       childStep = new Step(alias, action, {}, task);

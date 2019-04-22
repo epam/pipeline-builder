@@ -35,6 +35,7 @@ function parse(text, opts = {}) {
   const zipFile = opts.zipFile || null;
   if (format === 'wdl') {
     if (zipFile) {
+      const wdlArray = opts.wdlArray || [];
       return JSZip.loadAsync(zipFile).then((files) => {
         const zipWdlFiles = [];
 
@@ -48,7 +49,10 @@ function parse(text, opts = {}) {
           name: zipWdlFile.name.split('/').pop(),
           wdl: str,
         }))))
-          .then(wdlArray => parseWDL(text, { wdlArray, baseURI, subWfDetailing, recursionDepth }));
+          .then(zipWdlArray => parseWDL(
+            text,
+            { wdlArray: wdlArray.concat(zipWdlArray), baseURI, subWfDetailing, recursionDepth },
+          ));
       }, e => Promise.reject(`Parse zip file: ${e}`));
     }
     return parseWDL(text, opts);

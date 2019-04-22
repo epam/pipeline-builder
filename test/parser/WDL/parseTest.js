@@ -656,9 +656,15 @@ task task3 {
 `,
     }];
 
-    it('requires to parse valid and all sub workflows should be expanded till recursion depth level = 2', () => expect(parse(validSrc, { wdlArray: validWdlArray, subWfDetailing: ['*'], recursionDepth: 2 })).to.be.fulfilled);
+    it('requires to parse valid and all sub workflows should be expanded till recursion depth level = 2',
+      () => expect(
+        parse(validSrc, { wdlArray: validWdlArray, subWfDetailing: ['*'], recursionDepth: 2 }),
+      ).to.be.fulfilled);
 
-    it('requires to parse valid and only specified sub workflow should be expanded', () => expect(parse(validSrc, { wdlArray: validWdlArray, subWfDetailing: ['SubWorkflow_Workflow'], recursionDepth: 2 })).to.be.fulfilled);
+    it('requires to parse valid and only specified sub workflow should be expanded',
+      () => expect(
+          parse(validSrc, { wdlArray: validWdlArray, subWfDetailing: ['Workflow'], recursionDepth: 2 }),
+        ).to.be.fulfilled);
 
     it('returns with error when parsing valid wdl script with imports with incorrect sub imports', () => expect(parse(validSrc, { wdlArray: invalidWdlArray, subWfDetailing: ['*'], recursionDepth: 4 })).to.be.rejected);
   });

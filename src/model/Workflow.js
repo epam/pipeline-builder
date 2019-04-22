@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import Group from './Group';
+import { extractNamespace } from '../parser/WDL/utils/utils';
 
 /**
  * Class representing the entire workflow.
@@ -46,6 +47,7 @@ class Workflow extends Group {
     }
     if (config.initialName) {
       this.initialName = config.initialName;
+      this.namespace = extractNamespace(config.initialName);
     }
 
     this.isSubWorkflow = config.isSubWorkflow || false;

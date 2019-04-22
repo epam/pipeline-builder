@@ -103,7 +103,7 @@ export default class Step {
    *
    * @param initialName
    */
-  constructor(name, action = {}, config = {}, initialName = null) {
+  constructor(name, action = {}, config = {}, initialName = '') {
     if (_.isUndefined(name)) {
       throw new Error('Step must have a name');
     }
@@ -119,7 +119,7 @@ export default class Step {
      * Step namespace.
      * @type {string}
      */
-    this.namespace = extractNamespace(name);
+    this.namespace = extractNamespace(initialName) || extractNamespace(name);
 
     /**
      * Step initial name.

@@ -188,13 +188,6 @@ export default class Context {
       if (imports.children[namespace]) {
         return imports.children[namespace];
       }
-      let child = null;
-      for (let i = 0; i < imports.imports.length; i++) {
-        if (!child && imports.children[imports.imports[i].name]) {
-          child = Context.findChildImport(namespace, imports.children[imports.imports[i].name]);
-        }
-      }
-      return child;
     }
     return null;
   }
