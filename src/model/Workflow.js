@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import Group from './Group';
+import { extractNamespace } from '../parser/WDL/utils/utils';
 
 /**
  * Class representing the entire workflow.
@@ -26,7 +27,7 @@ class Workflow extends Group {
   constructor(name, config = {}) {
     super(name, 'workflow', config);
     /**
-     * A dictionary of actions to be (probably) used in the workflow.
+     * A dictionary of actions to be used in the workflow.
      *
      * It is updated automatically when you {@link Workflow#add add} a child or a grandchild step.
      * You may also wish to {@link Workflow#addAction add actions} manually even if they do not correspond
@@ -46,6 +47,7 @@ class Workflow extends Group {
     }
     if (config.initialName) {
       this.initialName = config.initialName;
+      this.namespace = extractNamespace(config.initialName);
     }
 
     this.isSubWorkflow = config.isSubWorkflow || false;

@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import Action from './Action';
 import Port from './Port';
+import { extractNamespace, extractName } from '../parser/WDL/utils/utils';
 
 /**
  * Bind ports during step construction.
@@ -100,8 +101,9 @@ export default class Step {
    * @param {object} config - Action configuration containing input bindings.
    * It should include action description in case the action is missing.
    *
+   * @param initialName
    */
-  constructor(name, action = {}, config = {}) {
+  constructor(name, action = {}, config = {}, initialName = '') {
     if (_.isUndefined(name)) {
       throw new Error('Step must have a name');
     }
@@ -114,10 +116,28 @@ export default class Step {
     action.on('port-rename', (...args) => this._onPortRename(...args));
 
     /**
+     * Step namespace.
+     * @type {string}
+     */
+    this.namespace = extractNamespace(initialName) || extractNamespace(name);
+
+    /**
+     * Step initial name.
+     * @type {string}
+     */
+    this.initialName = initialName || action.name;
+
+    /**
+     * Shows if Step was imported.
+     * @type {Boolean}
+     */
+    this.imported = this.initialName !== extractName(this.initialName);
+
+    /**
      * Step name.
      * @type {string}
      */
-    this.name = name;
+    this.name = extractName(name);
     /**
      * Action performed during the step.
      * @type {Action}

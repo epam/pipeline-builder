@@ -20,6 +20,7 @@ function createPort(portDesc) {
   return _.defaults(_.pick(portDesc, [
     'type',
     'default',
+    'expression',
     'multi',
   ]), {
     multi: false,

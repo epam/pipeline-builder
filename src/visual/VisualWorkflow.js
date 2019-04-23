@@ -10,12 +10,22 @@ export default class VisualWorkflow extends VisualGroup {
    * joint.shapes.dev.Model and Step and embeds padding values.
    */
   constructor(opts = {}) {
+    let text;
+    const namespace = opts.step.namespace ? `${opts.step.namespace}.` : '';
+    if (opts.step.name === opts.step.initialName || opts.step.initialName === `${namespace}${opts.step.name}`) {
+      if (opts.step.action.name === `${namespace}${opts.step.name}`) {
+        text = `${opts.step.type} ${namespace}${opts.step.name}`;
+      } else {
+        text = `${opts.step.type} ${opts.step.action.name} as ${opts.step.name}`;
+      }
+    } else {
+      text = `${opts.step.type} ${opts.step.initialName} as ${opts.step.name}`;
+    }
+
     super(_.defaultsDeep(opts, {
       attrs: {
         '.label': {
-          text: opts.step.initialName && opts.step.initialName !== opts.step.name
-            ? `${opts.step.type} ${opts.step.initialName} as ${opts.step.name}`
-            : `${opts.step.type} ${opts.step.name}`,
+          text,
         },
       },
       type: 'VisualWorkflow',
@@ -24,8 +34,18 @@ export default class VisualWorkflow extends VisualGroup {
   }
 
   _getLabel() {
-    return this.step.initialName && this.step.initialName !== this.step.name
-      ? `${this.step.type} ${this.step.initialName} as ${this.step.name}`
-      : `${this.step.type} ${this.step.name}`;
+    let text;
+    const namespace = this.step.namespace ? `${this.step.namespace}.` : '';
+    if (this.step.name === this.step.initialName || this.step.initialName === `${namespace}${this.step.name}`) {
+      if (this.step.action.name === `${namespace}${this.step.name}`) {
+        text = `${this.step.type} ${namespace}${this.step.name}`;
+      } else {
+        text = `${this.step.type} ${this.step.action.name} as ${this.step.name}`;
+      }
+    } else {
+      text = `${this.step.type} ${this.step.initialName} as ${this.step.name}`;
+    }
+
+    return text;
   }
 }
