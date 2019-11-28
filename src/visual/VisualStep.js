@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import joint from 'jointjs';
+import joint from 'jointjs/index';
 
 const cDefaultWidth = 100;
 const cMinHeight = 100;

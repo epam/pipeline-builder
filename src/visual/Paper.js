@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import joint, { V } from 'jointjs';
-
+import { V } from 'jointjs';
+import joint from 'jointjs/index';
 import VisualGroup from './VisualGroup';
 
 /**
