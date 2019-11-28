@@ -930,9 +930,10 @@ babylon@^6.18.0:
   version "6.18.0"
   resolved "https://registry.yarnpkg.com/babylon/-/babylon-6.18.0.tgz#af2f3b88fa6f5c1e4c634d1a0f8eac4f55b395e3"
 
-backbone@1.3.3:
-  version "1.3.3"
-  resolved "https://registry.yarnpkg.com/backbone/-/backbone-1.3.3.tgz#4cc80ea7cb1631ac474889ce40f2f8bc683b2999"
+backbone@~1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/backbone/-/backbone-1.4.0.tgz#54db4de9df7c3811c3f032f34749a4cd27f3bd12"
+  integrity sha512-RLmDrRXkVdouTg38jcgHhyQ/2zjg7a8E6sz2zxfz21Hh17xDJYUHBZimVIt5fUyS8vbfpeSmTL3gUjTEvUV3qQ==
   dependencies:
     underscore ">=1.8.3"
 
@@ -1826,12 +1827,13 @@ d@~0.1.1:
   dependencies:
     es5-ext "~0.10.2"
 
-dagre@0.7.4:
-  version "0.7.4"
-  resolved "https://registry.yarnpkg.com/dagre/-/dagre-0.7.4.tgz#de72f0e74a550ce11ce638f0a136fed712398022"
+dagre@~0.8.4:
+  version "0.8.4"
+  resolved "https://registry.yarnpkg.com/dagre/-/dagre-0.8.4.tgz#26b9fb8f7bdc60c6110a0458c375261836786061"
+  integrity sha512-Dj0csFDrWYKdavwROb9FccHfTC4fJbyF/oJdL9LNZJ8WUvl968P6PAKEriGqfbdArVJEmmfA+UyumgWEwcHU6A==
   dependencies:
-    graphlib "^1.0.5"
-    lodash "^3.10.0"
+    graphlib "^2.1.7"
+    lodash "^4.17.4"
 
 dashdash@^1.12.0:
   version "1.14.1"
@@ -3092,11 +3094,12 @@ graceful-fs@~1.2.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/graceful-readlink/-/graceful-readlink-1.0.1.tgz#4cafad76bc62f02fa039b2f94e9a3dd3a391a725"
 
-graphlib@1.0.7, graphlib@^1.0.5:
-  version "1.0.7"
-  resolved "https://registry.yarnpkg.com/graphlib/-/graphlib-1.0.7.tgz#0cab2df0ffe6abe070b2625bfa1edb6ec967b8b1"
+graphlib@^2.1.7, graphlib@~2.1.7:
+  version "2.1.7"
+  resolved "https://registry.yarnpkg.com/graphlib/-/graphlib-2.1.7.tgz#b6a69f9f44bd9de3963ce6804a2fc9e73d86aecc"
+  integrity sha512-TyI9jIy2J4j0qgPmOOrHTCtpPqJGN/aurBwc6ZT+bRii+di1I+Wv3obRhVrmBEXet+qkMaEX67dXrwsd3QQM6w==
   dependencies:
-    lodash "^3.10.0"
+    lodash "^4.17.5"
 
 growl@1.9.2:
   version "1.9.2"
@@ -4004,19 +4007,21 @@ istanbul@^0.4.0, istanbul@~0.4.5:
     which "^1.1.1"
     wordwrap "^1.0.0"
 
-jointjs@^1.0.3:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/jointjs/-/jointjs-1.1.0.tgz#3c5f0f225c0b3748d77d38000f7f1f7b9634f032"
-  dependencies:
-    backbone "1.3.3"
-    dagre "0.7.4"
-    graphlib "1.0.7"
-    jquery "3.1.1"
-    lodash "3.10.1"
-
-jquery@3.1.1:
+jointjs@^3.1.1:
   version "3.1.1"
-  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.1.1.tgz#347c1c21c7e004115e0a4da32cece041fad3c8a3"
+  resolved "https://registry.yarnpkg.com/jointjs/-/jointjs-3.1.1.tgz#6401f475fe2156dc36cca77c9389993893ec4c22"
+  integrity sha512-f9eMOrqGHL9voBsvmnKJAWW3/Jug+UXOI1YmL0LguoDM6pFvz9zok4shX5wjHI5awEGtA6/0YBXBBJjVKTV7xw==
+  dependencies:
+    backbone "~1.4.0"
+    dagre "~0.8.4"
+    graphlib "~2.1.7"
+    jquery "~3.4.1"
+    lodash "~4.17.14"
+
+jquery@~3.4.1:
+  version "3.4.1"
+  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.4.1.tgz#714f1f8d9dde4bdfa55764ba37ef214630d80ef2"
+  integrity sha512-36+AdBzCL+y6qjw5Tx7HgzeGCzC81MDDgaUP8ld2zhx58HdqXGoBd+tHdrBMiyjGQs0Hxs/MLZTu/eHNJJuWPw==
 
 js-base64@^2.1.8, js-base64@^2.1.9:
   version "2.5.1"
@@ -4450,17 +4455,14 @@ lodash.uniq@^4.5.0:
   version "4.5.0"
   resolved "https://registry.yarnpkg.com/lodash.uniq/-/lodash.uniq-4.5.0.tgz#d0225373aeb652adc1bc82e4945339a842754773"
 
-lodash@3.10.1, lodash@^3.10.0:
-  version "3.10.1"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-3.10.1.tgz#5bf45e8e49ba4189e17d482789dfd15bd140b7b6"
-
 lodash@^4.0.0, lodash@^4.0.1, lodash@^4.1.0, lodash@^4.17.11, lodash@^4.17.4, lodash@^4.3.0, lodash@~4.17.10, lodash@~4.17.2:
   version "4.17.11"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.11.tgz#b39ea6229ef607ecd89e2c8df12536891cac9b8d"
 
-lodash@^4.17.15:
+lodash@^4.17.15, lodash@^4.17.5, lodash@~4.17.14:
   version "4.17.15"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
+  integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
 
 lodash@~1.0.1:
   version "1.0.2"
@@ -7308,6 +7310,7 @@ underscore@1.6.0, underscore@~1.6.0:
 underscore@>=1.8.3:
   version "1.9.1"
   resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.9.1.tgz#06dce34a0e68a7babc29b365b8e74b8925203961"
+  integrity sha512-5/4etnCkd9c8gwgowi5/om/mYO5ajCaOgdzj/oW+0eQV9WxKBDZw5+ycmKmeaTXjInS/W0BzpGLo2xR2aBwZdg==
 
 underscore@~1.8.3:
   version "1.8.3"

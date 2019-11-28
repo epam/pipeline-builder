@@ -76,7 +76,7 @@
     "gulp-stylelint": "^3.9.0",
     "gulp-uglify": "^3.0.0",
     "gulp-util": "^3.0.8",
-    "jointjs": "^1.0.3",
+    "jointjs": "^3.1.1",
     "jsdoc-export-default-interop": "^0.3.1",
     "minami": "^1.1.1",
     "mocha": "^3.2.0",
