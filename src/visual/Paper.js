@@ -1,12 +1,11 @@
 import _ from 'lodash';
-import { V } from 'jointjs';
-import joint from 'jointjs/index';
+import { V, dia } from 'jointjs';
 import VisualGroup from './VisualGroup';
 
 /**
  * Extended version of the joint.dia.Paper class.
  */
-export default class Paper extends joint.dia.Paper {
+export default class Paper extends dia.Paper {
   /**
    * Create paper object.
    * @param opts options, see joint.dia.Paper.

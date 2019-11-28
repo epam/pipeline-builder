@@ -1,11 +1,11 @@
 import _ from 'lodash';
-import joint from 'jointjs/index';
+import { shapes } from 'jointjs';
 
 const cDefaultWidth = 12;
 const cMinHeight = 50;
 const cPixelPerSymbol = 10;
 
-export default class VisualDeclaration extends joint.shapes.pn.Transition {
+export default class VisualDeclaration extends shapes.pn.Transition {
 
   constructor(opts = { declaration: null, x: 0, y: 0 }) {
     super(_.defaultsDeep(opts, {

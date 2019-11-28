@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import joint from 'jointjs/index';
+import { shapes } from 'jointjs';
 
 const cDefaultWidth = 100;
 const cMinHeight = 100;
@@ -14,7 +14,7 @@ function findMaxLen(strList) {
 /** Class that provides graphical representation for the Step.
  * @private
  */
-export default class VisualStep extends joint.shapes.devs.Model {
+export default class VisualStep extends shapes.devs.Model {
   /**
    * Creates new Step visual representation. Accepts all options for
    * joint.shapes.dev.Model and various custom parameters.

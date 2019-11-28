@@ -1,11 +1,11 @@
 import _ from 'lodash';
-import joint from 'jointjs/index';
+import { shapes } from 'jointjs';
 
 /**
  * Class that represents graphical link
  * @private
  */
-export default class VisualLink extends joint.shapes.pn.Link {
+export default class VisualLink extends shapes.pn.Link {
 
   constructor(opts, readOnly) {
     const defaultLinkaAttr = readOnly ?

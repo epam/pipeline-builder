@@ -1,6 +1,5 @@
 import _ from 'lodash';
-import { V } from 'jointjs';
-import joint from 'jointjs/index';
+import { dia, V, layout } from 'jointjs';
 import Workflow from '../model/Workflow';
 import Declaration from '../model/Declaration';
 import Port from '../model/Port';
@@ -92,7 +91,7 @@ function createSubstituteCells(graph) {
     newCell.proto = cellProto;
   });
 
-  const gr = new joint.dia.Graph();
+  const gr = new dia.Graph();
   gr.addCells(newCells);
   return gr;
 }
@@ -105,7 +104,7 @@ function generateChildName(step) {
   return parentName ? `${parentName}_${step.name}` : step.name;
 }
 
-class VisualWorkflowView extends joint.dia.ElementView {
+class VisualWorkflowView extends dia.ElementView {
   pointerdown(evt, x, y) {
     if (evt.target.getAttribute('magnet') && evt.which === 1 && evt.shiftKey) {
       const port = evt.target.getAttribute('port');
@@ -135,7 +134,7 @@ export default class Visualizer {
    * @param {boolean} readOnly - specify the read only access mode
    */
   constructor(element, readOnly = false) {
-    const graph = new joint.dia.Graph();
+    const graph = new dia.Graph();
 
     if (!(element instanceof Element)) {
       element = document.getElementById(element);
@@ -320,7 +319,7 @@ export default class Visualizer {
           y: glNode.y - glNode.height / 2 });
       }, // setVertices is ignored
     };
-    joint.layout.DirectedGraph.layout(newCells, settings);
+    layout.DirectedGraph.layout(newCells, settings);
   }
 
   /**
