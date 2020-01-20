@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 import Context from './entities/Context';
-import Parser from './hermes/wdl_parser';
+import Parser from './hermes/versions/draft-2/wdl_parser';
 import * as Constants from './constants';
 import DataService from './../../dataServices/data-service';
 import { extractImportsArray } from './utils/utils';
