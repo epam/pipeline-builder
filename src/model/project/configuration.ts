@@ -6,7 +6,7 @@ class ProjectConfiguration implements IProjectConfiguration {
     debug: false,
   });
 
-  private _wdlVersion: WdlVersion;
+  private readonly _wdlVersion: WdlVersion;
 
   private _baseURI: string | undefined;
 

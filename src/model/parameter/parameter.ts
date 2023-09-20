@@ -9,7 +9,7 @@ import {
   IParametersObject,
   IParameterType,
   isAction, isExecutable,
-  isParametersArray,
+  isParametersArray, isScatter,
   IStruct,
   IWdlError,
   TParameterTypes,
@@ -278,6 +278,7 @@ abstract class Parameter<T extends TParameterTypes = TParameterTypes>
         && !this.supports(WdlVersion.draft3)
         && !!this.parent
         && isAction(this.parent)
+        && !isScatter(this.parent)
       );
   }
 

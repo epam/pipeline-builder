@@ -455,7 +455,7 @@ class Call extends ActionWithOutputs<ContextTypes.call> implements ICall {
   }
 
   protected getValidationErrors(): IWdlError[] {
-    let issues: IWdlError[] = super.getValidationErrors();
+    const issues: IWdlError[] = super.getValidationErrors();
     // unique name
     if (
       this.rootAction
@@ -483,7 +483,6 @@ class Call extends ActionWithOutputs<ContextTypes.call> implements ICall {
         ),
       );
     } else {
-      issues = issues.concat(this.executable.issues);
       const inputs: CallInput[] = this.inputs
         .filter((input) => input instanceof CallInput) as CallInput[];
       const outputs: CallOutput[] = this.outputs

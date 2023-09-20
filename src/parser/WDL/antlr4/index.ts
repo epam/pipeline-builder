@@ -92,8 +92,6 @@ function parse(wdlContent: string): IWdlDocumentOptions {
     const config = CONFIGURATIONS.find((aConfiguration) => aConfiguration.versions.includes(e[1]));
     if (!config) {
       console.log(`Unsupported WDL version: ${e[1]}. Falling back to ${FALLBACK.versions[0]}`);
-    } else {
-      console.log('WDL document version:', e[1]);
     }
     parseWdl = (config || FALLBACK).parse;
   }

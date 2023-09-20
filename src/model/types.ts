@@ -555,11 +555,6 @@ export interface IScatterIterator extends IParameter<ContextTypes.input> {
   readonly iteratorType: IType | undefined;
 }
 
-export function isScatterIterator(iterator: IParameter): iterator is IScatterIterator {
-  return iterator.contextType === ContextTypes.input
-    && iterator[ScatterIteratorSymbol] === true;
-}
-
 export interface IScatter extends IAction<ContextTypes.scatter> {
   iterator: IScatterIterator;
 }
@@ -592,6 +587,7 @@ export interface IImport
   extends IWdlEntity<ContextTypes.import>, IWdlGenerator {
   source: string;
   readonly structs: IStructAlias[];
+  readonly globalStructs: IStructAlias[];
   readonly importedDocument: IWdlDocument | undefined;
   getAliases(...type: ContextTypes[]): string[]
   load(): Promise<IWdlDocument | undefined>;
@@ -650,6 +646,7 @@ export interface IWdlDocument
   extends IWdlEntity<ContextTypes.document>, IWdlGenerator {
   readonly version: WdlVersion;
   readonly structs: IStruct[];
+  readonly globalStructs: IStructAlias[];
   readonly imports: IImport[];
   readonly workflows: IWorkflow[];
   readonly tasks: ITask[];
@@ -712,6 +709,7 @@ export interface IWdlGenerationResult {
 
 export interface IProject extends IProjectConfiguration {
   readonly documents: IWdlDocument[];
+  readonly defaultContentsResolver: TURIContentsResolver;
   validateWdl(content: string): {
     error?: string;
     success: boolean;
@@ -768,6 +766,17 @@ export function isScatter(
   entity: IWdlEntity,
 ): entity is IScatter {
   return isAction(entity) && entity.contextType === ContextTypes.scatter;
+}
+
+export function isScatterIterator(iterator: IParameter): iterator is IScatterIterator {
+  return iterator.contextType === ContextTypes.input
+    && iterator[ScatterIteratorSymbol] === true;
+}
+
+export function isScatterDeclaration(entity: IWdlEntity): boolean {
+  return entity.contextType === ContextTypes.declaration
+    && entity.parent
+    && isScatter(entity.parent);
 }
 
 export function isExecutable(

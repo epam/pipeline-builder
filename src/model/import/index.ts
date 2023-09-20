@@ -12,6 +12,7 @@ import {
 import removeQuotes from '../utilities/remove-quotes';
 import parseURL from '../utilities/parse-url';
 import { getContent, ident } from '../utilities/wdl-generation';
+import reduceStructAliases from '../utilities/reduce-struct-aliases';
 
 class Import extends WdlEntity<ContextTypes.import> implements IImport {
   private readonly _source: string;
@@ -59,6 +60,13 @@ class Import extends WdlEntity<ContextTypes.import> implements IImport {
     return this._structs;
   }
 
+  get globalStructs(): IStructAlias[] {
+    return reduceStructAliases(
+      this.structs,
+      this.importedDocument ? this.importedDocument.globalStructs : [],
+    );
+  }
+
   getAliases(...type): string[] {
     const types = type.length === 0 ? Object.values(ContextTypes) : type;
     const withoutStructs = types.filter((t) => t !== ContextTypes.struct);
@@ -74,14 +82,14 @@ class Import extends WdlEntity<ContextTypes.import> implements IImport {
     };
     return []
       .concat(
-        this.document
-          ? this.document
+        this.importedDocument
+          ? this.importedDocument
             .getAliases(...withoutStructs).map(mapAlias)
           : [],
       )
       .concat(
-        this.document && types.includes(ContextTypes.struct)
-          ? this.document
+        this.importedDocument && types.includes(ContextTypes.struct)
+          ? this.importedDocument
             .getAliases(ContextTypes.struct).map(mapStruct)
           : [],
       );
@@ -105,19 +113,16 @@ class Import extends WdlEntity<ContextTypes.import> implements IImport {
         [ImportDepthSymbol]: document[ImportDepthSymbol] + 1,
       });
       this._structs = [];
-      this._importedDocument.structs.forEach((struct) => {
-        const alias = this._structAliases
-          .find((o) => o.struct === struct.name);
+      this._importedDocument.globalStructs.forEach((struct) => {
+        const alias = this._structAliases.find((o) => o.alias === struct.alias)
+        || this._structAliases.find((o) => o.struct === struct.struct.name);
         if (alias) {
           this._structs.push({
             alias: alias.alias,
-            struct,
+            struct: struct.struct,
           });
         } else {
-          this._structs.push({
-            alias: struct.name,
-            struct,
-          });
+          this._structs.push(struct);
         }
       });
       await this._importedDocument.loadImports();
@@ -125,7 +130,7 @@ class Import extends WdlEntity<ContextTypes.import> implements IImport {
       document.spread(WdlEvent.treeChanged, this);
       return this._importedDocument;
     } catch (error) {
-      console.warn(error.message);
+      console.warn(`Error loading import "${this.source}": ${error.message}`);
       return undefined;
     }
   }

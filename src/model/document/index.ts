@@ -8,7 +8,8 @@ import {
   IProject,
   IStruct,
   IStructAlias,
-  ITask, ITaskOptions,
+  ITask,
+  ITaskOptions,
   IUnnamedTaskOptions,
   IWdlDocument,
   IWdlDocumentOptions,
@@ -24,6 +25,7 @@ import Import from '../import';
 import Struct from '../struct';
 import generateName from '../utilities/generate-name';
 import { getContent } from '../utilities/wdl-generation';
+import reduceStructAliases from '../utilities/reduce-struct-aliases';
 
 class WdlDocument
   extends WdlEntity<ContextTypes.document>
@@ -186,19 +188,11 @@ class WdlDocument
     // a global struct namespace.
     // This enables structs to be used by their name alone,
     // without the need for any `namespace.` prefix.
-    return []
-      .concat(
-        this.structs.map((struct) => ({
-          alias: struct.name,
-          struct,
-        })),
-      )
-      .concat(
-        this.imports.reduce<IStructAlias[]>((result, i) => ([
-          ...result,
-          ...i.structs,
-        ]), []),
-      );
+    const local = this.structs.map((struct) => ({
+      alias: struct.name,
+      struct,
+    }));
+    return reduceStructAliases(local, ...this.imports.map((i) => i.globalStructs));
   }
 
   /**
@@ -228,7 +222,8 @@ class WdlDocument
       .concat(this.tasks)
       .concat(this.imports.reduce<IExecutable[]>((ex, i) => ([
         ...ex,
-        ...(i.document ? i.document.executables : []),
+        ...(i.importedDocument ? i.importedDocument.workflows : []),
+        ...(i.importedDocument ? i.importedDocument.tasks : []),
       ]), []));
   }
 
@@ -244,7 +239,7 @@ class WdlDocument
       );
     if (types.has(ContextTypes.struct)) {
       aliases = aliases
-        .concat(this.structs.map((wf) => wf.name));
+        .concat(this.globalStructs.map((o) => o.alias));
     }
     if (types.has(ContextTypes.workflow)) {
       aliases = aliases

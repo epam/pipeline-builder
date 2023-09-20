@@ -1,5 +1,5 @@
 import {
-  CompoundTypes, ContextTypes, IParameter, isScatterIterator, IType,
+  CompoundTypes, ContextTypes, IParameter, isScatterDeclaration, isScatterIterator, IType,
 } from '../types';
 
 export default function canBindParameters(
@@ -27,6 +27,7 @@ export default function canBindParameters(
   }
   if (
     targetContextType !== ContextTypes.output
+    && !isScatterDeclaration(target)
     && target.parent
     && target.parent.isParentFor(source)
   ) {
@@ -41,14 +42,17 @@ export default function canBindParameters(
     if (!check && throwError) {
       throw new Error('cannot bind parameter to parent input');
     }
-    return check;
+    if (!check) {
+      return false;
+    }
   }
   if (
     sourceContextType !== ContextTypes.output
     && source.parent
     && !source.parent.isParentFor(target)
+    && !isScatterDeclaration(source)
   ) {
-    // Cannot bind input / declaration to non-children actions
+    // Cannot bind input / declaration to non-children actions, except for scatter declarations
     if (throwError) {
       throw new Error('cannot bind input parameter to non-child action parameter');
     }
@@ -100,6 +104,17 @@ export default function canBindParameters(
       // else - if parameter is target and scatter iterator,
       // then we should pick `array type`
       return parameter.arrayType;
+    }
+    if (isScatterDeclaration(parameter)) {
+      if (parameter === target) {
+        return parameter.parameterType.clone();
+      }
+      if (parameter.parent && parameter.parent.isParentFor(target)) {
+        // using inner type - both source and target within scatter body
+        return parameter.parameterType.clone();
+      }
+      // else - if target parameter is out of scatter body
+      return parameter.parameterType.makeArray();
     }
     let type = parameter.parameterType.clone();
     // if parameter is output and execution stack (from common parent) contains

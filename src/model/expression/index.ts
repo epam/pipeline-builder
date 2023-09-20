@@ -12,7 +12,8 @@ import {
   isCall,
   IScatter,
   isScatter,
-  isTask,
+  isScatterDeclaration,
+  isTask, isWorkflow,
   IWdlError,
   TExpressionTypes,
   WdlEvent,
@@ -233,6 +234,16 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
           .filter((entity) => isCall(entity)) as ICall[];
       };
       const calls: ICall[] = extractCalls(currentWorkflow);
+      const allActions = currentWorkflow
+        .getNestedActions(false);
+      const allCalls = allActions
+        .filter((action) => isCall(action)) as ICall[];
+      const allScatters = allActions
+        .filter((action) => isScatter(action)) as IScatter[];
+      const scattersDeclarations = allScatters.reduce<IParameter[]>((r, s) => ([
+        ...r,
+        ...s.declarations,
+      ]), []);
       const currentStack = this.stack || [];
       /**
        * @type {IScatter[]}
@@ -245,6 +256,9 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
       //      - or output of a call or workflow)
       // - parent execution stack inputs and declarations (if we're processing
       //      input of a call)
+      // - scatter declarations (if we're processing
+      //      - declaration / output of a call or workflow
+      //      - input of a call)
       // - current workflow inputs (if we're processing
       //      - declaration of a call or workflow,
       //      - or output of a call or workflow
@@ -255,6 +269,7 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
       //      - or input of a call)
       // - other workflows outputs
       // - outputs of other actions (calls) within current workflow
+      // - all workflow calls outputs (if we're processing scatter declaration)
       const processInputsAndDeclarations = [ContextTypes.declaration, ContextTypes.output]
         .includes(this.contextType)
         || currentAction.contextType === ContextTypes.call
@@ -279,6 +294,14 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
             return result;
           }, []),
         )
+        // - scatter declarations (if we're processing
+        //      - declaration / output of a call or workflow
+        //      - input of a call)
+        .concat(
+          !isWorkflow(currentAction) || this.contextType !== ContextTypes.input
+            ? scattersDeclarations
+            : [],
+        )
         // current workflow inputs
         .concat(
           processInputsAndDeclarations
@@ -297,8 +320,10 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
             .concat(workflow.outputs || []), []),
         )
         // outputs of other actions (calls) within current workflow
+        // all workflow calls outputs (if we're processing scatter declaration)
         .concat(
-          calls.reduce((result, call) => result.concat(call.outputs || []), []),
+          (isScatterDeclaration(this) ? allCalls : calls)
+            .reduce<IParameter[]>((result, call) => result.concat(call.outputs || []), []),
         ) as IParameter[];
       const getInboundConnectionForDependency = (dependency: string) => list
         .find((o) => this.parameterMatchesDependency(o, dependency));
@@ -319,10 +344,9 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
     if (
       notResolvedDependencies.length > 0
       && isTask(currentAction)
-      && this.contextType !== ContextTypes.input
     ) {
       // Possible connections could be found among
-      // task inputs and declarations (if we're processing output or declaration)
+      // task inputs and declarations
       const inputs = currentAction.getActionInputs();
       const declarations = currentAction.getActionDeclarations();
       const list: IParameter[] = []

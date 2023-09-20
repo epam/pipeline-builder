@@ -2,7 +2,8 @@ import { dia, shapes } from 'jointjs';
 import {
   IDragAndDropOptions,
   IPaper,
-  IVisualizer, IVisualizerDragEvent,
+  IVisualizer,
+  IVisualizerDragEvent,
   IZoom,
   VisualizerEvent,
   VisualizerOptions,

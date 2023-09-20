@@ -5,7 +5,7 @@ import {
   IProjectConfiguration, ITask,
   IWdlDocument,
   IWdlDocumentOptions, IWdlGenerationResult, IWorkflow,
-  SupportedFormats,
+  SupportedFormats, TURIContentsResolver,
   WdlContentsOptions,
   WdlLoadOptions,
 } from '../types';
@@ -46,6 +46,11 @@ class Project
     return this._documents;
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  get defaultContentsResolver(): TURIContentsResolver {
+    return defaultContentsResolver;
+  }
+
   private getURL(
     relativeURI: string,
     base?: string,
@@ -53,15 +58,26 @@ class Project
     if (!relativeURI || !relativeURI.length) {
       throw new Error('URI not provided');
     }
+    if (/^(https?|ftp):\/\//i.test(relativeURI)) {
+      return parseURL(relativeURI);
+    }
     const baseURI = base || this.baseURI;
     if (!baseURI || !baseURI.length) {
       return parseURL(relativeURI);
     }
+    if (/^(https?|ftp):\/\//i.test(baseURI)) {
+      try {
+        const url = new URL(relativeURI, baseURI);
+        return parseURL(url.href);
+      } catch (e) {
+        throw new Error(`Couldn't build URI for base "${baseURI}" and relative "${relativeURI}": ${e.message}`);
+      }
+    }
     try {
-      const url = new URL(relativeURI, baseURI);
-      return parseURL(url.href);
+      const url = new URL(relativeURI, `file:///${baseURI}`);
+      return parseURL(url.pathname);
     } catch (e) {
-      throw new Error(`Couldn't build URI for base "${baseURI}" and relative "${relativeURI}": ${e.message}`);
+      throw new Error(`Couldn't build file URI for base "${baseURI}" and relative "${relativeURI}": ${e.message}`);
     }
   }
 
@@ -72,7 +88,7 @@ class Project
   } {
     try {
       const parser = parsers.get(SupportedFormats.wdl);
-      console.log(parser(content));
+      parser(content);
       return {
         success: true,
       };
@@ -142,7 +158,9 @@ class Project
         new Error(`Document loading cancelled because of the recursion depth (allowed: ${this.importRecursionDepth}, current: ${importDepth}): ${url}`),
       );
     }
-    const resolver = this.contentsResolver || defaultContentsResolver;
+    const resolver = this.contentsResolver
+      || this.defaultContentsResolver
+      || defaultContentsResolver;
     if (this.debug) {
       console.log('Loading document:');
       if (uriValue === url) {
@@ -153,7 +171,7 @@ class Project
       }
     }
     const cacheItem: Promise<IWdlDocument> = new Promise((resolve, reject) => {
-      resolver(url)
+      resolver.call(this, url)
         .then((contents) => this.loadDocumentByContents({
           uri: url,
           contents,

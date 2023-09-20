@@ -273,6 +273,7 @@ export default function print(
       .forEach((child) => print(child, {
         ...(options || {}),
         collapsed: true,
+        withParent: false
       }));
   } else {
     closeGroup = openGroup(false);

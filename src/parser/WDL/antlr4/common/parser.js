@@ -552,9 +552,12 @@ function createParser(Lexer, Parser, ParserListener, version) {
   return (wdlContent) => {
     const inputStream = new antlr4.InputStream(wdlContent);
     const lexer = new Lexer(inputStream);
+    lexer.removeErrorListeners();
     const tokens = new antlr4.CommonTokenStream(lexer);
     const parser = new Parser(tokens);
+    parser.removeErrorListeners();
     const errorListener = new ErrorListener();
+    lexer.addErrorListener(errorListener);
     parser.addErrorListener(errorListener);
     try {
       const wdl = parser.document();
