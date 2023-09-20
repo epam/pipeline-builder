@@ -1,5 +1,3 @@
-/*global env: true */
-'use strict';
+const { publish } = require('jsdoc/templates/default/publish.js');
 
-var publish = require('jsdoc/templates/default/publish').publish;
 exports.publish = publish;

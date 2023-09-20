@@ -1,6 +1,6 @@
-node_modules/
-coverage/
 dist/
 docs/auto/
-.sonar/
-.idea/
+lib/
+coverage/
+node_modules/
+gen/

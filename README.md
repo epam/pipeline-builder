@@ -14,7 +14,7 @@ Pipeline Builder is a JavaScript library for visualizing and constructing bioinf
 
 ## Demo environment
 
-Example of a **Pipeline Builder** usage is available at [http://pb.opensource.epam.com](http://pb.opensource.epam.com) built on master branch and 
+Example of a **Pipeline Builder** usage is available at [http://pb.opensource.epam.com](http://pb.opensource.epam.com) built on master branch and
 [http://pb.opensource.epam.com:10000](http://pb.opensource.epam.com:10000) built on dev branch
 
 This demo application demonstrates major capabilities of a **Pipeline Builder**
@@ -48,10 +48,8 @@ The following WDL features, that require more specific parsing or visualization,
 
 Ensure that the latest [git](https://git-scm.com/)
 (e.g [Git For Windows](https://git-for-windows.github.io/)) and
-[Node.js v6 LTS](https://nodejs.org/) are installed. You're also encouraged to use
-[Yarn](https://yarnpkg.com/) package manager to guarantee that package versions are consistent across
-all build machines.
-[Gulp.js v3](http://gulpjs.com/) is used as a build framework.
+[Node.js v18 LTS](https://nodejs.org/) are installed.
+[Gulp.js v4](http://gulpjs.com/) is used as a build framework.
 
 ```sh
 # grab the project
@@ -59,12 +57,12 @@ git clone https://github.com/epam/pipeline-builder.git
 
 # install necessary Node.js modules
 cd pipeline-builder
-yarn global add gulp-cli
-yarn install
+npm install --global gulp-cli
+npm install
 
 # test and build everything
-gulp
+npm run build
 
 # or just start webpack development server with live reload
-gulp serve
+npm run dev
 ```

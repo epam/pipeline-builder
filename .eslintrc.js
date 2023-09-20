@@ -1,62 +1,55 @@
-const os = require('os');
+const path = require('path');
 
 module.exports = {
-  root: true,
-  extends: 'airbnb-base',
-  plugins: [
-    'import',
-  ],
-
   env: {
-    browser: true,
+    'browser': true,
+    'es2021': true
   },
-
-  globals: {
-  },
-
-  // current deviations from AirBnB setup (TODO: revisit later)
-  rules: {
-    'linebreak-style': ['warn', os.EOL === '\n'? 'unix' : 'windows'],
-    'no-param-reassign': 0,
-    'no-underscore-dangle': ['warn', { 'allowAfterThis': true }],
-    'no-plusplus': ['error', { 'allowForLoopAfterthoughts': true }],
-    'no-mixed-operators': ['error', {
-      'groups': [
-        // ['+', '-', '*', '/', '%', '**'], Was removed in order to enable expressions like: a * b + c
-        ['&', '|', '^', '~', '<<', '>>', '>>>'],
-        ['==', '!=', '===', '!==', '>', '>=', '<', '<='],
-        ['&&', '||'],
-        ['in', 'instanceof'],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:react/recommended',
+    'airbnb-base',
+    'airbnb-typescript/base'
+  ],
+  overrides: [
+    {
+      'env': {
+        'node': true
+      },
+      'files': [
+        '.eslintrc.{js,cjs}'
       ],
-      // 'allowSamePrecedence': false, Was changed because it reports expressions like a + b + c
-      'allowSamePrecedence': true,
-    }],
-    'no-restricted-properties': ['error', {
-      object: 'arguments',
-      property: 'callee',
-      message: 'arguments.callee is deprecated',
-    }, {
-      property: '__defineGetter__',
-      message: 'Please use Object.defineProperty instead.',
-    }, {
-      property: '__defineSetter__',
-      message: 'Please use Object.defineProperty instead.',
-    }, /*{ Disabled due to inaccessibility of ** operator in ES2015
-      object: 'Math',
-      property: 'pow',
-      message: 'Use the exponentiation operator (**) instead.',
-    }*/],
-    // We had to enable this in order to bundle jointjs
-    'import/no-extraneous-dependencies': ['error', {
-      devDependencies: true,
-      optionalDependencies: false,
-    }],
-    'max-len': ['error', 120, 2, {
-      ignoreUrls: true,
-      ignoreComments: true,
-      ignoreRegExpLiterals: true,
-      ignoreStrings: true,
-      ignoreTemplateLiterals: true,
-    }],
+      'parserOptions': {
+        'sourceType': 'script'
+      }
+    }
+  ],
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+    project: path.resolve(__dirname, './tsconfig.json')
   },
+  plugins: [
+    '@typescript-eslint',
+    'react'
+  ],
+  rules: {
+    'linebreak-style': ['error', 'unix'],
+    'quotes': ['error', 'single'],
+    'semi': ['error', 'always'],
+    'no-underscore-dangle': 'off',
+    'no-console': 'off',
+  },
+  ignorePatterns: [
+    '*rc.js',
+    '*rc.json',
+    '*.config.js',
+    '*.config.json',
+    'docs/**/*',
+    'scripts/**/*',
+    'gulpfile.js',
+    'src/parser/WDL/antlr4/**/*'
+  ]
 };

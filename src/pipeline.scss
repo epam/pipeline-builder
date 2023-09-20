@@ -1,176 +1,138 @@
-@import '../node_modules/jointjs/dist/joint';
+@import "jointjs/dist/joint.css";
 
 // EPAM primary colors
 $sharp-blue: #39c2d7;
 $lime-green: #a3c644;
 $graphite: #464547;
-$white: #fff;
 
-// EPAM secondary colors
+  // EPAM secondary colors
 $raspberry: #b22746;
-$plum: #8e244d;
-$dark-blue: #1a9cb0;
-$dark-green: #7f993a;
-$medium-gray: #666;
 $gray: #999;
 $light-gray: #ccc;
 
-// Semantic color mapping
-$step-color: $sharp-blue;
-$port-color: $graphite;
-$port-color-empty: $dark-blue;
-$port-color-available: $lime-green;
-
-@mixin grab {
-  // http://www.google.com/intl/en_ALL/mapfiles/openhand.cur
-  cursor: url('data:image/vnd.microsoft.icon;base64,AAACAAEAICACAAcABQAwAQAAFgAAACgAAAAgAAAAQAAAAAEAAQAAAAAAAAEAAAAAAAAAAAAAAgAAAAAAAAAAAAAA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAA/AAAAfwAAAP+AAAH/gAAB/8AAA//AAAd/wAAGf+AAAH9gAADbYAAA2yAAAZsAAAGbAAAAGAAAAAAAAA//////////////////////////////////////////////////////////////////////////////////////gH///4B///8Af//+AD///AA///wAH//4AB//8AAf//AAD//5AA///gAP//4AD//8AF///AB///5A////5///8='), all-scroll !important;
-  cursor: -moz-grab !important;
-  cursor: -webkit-grab !important;
-  cursor: grab !important;
-}
-
-@mixin grabbing {
-  // http://www.google.com/intl/en_ALL/mapfiles/closedhand.cur
-  cursor: url('data:image/vnd.microsoft.icon;base64,AAACAAEAICACAAcABQAwAQAAFgAAACgAAAAgAAAAQAAAAAEAAQAAAAAAAAEAAAAAAAAAAAAAAgAAAAAAAAAAAAAA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAA/AAAAfwAAAP+AAAH/gAAB/8AAAH/AAAB/wAAA/0AAANsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//////////////////////////////////////////////////////////////////////////////////////gH///4B///8Af//+AD///AA///wAH//+AB///wAf//4AH//+AD///yT/////////////////////////////8='), all-scroll !important;
-  cursor: -moz-grabbing !important;
-  cursor: -webkit-grabbing !important;
-  cursor: grabbing !important;
-}
-
-.pannable,
-.pannable.joint-cell .port-body {
-  @include grab;
-}
-
-.pannable.joint-link {
-  .connection-wrap {
-    @include grab;
-  }
-
-  .link-tools {
-    display: none;
-  }
-
-  .marker-arrowheads {
-    display: none;
-  }
-}
-
-.pannable.is-panning,
-.is-panning .pannable,
-.is-panning .pannable.joint-cell * {
-  @include grabbing;
-}
-
-.joint-type-visualdeclaration {
-  .root {
-    fill: $step-color;
-    stroke: $step-color;
-  }
-
-  .label {
-    font-weight: 500;
-    font-family: "Source Sans Pro", sans-serif;
-    font-size: 16px;
-    text-decoration: none;
-    text-transform: none;
-  }
-}
-
-.joint-type-visualstep.selected {
-  .body {
-    stroke: $raspberry;
-    stroke-width: 3px;
-  }
-}
-
-.joint-type-visualstep {
-  text {
-    font-weight: 500;
-    font-family: "Source Sans Pro", sans-serif;
-  }
-
-  rect {
-    rx: 5px;
-    ry: 5px;
-  }
-
-  .body {
-    fill: $white;
-    stroke: $step-color;
-    stroke-width: 2px;
-  }
-
-  .label {
-    fill: $step-color;
-    font-size: 16px;
-  }
-
-  .port-body {
-    stroke: $white;
-    stroke-width: 3px;
-    fill: $port-color;
-  }
-
-  .port-body.empty {
-    stroke: $port-color-empty;
-    stroke-width: 1.5px;
-    fill: $white;
-  }
-
-  .port-body.available-magnet {
-    fill: $port-color-available;
-  }
-
-  .port-body.disabled {
-    opacity: 0.5;
-  }
-
-  .port-body:hover {
-    opacity: 1;
-    fill: $step-color;
-  }
-
-  .port-label {
-    fill: $port-color;
-    text-decoration: none;
-    text-transform: none;
-  }
-}
-
-.joint-type-visualgroup {
-  @extend .joint-type-visualstep;
-
-  .body {
-    fill: transparent;
-  }
-}
-
-.joint-type-visualworkflow {
-  @extend .joint-type-visualstep;
-}
-
-.joint-link {
-  .connection {
-    stroke: $port-color;
-    stroke-width: 2px;
-  }
-
-  .marker-arrowheads .marker-arrowhead,
-  .marker-vertex-group .marker-vertex,
-  .marker-vertex-group .marker-vertex:hover {
-    fill: $port-color;
-  }
-
-  .marker-arrowheads .marker-arrowhead:hover {
-    fill: $step-color;
-  }
-
-  .link-tools .link-tool .tool-remove circle {
-    fill: $raspberry;
-  }
-}
+$selected-color: $raspberry;
 
 .joint-highlight-stroke {
   stroke: $sharp-blue;
+}
+
+.joint-tools-layer .joint-tools .joint-link-tool-remove circle {
+  fill: $raspberry;
+}
+
+@mixin jointPorts($fill, $stroke, $stroke-width) {
+  .visual-parameter {
+    fill: $stroke;
+    stroke: $fill;
+    stroke-width: $stroke-width;
+    &[connected=false] {
+      fill: $fill;
+      stroke: $stroke;
+    }
+
+    &.invalid {
+      stroke: red;
+    }
+  }
+}
+
+@mixin visualElementBody($fill: #fafafa, $stroke: $graphite, $stroke-width: 1, $opacity: 0.7) {
+  .visual-element-body {
+    cursor: move;
+    fill: fade-out($fill, 1.0 - $opacity);
+    stroke: $stroke;
+    stroke-width: $stroke-width;
+  }
+
+  &.selected {
+    .visual-element-body {
+      stroke: $selected-color;
+    }
+  }
+
+  &.invalid {
+    .visual-element-body {
+      stroke: red;
+    }
+  }
+
+  @include jointPorts(fade-in($fill, 1), $stroke, $stroke-width);
+}
+
+.visual-element {
+  @include visualElementBody();
+
+  &.visual-workflow,
+  &.visual-call,
+  &.visual-scatter {
+    @include visualElementBody($stroke: $sharp-blue, $stroke-width: 2);
+  }
+
+  &.visual-conditional {
+    @include visualElementBody($stroke: $lime-green, $stroke-width: 2);
+    .visual-element-body {
+      stroke-dasharray: 2, 2;
+    }
+  }
+}
+
+#workflow-connection-marker {
+  fill: $light-gray;
+  stroke: $light-gray;
+}
+
+#default-connection-marker {
+  fill: $gray;
+  stroke: $gray;
+}
+
+.visual-connection {
+  .visual-connection-line {
+    stroke: $gray;
+  }
+  &.visual-connection-complex {
+    .visual-connection-line {
+      stroke-dasharray: 20 10;
+    }
+  }
+  &.visual-connection-workflow {
+    .visual-connection-line {
+      stroke: $light-gray;
+    }
+    &.selected {
+      .visual-connection-line {
+        stroke: $selected-color;
+        stroke-width: 2;
+      }
+    }
+  }
+  &.selected {
+    .visual-connection-line {
+      stroke: $selected-color;
+      stroke-width: 2;
+    }
+  }
+}
+
+$text-color: #222222;
+$text-color-2: #555555;
+
+.visual-parameter-label {
+  tspan[parameter-name=true] {
+    fill: $text-color;
+  }
+  tspan[parameter-type=true] {
+    fill: $text-color-2;
+  }
+}
+
+.visual-element-label {
+  tspan[element-name=true],
+  tspan[element-alias=true] {
+    fill: $text-color;
+  }
+  tspan[element-type=true],
+  tspan[element-as=true] {
+    fill: $text-color-2;
+  }
 }
