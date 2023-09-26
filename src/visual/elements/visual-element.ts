@@ -339,13 +339,16 @@ abstract class VisualElement<T extends TActionTypes = TActionTypes>
             } = args[0];
             if (this.shouldHandleParameter(source)) {
               this.updateParameterConnected(source);
+              this.updateParameterHasValue(source);
             }
             if (this.shouldHandleParameter(target)) {
               this.updateParameterConnected(target);
+              this.updateParameterHasValue(target);
             }
           }
           break;
         default:
+          this.updateParameterHasValue(sender);
           break;
       }
     }
@@ -393,6 +396,9 @@ abstract class VisualElement<T extends TActionTypes = TActionTypes>
       )
     ) {
       this.updateValidationStatus();
+      if (sender instanceof Parameter) {
+        this.updateParameterHasValue(sender);
+      }
     }
   }
 
@@ -572,6 +578,14 @@ abstract class VisualElement<T extends TActionTypes = TActionTypes>
     );
   }
 
+  protected updateParameterHasValue(parameter: IParameter): void {
+    this.portPropSafe(
+      getParameterIdentifier(parameter),
+      'attrs/portBody/hasValue',
+      !!parameter.value,
+    );
+  }
+
   protected getParameterProperty<P>(
     parameter: dia.Element.Port | IParameter,
     property: string,
@@ -627,6 +641,7 @@ abstract class VisualElement<T extends TActionTypes = TActionTypes>
     portsToUpdate.forEach((port) => {
       this.updateParameterName(port);
       this.updateParameterConnected(port);
+      this.updateParameterHasValue(port);
     });
     portsToAdd.forEach((port) => {
       const {
@@ -656,6 +671,7 @@ abstract class VisualElement<T extends TActionTypes = TActionTypes>
       });
       this.updateParameterName(port);
       this.updateParameterConnected(port);
+      this.updateParameterHasValue(port);
     });
     this._portsSizes.set(group, this.getParametersSize(ports));
     this.ensureMinimumSize();
