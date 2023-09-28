@@ -348,16 +348,32 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
       // Possible connections could be found among
       // task inputs and declarations
       const inputs = currentAction.getActionInputs();
+      const outputs = currentAction.getActionOutputs();
       const declarations = currentAction.getActionDeclarations();
+      const currentParameter = currentAction.getParameterByUUID(this.uuid);
       const list: IParameter[] = []
         .concat(declarations)
         .concat(inputs)
         .filter((d) => (d as IExpression) !== this);
       const getInboundConnectionForDependency = (dependency: string) => list
         .find((o) => this.parameterMatchesDependency(o, dependency));
+      const getOutboundConnectionForDependency = (dependency: string) => {
+        // Outputs can reference previous outputs in the same block for a Task
+        if (currentParameter && currentParameter.isOutput) {
+          const resolveIdx = outputs
+            .findIndex((o) => this.parameterMatchesDependency(o, dependency));
+          const currentIdx = outputs
+            .findIndex((o) => this.parameterMatchesDependency(o, currentParameter.name));
+          return resolveIdx >= 0 && currentIdx >= 0 && currentIdx > resolveIdx
+            ? outputs[resolveIdx]
+            : undefined;
+        }
+        return undefined;
+      };
       notResolvedDependencies.forEach((dependency) => {
         // eslint-disable-next-line no-param-reassign
-        dependency.resolved = getInboundConnectionForDependency(dependency.dependency);
+        dependency.resolved = getInboundConnectionForDependency(dependency.dependency)
+         || getOutboundConnectionForDependency(dependency.dependency);
       });
     }
     return this.dependencies
