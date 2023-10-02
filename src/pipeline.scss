@@ -25,7 +25,7 @@ $selected-color: $raspberry;
     fill: $stroke;
     stroke: $fill;
     stroke-width: $stroke-width;
-    &[connected=false] {
+    &[has-value=false] {
       fill: $fill;
       stroke: $stroke;
     }
