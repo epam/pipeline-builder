@@ -358,15 +358,13 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
       const getInboundConnectionForDependency = (dependency: string) => list
         .find((o) => this.parameterMatchesDependency(o, dependency));
       const getOutboundConnectionForDependency = (dependency: string) => {
-        // Outputs can reference previous outputs in the same block for a Task
-        if (currentParameter && currentParameter.isOutput) {
-          const resolveIdx = outputs
-            .findIndex((o) => this.parameterMatchesDependency(o, dependency));
-          const currentIdx = outputs
-            .findIndex((o) => this.parameterMatchesDependency(o, currentParameter.name));
-          return resolveIdx >= 0 && currentIdx >= 0 && currentIdx > resolveIdx
-            ? outputs[resolveIdx]
-            : undefined;
+        // Outputs can reference another outputs in the same block for a Task
+        if (
+          currentParameter.isOutput
+          && dependency !== currentParameter.name
+        ) {
+          return outputs
+            .find((o) => this.parameterMatchesDependency(o, dependency));
         }
         return undefined;
       };
