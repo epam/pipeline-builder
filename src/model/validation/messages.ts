@@ -17,6 +17,7 @@ const WdlErrorMessages: Record<WdlErrorType, string> = {
   [WdlErrorType.wrongExpression]: 'Invalid expression',
   [WdlErrorType.commandRequired]: 'Command required',
   [WdlErrorType.wrongIdentifier]: 'Invalid identifier',
+  [WdlErrorType.reservedKeyword]: 'Reserved keyword',
   [WdlErrorType.wrongType]: 'Invalid type',
   [WdlErrorType.expressionRequired]: 'Conditional expression required',
 };

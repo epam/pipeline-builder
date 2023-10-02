@@ -1,6 +1,8 @@
 import {
   ContextTypes,
   ContextTypeSymbol,
+} from '../context-types';
+import {
   IExpression,
   IParameter,
   IParameterOptionOrInstance,
@@ -206,7 +208,7 @@ abstract class Parameter<T extends TParameterTypes = TParameterTypes>
      * @type {string}
      * @private
      */
-    this._type = new ParameterType(type);
+    this._type = new ParameterType(this, type);
     this.startForwardEventsFrom(this._type, WdlEvent.typeChanged, WdlEvent.validation);
   }
 
@@ -218,7 +220,7 @@ abstract class Parameter<T extends TParameterTypes = TParameterTypes>
   }
 
   get parameterType(): IParameterType {
-    return this._type || (new ParameterType(''));
+    return this._type || (new ParameterType(this, ''));
   }
 
   get type(): string | undefined {
@@ -290,6 +292,10 @@ abstract class Parameter<T extends TParameterTypes = TParameterTypes>
     return this.contextType === ContextTypes.output;
   }
 
+  get typeIssues(): IWdlError[] {
+    return this._type ? this._type.issues : [];
+  }
+
   canBindTo(source: IExpression): boolean;
   canBindTo(source: IExpression, throwError: boolean): boolean | never;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,class-methods-use-this
@@ -307,8 +313,8 @@ abstract class Parameter<T extends TParameterTypes = TParameterTypes>
     }
   }
 
-  protected getValidationErrors(): IWdlError[] {
-    let issues: IWdlError[] = super.getValidationErrors();
+  protected getSelfValidationErrors(): IWdlError[] {
+    const issues: IWdlError[] = super.getSelfValidationErrors();
     if (
       this.parent
       && isExecutable(this.parent)
@@ -335,12 +341,14 @@ abstract class Parameter<T extends TParameterTypes = TParameterTypes>
         );
       }
     }
-    if (this._type) {
-      issues = issues.concat(this._type.issues);
-    } else {
+    if (!this._type) {
       issues.push(new TypeRequiredError(this));
     }
     return issues;
+  }
+
+  protected getValidationErrors(): IWdlError[] {
+    return super.getValidationErrors().concat(this.typeIssues);
   }
 
   generateWdl(): string {

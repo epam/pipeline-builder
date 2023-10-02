@@ -1,5 +1,5 @@
 import defaultsDeep from '../../utilities/defaults-deep';
-import { ContextTypes, ContextTypeSymbol } from '../../../model';
+import { ContextTypes } from '../../../model';
 import { getEntityIdentifier } from '../../utilities/get-entity-identifier';
 import VisualElement from '../visual-element';
 import {
@@ -56,9 +56,9 @@ class VisualAction extends VisualElement implements IVisualAction {
 
   static initialize(options: VisualActionOptions): VisualAction {
     const {
-      entity = {},
-    } = options || {};
-    const type = entity[ContextTypeSymbol];
+      entity,
+    } = options || { entity: undefined };
+    const type = entity ? entity.contextType : undefined;
     const Initializer = VisualAction.initializers.get(type);
     const defaultOptions = VisualAction.initializersDefaultOptions.get(type) || {};
     const opts = defaultsDeep<VisualActionOptions>(

@@ -1,6 +1,8 @@
 import {
-  CommandTypes,
   ContextTypes,
+} from '../context-types';
+import {
+  CommandTypes,
   ICommand,
   ICommandOptions, ITask,
   IWdlError,
@@ -89,8 +91,8 @@ class Command
     }
   }
 
-  protected getValidationErrors(): IWdlError[] {
-    const issues = super.getValidationErrors();
+  protected getSelfValidationErrors(): IWdlError[] {
+    const issues = super.getSelfValidationErrors();
     if (!this.command || this.command.trim().length === 0) {
       issues.push(new CommandRequiredError(this));
     }

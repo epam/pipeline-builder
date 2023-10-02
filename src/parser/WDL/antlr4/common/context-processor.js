@@ -1,6 +1,6 @@
 // eslint-disable-next-line max-classes-per-file
 import { extractValue } from './utilities';
-import { ContextTypeSymbol, ContextTypes } from '../../../../model/types';
+import { ContextTypeSymbol, ContextTypes } from '../../../../model/context-types';
 
 class ContextElement {
   constructor(type) {

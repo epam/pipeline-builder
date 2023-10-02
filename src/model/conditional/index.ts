@@ -1,6 +1,10 @@
 import { Action } from '../action';
 import {
-  ContextTypes, IConditional, IConditionalOptions,
+  ContextTypes,
+} from '../context-types';
+import {
+  IConditional,
+  IConditionalOptions,
   WdlEvent,
 } from '../types';
 import ConditionalExpression from './conditional-expression';

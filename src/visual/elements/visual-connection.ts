@@ -2,8 +2,9 @@ import { shapes } from 'jointjs';
 import { getParameterConnection } from '../utilities/get-parameter-identifier';
 import VisualElement from './visual-element';
 import {
-  ContextTypeSymbol,
   ContextTypes,
+} from '../../model/context-types';
+import {
   IParameter,
 } from '../../model/types';
 import Parameter from '../../model/parameter';
@@ -103,9 +104,9 @@ class VisualConnection extends shapes.standard.Link implements IVisualConnection
       sourceElement,
       targetElement,
     } = this;
-    const parameterParent = (parameter) => (parameter
+    const parameterParent = (parameter: IParameter) => (parameter
     && parameter.parent
-    && parameter[ContextTypeSymbol] === ContextTypes.declaration
+    && parameter.contextType === ContextTypes.declaration
       ? parameter.parent
       : undefined);
     return !!sourceElement
@@ -141,13 +142,13 @@ class VisualConnection extends shapes.standard.Link implements IVisualConnection
   }
 
   private getIsWorkflowConnection(): boolean {
-    const isWorkflowInputOrDeclaration = (parameter) => parameter
+    const isWorkflowInputOrDeclaration = (parameter: IParameter) => parameter
       && parameter.parent
-      && parameter.parent[ContextTypeSymbol] === ContextTypes.workflow
+      && parameter.parent.contextType === ContextTypes.workflow
       && [
         ContextTypes.input,
         ContextTypes.declaration,
-      ].includes(parameter[ContextTypeSymbol]);
+      ].includes(parameter.contextType);
     return isWorkflowInputOrDeclaration(this.sourceParameter)
       || isWorkflowInputOrDeclaration(this.targetParameter);
   }

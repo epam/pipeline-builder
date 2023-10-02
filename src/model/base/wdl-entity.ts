@@ -6,9 +6,11 @@ import {
   WdlEventDispatcher,
 } from '../events';
 import {
-  compareVersions,
   ContextTypes,
   ContextTypeSymbol,
+} from '../context-types';
+import {
+  compareVersions,
   IAction,
   IExecutable,
   isAction,
@@ -27,7 +29,12 @@ import {
 import { EventWildcard, IEventDispatcherArray } from '../events/types';
 import getFullyQualifiedName from '../utilities/fully-qualified-name';
 import {
-  filterErrors, filterWarnings, NameRequiredError, WdlValidationError, WrongIdentifierError,
+  filterErrors,
+  filterWarnings,
+  NameRequiredError,
+  ReservedKeywordError,
+  WdlValidationError,
+  WrongIdentifierError,
 } from '../validation';
 import escapeRegExp from '../utilities/escape-reg-exp';
 import EventForwarder, { IForwardEventOptions } from './event-forwarder';
@@ -610,23 +617,44 @@ abstract class WdlEntity<T extends ContextTypes>
     return this.contextType;
   }
 
-  protected getValidationErrors(): IWdlError[] {
+  /**
+   * Returns current object validation issues
+   * @protected
+   */
+  protected getSelfValidationErrors(): IWdlError[] {
     const errors: IWdlError[] = [];
-    if (requiresName(this.contextType)) {
-      if (!this.name) {
-        errors.push(new NameRequiredError(this));
-      } else if (this.name && !WrongIdentifierError.check(this.name)) {
-        errors.push(new WrongIdentifierError(this, this.name));
-      }
+    const nameIsRequired = (requiresName(this.contextType) && !this.name)
+      || (requiresReference(this.contextType) && !this.reference);
+    if (nameIsRequired) {
+      errors.push(new NameRequiredError(this));
     }
-    if (requiresReference(this.contextType)) {
-      if (!this.reference) {
-        errors.push(new NameRequiredError(this));
-      } else if (this.reference && !WrongIdentifierError.check(this.reference)) {
-        errors.push(new WrongIdentifierError(this, this.reference));
+    const identifiersToCheck = getUniqueObjects([
+      requiresName(this.contextType) ? this.name : undefined,
+      requiresReference(this.contextType) ? this.reference : undefined,
+    ].filter(Boolean));
+    identifiersToCheck.forEach((identifier) => {
+      if (!WrongIdentifierError.check(identifier)) {
+        errors.push(new WrongIdentifierError(this, identifier));
       }
-    }
+      if (!ReservedKeywordError.check(identifier)) {
+        errors.push(new ReservedKeywordError(this, identifier));
+      }
+    });
     return errors;
+  }
+
+  /**
+   * Returns current object and its children / dependencies validation issues
+   * @protected
+   */
+  protected getValidationErrors(): IWdlError[] {
+    return []
+      .concat(this._entityIssues)
+      .concat(
+        this.children.reduce<IWdlError[]>((childrenErrors, child) => (
+          childrenErrors.concat(child.issues)
+        ), []),
+      );
   }
 
   private checkRequiresValidation(event: WdlEvent, sender: IWdlEntity): void {
@@ -646,7 +674,7 @@ abstract class WdlEntity<T extends ContextTypes>
   }
 
   protected validateEntity(fireEvent: boolean): boolean {
-    this._entityIssues = getUniqueObjects(this.getValidationErrors());
+    this._entityIssues = getUniqueObjects(this.getSelfValidationErrors());
     if (fireEvent) {
       this.bubble(WdlEvent.validation);
     } else {
@@ -656,13 +684,7 @@ abstract class WdlEntity<T extends ContextTypes>
   }
 
   private onValidated() {
-    this._issues = getUniqueObjects([]
-      .concat(this._entityIssues)
-      .concat(
-        this.children.reduce<IWdlError[]>((childrenErrors, child) => (
-          childrenErrors.concat(child.issues)
-        ), []),
-      ));
+    this._issues = getUniqueObjects(this.getValidationErrors());
   }
 
   validate(): boolean | never;

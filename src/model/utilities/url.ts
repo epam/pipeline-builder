@@ -1,7 +1,7 @@
 import { SupportedFormats } from '../types';
 import parseFormat from './parse-format';
 
-export default function parseURL(url: string): {
+export function parseURL(url: string): {
   url: string,
   name: string,
   format: SupportedFormats,
@@ -21,4 +21,16 @@ export default function parseURL(url: string): {
     name,
     format,
   };
+}
+
+export function getPathUri(uri: string, baseUri: string): string | never {
+  if (!baseUri || !baseUri.length) {
+    return uri;
+  }
+  let base = baseUri;
+  if (base.startsWith('/')) {
+    base = base.slice(1);
+  }
+  const url = new URL(uri, `file:///${base}`);
+  return url.pathname;
 }

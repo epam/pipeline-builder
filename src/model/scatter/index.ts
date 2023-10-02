@@ -1,10 +1,12 @@
 import { Action } from '../action';
 import {
   ContextTypes,
+} from '../context-types';
+import {
   IParameter,
   IScatter,
   IScatterIterator,
-  IScatterOptions,
+  IScatterOptions, IWdlError,
 } from '../types';
 import ScatterIterator from './scatter-iterator';
 import { IParameterOrAction } from '../utilities/dependencies';
@@ -61,6 +63,10 @@ class Scatter extends Action<ContextTypes.scatter> implements IScatter {
 
   protected getWdlContentHeader(): string {
     return `scatter (${this.iterator.name} in ${this.iterator.value})`;
+  }
+
+  protected getValidationErrors(): IWdlError[] {
+    return super.getValidationErrors().concat(this.iterator.issues);
   }
 
   toString(): string {

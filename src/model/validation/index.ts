@@ -6,6 +6,7 @@ import {
   WdlErrorLevel,
   WdlErrorType,
 } from '../types';
+import ReservedKeywordError from './reserved-keyword-error';
 import WrongIdentifierError from './wrong-identifier-error';
 import WrongTypeError from './wrong-type-error';
 
@@ -134,5 +135,6 @@ export {
   CommandRequiredError,
   WrongIdentifierError,
   WrongTypeError,
+  ReservedKeywordError,
   ConditionalExpressionRequiredError,
 };

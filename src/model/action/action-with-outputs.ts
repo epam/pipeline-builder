@@ -1,6 +1,8 @@
 import Action, { ActionWdlContentBlock } from './action';
 import {
   ContextTypes,
+} from '../context-types';
+import {
   IActionWithOutputs,
   IActionWithOutputsOptions,
   IParameter,
@@ -13,6 +15,7 @@ import Parameter from '../parameter';
 import { IEventDispatcherArray } from '../events/types';
 import { TParameterInitializer } from '../parameter/parameter';
 import { getScopedContent, IWdlContentItem } from '../utilities/wdl-generation';
+import { getBodyElementsExecutionOrder } from '../utilities/dependencies';
 
 /**
  * Base class for actions with outputs (Call and executables - Task & Workflow)
@@ -130,7 +133,7 @@ abstract class ActionWithOutputs<T extends TActionWithOutputsTypes>
     return [
       ...super.getWdlContentItems(),
       [
-        getScopedContent('output', this.outputs),
+        getScopedContent('output', getBodyElementsExecutionOrder(this.outputs)),
         ActionWdlContentBlock.postFinalization,
       ],
     ];

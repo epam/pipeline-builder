@@ -1,5 +1,8 @@
 import Executable from '../executable';
-import { ContextTypes, IWorkflow, IWorkflowOptions } from '../types';
+import {
+  ContextTypes,
+} from '../context-types';
+import { IWorkflow, IWorkflowOptions } from '../types';
 
 class Workflow extends Executable<ContextTypes.workflow> implements IWorkflow {
   static deserializeWorkflow(options: IWorkflowOptions): Workflow {

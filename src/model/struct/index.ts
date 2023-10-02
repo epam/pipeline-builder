@@ -1,5 +1,8 @@
 import {
-  ContextTypes, IStruct, IStructOptions, IStructProperty, WdlEvent,
+  ContextTypes,
+} from '../context-types';
+import {
+  IStruct, IStructOptions, IStructProperty, WdlEvent,
 } from '../types';
 import Parameter from '../parameter';
 import WdlEntity from '../base/wdl-entity';

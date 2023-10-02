@@ -1,6 +1,9 @@
 import Expression from '../expression';
 import {
-  ContextTypes, IExpression, IWdlError, WdlEvent,
+  ContextTypes,
+} from '../context-types';
+import {
+  IExpression, IWdlError, WdlEvent,
 } from '../types';
 import { ConditionalExpressionRequiredError } from '../validation';
 
@@ -28,8 +31,8 @@ class ConditionalExpression extends Expression<ContextTypes.conditionalExpressio
     return true;
   }
 
-  protected getValidationErrors(): IWdlError[] {
-    const issues = super.getValidationErrors();
+  protected getSelfValidationErrors(): IWdlError[] {
+    const issues = super.getSelfValidationErrors();
     if (!this.value || !this.value.length) {
       issues.push(new ConditionalExpressionRequiredError(this));
     }

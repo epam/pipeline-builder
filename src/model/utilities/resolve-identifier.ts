@@ -1,4 +1,7 @@
-import { ContextTypes, IWdlEntity } from '../types';
+import {
+  ContextTypes,
+} from '../context-types';
+import { IWdlEntity } from '../types';
 import Import from '../import';
 import WdlDocument from '../document';
 

@@ -5,8 +5,11 @@ import {
 } from './compound';
 import WdlEntity from '../base/wdl-entity';
 import {
-  CompoundTypes,
   ContextTypes,
+} from '../context-types';
+import {
+  CompoundTypes,
+  IParameter,
   IParameterType,
   IType,
   IWdlError,
@@ -42,10 +45,14 @@ class ParameterType extends WdlEntity<ContextTypes.type> implements IParameterTy
 
   private _rawType: string | undefined;
 
-  constructor(type: string | undefined) {
+  private _parameter: IParameter;
+
+  constructor(parameter: IParameter, type: string | undefined) {
     super(ContextTypes.type);
+    this._parameter = parameter;
     this._parsedType = undefined;
     this.setType(type);
+    this.validateEntity(false);
   }
 
   protected get eventsRequireValidation(): Set<WdlEvent> {
@@ -213,8 +220,8 @@ class ParameterType extends WdlEntity<ContextTypes.type> implements IParameterTy
     return undefined;
   }
 
-  protected getValidationErrors(): IWdlError[] {
-    const issues = super.getValidationErrors();
+  protected getSelfValidationErrors(): IWdlError[] {
+    const issues = super.getSelfValidationErrors();
     if (
       !this._parsedType
       && this._rawType
@@ -225,6 +232,13 @@ class ParameterType extends WdlEntity<ContextTypes.type> implements IParameterTy
       issues.push(new TypeRequiredError(this));
     }
     return issues;
+  }
+
+  toString(): string {
+    if (this._parameter) {
+      return this._parameter.toString();
+    }
+    return super.toString();
   }
 }
 

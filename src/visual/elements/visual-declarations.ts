@@ -2,7 +2,10 @@ import defaultsDeep from '../utilities/defaults-deep';
 import VisualElement from './visual-element';
 import { DECLARATION_BLOCK_POSTFIX, getEntityIdentifier } from '../utilities/get-entity-identifier';
 import Parameter from '../../model/parameter';
-import { ContextTypes, IAction, IParameter } from '../../model/types';
+import {
+  ContextTypes,
+} from '../../model';
+import { IAction, IParameter } from '../../model/types';
 import {
   IVisualDeclarations,
   IVisualElement,

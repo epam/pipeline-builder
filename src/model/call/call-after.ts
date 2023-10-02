@@ -1,6 +1,9 @@
 import WdlEntity from '../base/wdl-entity';
 import {
-  ContextTypes, ICall, ICallAfter, ICallAfterOptions, isCall, WdlEvent,
+  ContextTypes,
+} from '../context-types';
+import {
+  ICall, ICallAfter, ICallAfterOptions, isCall, WdlEvent,
 } from '../types';
 import resolveIdentifier from '../utilities/resolve-identifier';
 

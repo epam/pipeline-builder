@@ -2,6 +2,8 @@ import WdlEntity from '../base/wdl-entity';
 import {
   ContextTypes,
   ContextTypeSymbol,
+} from '../context-types';
+import {
   IAction,
   IActionOptions,
   IActionOptionsWithType,

@@ -2,6 +2,8 @@
 import Parameter from './parameter';
 import {
   ContextTypes,
+} from '../context-types';
+import {
   IParameterOptions,
   isExecutable,
   IWdlError,
@@ -18,6 +20,14 @@ class DeclarationParameter extends Parameter<ContextTypes.declaration> {
   constructor(options: IParameterOptions) {
     super(options, ContextTypes.declaration);
   }
+
+  protected getSelfValidationErrors(): IWdlError[] {
+    const issues = super.getSelfValidationErrors();
+    if (this.isDeclaration && !this.value) {
+      issues.push(new ValueRequiredError(this));
+    }
+    return issues;
+  }
 }
 
 class OutputParameter extends Parameter<ContextTypes.output> {
@@ -25,8 +35,8 @@ class OutputParameter extends Parameter<ContextTypes.output> {
     super(options, ContextTypes.output);
   }
 
-  protected getValidationErrors(): IWdlError[] {
-    const issues: IWdlError[] = super.getValidationErrors();
+  protected getSelfValidationErrors(): IWdlError[] {
+    const issues: IWdlError[] = super.getSelfValidationErrors();
     if (
       this.parent
       && isExecutable(this.parent)

@@ -3,6 +3,8 @@ import WdlEntity from '../base/wdl-entity';
 import {
   ContextTypes,
   ContextTypeSymbol,
+} from '../context-types';
+import {
   IAction,
   IBindableValue,
   ICall,
@@ -260,21 +262,10 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
       // - scatter declarations (if we're processing
       //      - declaration / output of a call or workflow
       //      - input of a call)
-      // - current workflow inputs (if we're processing
-      //      - declaration of a call or workflow,
-      //      - or output of a call or workflow
-      //      - or input of a call)
-      // - current workflow declarations (if we're processing
-      //      - declaration of a call or workflow,
-      //      - or output of a call or workflow
-      //      - or input of a call)
+      // - current workflow inputs and declarations
       // - other workflows outputs
       // - outputs of other actions (calls) within current workflow
       // - all workflow calls outputs (if we're processing scatter declaration)
-      const processInputsAndDeclarations = [ContextTypes.declaration, ContextTypes.output]
-        .includes(this.contextType)
-        || currentAction.contextType === ContextTypes.call
-        || currentAction.contextType === ContextTypes.scatter;
       const list = []
         // scatter iterators within current execution stack
         .concat(
@@ -304,17 +295,9 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
             : [],
         )
         // current workflow inputs
-        .concat(
-          processInputsAndDeclarations
-            ? (currentWorkflow.inputs || [])
-            : [],
-        )
+        .concat(currentWorkflow.inputs || [])
         // current workflow declarations
-        .concat(
-          processInputsAndDeclarations
-            ? (currentWorkflow.declarations || [])
-            : [],
-        )
+        .concat(currentWorkflow.declarations || [])
         // other workflows outputs
         .concat(
           otherWorkflows.reduce((result, workflow) => result
@@ -551,8 +534,8 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
     }
   }
 
-  protected getValidationErrors(): IWdlError[] {
-    const issues: IWdlError[] = super.getValidationErrors();
+  protected getSelfValidationErrors(): IWdlError[] {
+    const issues: IWdlError[] = super.getSelfValidationErrors();
     if (this._expressionError) {
       issues.push(this._expressionError);
     }

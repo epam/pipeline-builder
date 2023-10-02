@@ -1,6 +1,8 @@
 import Executable from '../executable';
 import {
   ContextTypes,
+} from '../context-types';
+import {
   ICommandData,
   ICommandOptions,
   IRuntime,
@@ -195,11 +197,8 @@ class Task extends Executable<ContextTypes.task> implements ITask {
   }
 
   protected getValidationErrors(): IWdlError[] {
-    let issues = super.getValidationErrors();
-    if (this._command) {
-      issues = issues.concat(this._command.issues);
-    }
-    return issues;
+    return super.getValidationErrors()
+      .concat(this._command ? this._command.issues : []);
   }
 
   protected getWdlContentHeader(): string {

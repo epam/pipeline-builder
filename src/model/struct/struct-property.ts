@@ -1,4 +1,7 @@
-import { ContextTypes, IStructProperty, IStructPropertyOptions } from '../types';
+import {
+  ContextTypes,
+} from '../context-types';
+import { IStructProperty, IStructPropertyOptions } from '../types';
 import Parameter from '../parameter';
 
 class StructProperty

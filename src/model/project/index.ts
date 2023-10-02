@@ -14,7 +14,7 @@ import ProjectConfiguration from './configuration';
 import generateName from '../utilities/generate-name';
 import parse from '../../parser/WDL/antlr4';
 import defaultContentsResolver from './default-contents-resolver';
-import parseURL from '../utilities/parse-url';
+import { getPathUri, parseURL } from '../utilities/url';
 import { measure, measureAsync } from '../utilities/measure';
 
 const parsers: Map<SupportedFormats, (wdl: string) => IWdlDocumentOptions> = new Map();
@@ -74,8 +74,7 @@ class Project
       }
     }
     try {
-      const url = new URL(relativeURI, `file:///${baseURI}`);
-      return parseURL(url.pathname);
+      return parseURL(getPathUri(relativeURI, baseURI));
     } catch (e) {
       throw new Error(`Couldn't build file URI for base "${baseURI}" and relative "${relativeURI}": ${e.message}`);
     }

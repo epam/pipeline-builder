@@ -1,5 +1,8 @@
 import {
-  CompoundTypes, ContextTypes, IParameter, isScatterDeclaration, isScatterIterator, IType,
+  ContextTypes,
+} from '../context-types';
+import {
+  CompoundTypes, IParameter, isScatterDeclaration, isScatterIterator, IType,
 } from '../types';
 
 export default function canBindParameters(

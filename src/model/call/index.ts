@@ -1,6 +1,8 @@
 import { ActionWithOutputs } from '../action';
 import {
   ContextTypes,
+} from '../context-types';
+import {
   ICall,
   ICallAfter,
   ICallOptions,
@@ -454,8 +456,8 @@ class Call extends ActionWithOutputs<ContextTypes.call> implements ICall {
     };
   }
 
-  protected getValidationErrors(): IWdlError[] {
-    const issues: IWdlError[] = super.getValidationErrors();
+  protected getSelfValidationErrors(): IWdlError[] {
+    const issues: IWdlError[] = super.getSelfValidationErrors();
     // unique name
     if (
       this.rootAction
@@ -512,6 +514,11 @@ class Call extends ActionWithOutputs<ContextTypes.call> implements ICall {
       }
     }
     return issues;
+  }
+
+  protected getValidationErrors(): IWdlError[] {
+    return super.getValidationErrors()
+      .concat(this.executable ? this.executable.issues : []);
   }
 
   toString(): string {

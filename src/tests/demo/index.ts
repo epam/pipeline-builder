@@ -43,7 +43,7 @@ export function createDocumentScenario(visualizer: Visualizer) {
 
 export function loadContentsWithCustomProjectScenario(
   visualizer: Visualizer,
-  project,
+  project: Project,
   contents: string,
 ) {
   console.log(project);
@@ -54,7 +54,9 @@ export function loadContentsWithCustomProjectScenario(
       try {
         console.log(doc.issues);
         doc.validate(true);
-        console.log(project.generateWdl(doc));
+        const generated = project.generateWdl(doc);
+        console.log(generated);
+        console.log(generated.content);
       } catch (e) {
         console.log(e.message);
       }

@@ -1,6 +1,6 @@
 import antlr4, { ParseTreeWalker } from 'antlr4';
 import ContextProcessor from './context-processor';
-import { ContextTypeSymbol, ContextTypes } from '../../../../model/types';
+import { ContextTypeSymbol, ContextTypes } from '../../../../model/context-types';
 import ErrorListener from './error-listener';
 import ParserError from './parser-error';
 
@@ -396,6 +396,10 @@ function createCommonListener(TreeWalker, processors = {}) {
 
     metaElementsEnd() {
       this.context.popItem();
+      this.reduceChildrenArray({
+        property: 'meta',
+        childrenProperty: 'meta',
+      });
     }
 
     metaElement(ctx) {
@@ -575,6 +579,7 @@ function createParser(Lexer, Parser, ParserListener, version) {
       if (e instanceof ParserError) {
         throw e;
       }
+      console.log(e);
       throw new Error(`Error parsing wdl: ${e}`);
     }
   };

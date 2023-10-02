@@ -1,5 +1,8 @@
 import {
-  ContextTypes, IParameter, IParameterOptions, IParameterType, TParameterTypes, WdlEvent,
+  ContextTypes,
+} from '../context-types';
+import {
+  IParameter, IParameterOptions, IParameterType, IWdlError, TParameterTypes, WdlEvent,
 } from '../types';
 import Parameter from '../parameter';
 
@@ -23,6 +26,7 @@ abstract class CallParameter
       if (executableParameter instanceof Parameter) {
         return {
           name: executableParameter.name,
+          type: executableParameter.type,
         };
       }
       return executableParameter as IParameterOptions;
@@ -80,6 +84,14 @@ abstract class CallParameter
     if (this.executableParameter) {
       this.executableParameter.type = type;
     }
+  }
+
+  get typeIssues(): IWdlError[] {
+    const { executableParameter } = this;
+    if (executableParameter && executableParameter instanceof Parameter) {
+      return executableParameter.typeIssues;
+    }
+    return [];
   }
 
   destroy() {

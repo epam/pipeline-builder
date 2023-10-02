@@ -3,33 +3,7 @@ import {
   IEventDispatcher,
   WdlEvent,
 } from './events/types';
-
-enum ContextTypes {
-  document = 'document',
-  import = 'import',
-  importAlias = 'importAlias',
-  struct = 'struct',
-  structProperty = 'struct-property',
-  workflow = 'workflow',
-  task = 'task',
-  inputs = 'inputs',
-  outputs = 'outputs',
-  declaration = 'declaration',
-  input = 'input',
-  output = 'output',
-  scatter = 'scatter',
-  call = 'call',
-  callAfter = 'call-after',
-  conditional = 'conditional',
-  conditionalExpression = 'conditional-expression',
-  parameterMeta = 'parameter-meta',
-  meta = 'meta',
-  metaElement = 'meta-element',
-  runtime = 'runtime',
-  command = 'command',
-  expression = 'expression',
-  type = 'type',
-}
+import { ContextTypes } from './context-types';
 
 enum PrimitiveTypes {
   boolean = 'Boolean',
@@ -110,8 +84,6 @@ export interface IExpressionDataOptions {
 
 export type IExpressionOptions = IWdlEntityOptions & IExpressionDataOptions;
 
-const ContextTypeSymbol = Symbol('type');
-
 export interface IWdlGenerator {
   generateWdl(): string;
 }
@@ -125,6 +97,7 @@ export enum WdlErrorType {
   typeRequired = 'type-required',
   valueRequired = 'value-required',
   wrongIdentifier = 'wrong-identifier',
+  reservedKeyword = 'reserved-keyword',
   wrongType = 'wrong-type',
 
   // Call errors
@@ -804,8 +777,6 @@ export function isTask(
 export {
   PrimitiveTypes,
   CompoundTypes,
-  ContextTypes,
-  ContextTypeSymbol,
   ScatterIteratorSymbol,
   CommandTypes,
   WdlEvent,

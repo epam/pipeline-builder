@@ -1,5 +1,7 @@
 import {
   ContextTypes,
+} from '../context-types';
+import {
   IScatterIterator,
   IScatterOptions,
   IType, IWdlError,
@@ -67,8 +69,8 @@ class ScatterIterator
     }
   }
 
-  protected getValidationErrors(): IWdlError[] {
-    const issues = super.getValidationErrors()
+  protected getSelfValidationErrors(): IWdlError[] {
+    const issues = super.getSelfValidationErrors()
       .filter((issue) => issue.type !== WdlErrorType.typeRequired);
     if (!this.value) {
       issues.push(new ValueRequiredError(this));

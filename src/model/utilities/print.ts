@@ -1,4 +1,7 @@
-import { ContextTypes, IWdlEntity } from '../types';
+import {
+  ContextTypes,
+} from '../context-types';
+import { IWdlEntity } from '../types';
 import WdlEntity from '../base/wdl-entity';
 import Command from '../task/command';
 import Expression from '../expression';
@@ -273,7 +276,7 @@ export default function print(
       .forEach((child) => print(child, {
         ...(options || {}),
         collapsed: true,
-        withParent: false
+        withParent: false,
       }));
   } else {
     closeGroup = openGroup(false);

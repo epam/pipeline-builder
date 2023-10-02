@@ -1,6 +1,8 @@
 import WdlEntity from '../base/wdl-entity';
 import {
   ContextTypes,
+} from '../context-types';
+import {
   IImport,
   IImportOptions,
   ImportDepthSymbol,
@@ -10,7 +12,7 @@ import {
   WdlEvent,
 } from '../types';
 import removeQuotes from '../utilities/remove-quotes';
-import parseURL from '../utilities/parse-url';
+import { parseURL } from '../utilities/url';
 import { getContent, ident } from '../utilities/wdl-generation';
 import reduceStructAliases from '../utilities/reduce-struct-aliases';
 

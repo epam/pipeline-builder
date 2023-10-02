@@ -1,5 +1,8 @@
 import {
-  ContextTypes, IParameter, IParameterOptions, IWdlError, WdlErrorLevel,
+  ContextTypes,
+} from '../context-types';
+import {
+  IParameter, IParameterOptions, IWdlError, WdlErrorLevel,
 } from '../types';
 import CallParameter from './call-parameter';
 import Parameter from '../parameter';
@@ -23,8 +26,8 @@ class CallInput
     }
   }
 
-  protected getValidationErrors(): IWdlError[] {
-    const issues: IWdlError[] = super.getValidationErrors();
+  protected getSelfValidationErrors(): IWdlError[] {
+    const issues: IWdlError[] = super.getSelfValidationErrors();
     if (!this.executableParameter) {
       issues.push(
         new UnknownInputError(

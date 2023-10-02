@@ -1,0 +1,28 @@
+export enum ContextTypes {
+  document = 'document',
+  import = 'import',
+  importAlias = 'importAlias',
+  struct = 'struct',
+  structProperty = 'struct-property',
+  workflow = 'workflow',
+  task = 'task',
+  inputs = 'inputs',
+  outputs = 'outputs',
+  declaration = 'declaration',
+  input = 'input',
+  output = 'output',
+  scatter = 'scatter',
+  call = 'call',
+  callAfter = 'call-after',
+  conditional = 'conditional',
+  conditionalExpression = 'conditional-expression',
+  parameterMeta = 'parameter-meta',
+  meta = 'meta',
+  metaElement = 'meta-element',
+  runtime = 'runtime',
+  command = 'command',
+  expression = 'expression',
+  type = 'type',
+}
+
+export const ContextTypeSymbol = Symbol('type');

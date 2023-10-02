@@ -1,7 +1,8 @@
 import { WdlEvent } from './events';
 import {
   ContextTypes,
-  ContextTypeSymbol,
+} from './context-types';
+import {
   PrimitiveTypes,
   CompoundTypes,
   isCall,
@@ -38,7 +39,6 @@ Action.registerActionInitializer(ContextTypes.conditional, Conditional);
 Action.registerActionInitializer(ContextTypes.scatter, Scatter);
 
 export {
-  ContextTypeSymbol,
   Call,
   Conditional,
   Scatter,
