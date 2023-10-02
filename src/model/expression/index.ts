@@ -13,7 +13,8 @@ import {
   IScatter,
   isScatter,
   isScatterDeclaration,
-  isTask, isWorkflow,
+  isTask,
+  isWorkflow,
   IWdlError,
   TExpressionTypes,
   WdlEvent,
@@ -350,7 +351,6 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
       const inputs = currentAction.getActionInputs();
       const outputs = currentAction.getActionOutputs();
       const declarations = currentAction.getActionDeclarations();
-      const currentParameter = currentAction.getParameterByUUID(this.uuid);
       const list: IParameter[] = []
         .concat(declarations)
         .concat(inputs)
@@ -359,10 +359,7 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
         .find((o) => this.parameterMatchesDependency(o, dependency));
       const getOutboundConnectionForDependency = (dependency: string) => {
         // Outputs can reference another outputs in the same block for a Task
-        if (
-          currentParameter.isOutput
-          && dependency !== currentParameter.name
-        ) {
+        if (this.contextType === ContextTypes.output && dependency !== this.name) {
           return outputs
             .find((o) => this.parameterMatchesDependency(o, dependency));
         }
