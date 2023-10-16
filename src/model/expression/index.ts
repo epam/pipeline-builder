@@ -16,6 +16,7 @@ import {
   isScatter,
   isScatterDeclaration,
   isTask,
+  IStruct,
   isWorkflow,
   IWdlError,
   TExpressionTypes,
@@ -373,11 +374,24 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
     if (ref === dependency) {
       return true;
     }
+    const checkStructs = (struct: IStruct, path: string) => {
+      const [propName, ...rest] = path.split('.');
+      const entity = struct && struct.properties
+        .find((p) => p.name === propName);
+      if (ref === propName) {
+        return checkStructs(struct, rest.join('.'));
+      }
+      if (entity && entity.struct && rest.length > 0) {
+        return checkStructs(entity.struct, rest.join('.'));
+      }
+      return entity && !rest.length
+        ? propName === entity.name
+        : false;
+    };
     if (
       parameter.struct
-      && parameter.struct
-        .properties
-        .some((p) => `${ref}.${p.name}` === dependency)
+      && parameter.struct.properties
+      && checkStructs(parameter.struct, dependency)
     ) {
       return true;
     }
