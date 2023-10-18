@@ -16,7 +16,6 @@ import {
   isScatter,
   isScatterDeclaration,
   isTask,
-  IStruct,
   isWorkflow,
   IWdlError,
   TExpressionTypes,
