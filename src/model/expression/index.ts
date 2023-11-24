@@ -373,11 +373,19 @@ abstract class Expression<T extends TExpressionTypes = TExpressionTypes>
     if (ref === dependency) {
       return true;
     }
+    const [refPart, ...parts] = dependency.split('.');
+    const checkStructs = (_parameter: IParameter, path: string[]) => {
+      const [propName, ...rest] = path;
+      const nextParameter = _parameter?.struct?.properties?.find((p) => p.name === propName);
+      if (nextParameter && rest.length > 0) {
+        return checkStructs(nextParameter, rest);
+      }
+      return propName === nextParameter.name;
+    };
     if (
       parameter.struct
-      && parameter.struct
-        .properties
-        .some((p) => `${ref}.${p.name}` === dependency)
+      && refPart === ref
+      && checkStructs(parameter, parts)
     ) {
       return true;
     }
